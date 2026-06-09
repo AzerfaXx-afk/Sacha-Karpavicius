@@ -145,11 +145,13 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
         onMouseEnter={() => {
           if (!hasStarted) {
             onHoverChange?.(true);
+            if (lensRef.current) gsap.to(lensRef.current, { width: '30vw', height: '30vw', rotation: 0, duration: 0.8, ease: 'power3.out' });
           }
         }}
         onMouseLeave={() => {
           if (!hasStarted) {
             onHoverChange?.(false);
+            if (lensRef.current) gsap.to(lensRef.current, { width: 0, height: 0, rotation: 45, duration: 0.8, ease: 'power3.out' });
           }
         }}
         onClick={() => {
@@ -196,6 +198,7 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
       <h1
         ref={letterSRef}
         className="absolute bottom-[-2vw] left-4 md:left-12 font-syne font-bold text-[30vw] md:text-[25vw] leading-none text-white/90"
+        style={{ opacity: 0, transform: 'translateY(120%)' }}
       >
         S
       </h1>
@@ -204,6 +207,7 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
       <h1
         ref={letterKRef}
         className="absolute bottom-[-2vw] right-4 md:right-12 font-syne font-bold text-[30vw] md:text-[25vw] leading-none text-white/90"
+        style={{ opacity: 0, transform: 'translateY(120%)' }}
       >
         K
       </h1>

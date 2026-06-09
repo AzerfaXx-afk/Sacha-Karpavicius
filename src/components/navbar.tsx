@@ -63,7 +63,10 @@ export default function Navbar({ showUI = true }: { showUI?: boolean }) {
     };
     updateTime();
     const interval = setInterval(updateTime, 1000);
-    
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     // Navbar entry animation
     if (showUI) {
       if (navRef.current) gsap.to(navRef.current, { y: 0, opacity: 1, duration: 1.5, ease: "power4.out" });
@@ -72,7 +75,9 @@ export default function Navbar({ showUI = true }: { showUI?: boolean }) {
       if (navRef.current) gsap.to(navRef.current, { y: -32, opacity: 0, duration: 1.0, ease: "power3.inOut" });
       if (timeRef.current) gsap.to(timeRef.current, { opacity: 0, duration: 1.0, ease: "power3.inOut" });
     }
+  }, [showUI]);
 
+  useEffect(() => {
     // Prevent scroll when menu is open
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -81,7 +86,6 @@ export default function Navbar({ showUI = true }: { showUI?: boolean }) {
     }
 
     return () => {
-      clearInterval(interval);
       document.body.style.overflow = "";
     };
   }, [isOpen]);
