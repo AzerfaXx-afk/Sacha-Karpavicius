@@ -70,7 +70,7 @@ export default function Navbar() {
         opacity: 1,
         duration: 2.0,
         ease: "power4.out",
-        delay: 3.2,
+        delay: 2.4,
       });
     }
 
@@ -131,7 +131,7 @@ export default function Navbar() {
       {/* Time at top right */}
       <div className="fixed top-6 right-6 md:top-8 md:right-12 z-[110] flex flex-col items-end gap-1 mix-blend-difference pointer-events-none opacity-0" ref={(el) => {
         if (el && navRef.current) {
-          gsap.to(el, { opacity: 1, duration: 2.0, ease: "power4.out", delay: 3.2 });
+          gsap.to(el, { opacity: 1, duration: 2.0, ease: "power4.out", delay: 2.4 });
         }
       }}>
         <div className="border border-white/20 px-2 py-0.5 rounded-sm text-[10px] text-white">

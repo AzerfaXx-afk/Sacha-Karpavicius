@@ -54,7 +54,7 @@ export default function Home() {
         onComplete: () => audioRef.current?.pause() 
       });
     } else {
-      audioRef.current.play();
+      audioRef.current.play().catch(e => console.warn("No audio file yet:", e));
       setIsPlaying(true);
       gsap.to(audioRef.current, { volume: 0.5, duration: 1.5 });
     }
@@ -81,34 +81,35 @@ export default function Home() {
   useEffect(() => {
     const ctx = gsap.context(() => {
       /* ── Hero reveal ── */
-      // Delay to match the aperture opening in Preloader (which starts around 2.7s)
-      const heroTl = gsap.timeline({ defaults: { ease: "power3.out" }, delay: 2.5 });
+      // Reduced delay so UI elements appear faster, matching the start of the site
+      const heroTl = gsap.timeline({ defaults: { ease: "power3.out" }, delay: 2.0 });
 
       heroTl.fromTo(
         heroImgRef.current,
         { scale: 1.1 },
-        { scale: 1, duration: 3.0, ease: "power2.out" }
+        { scale: 1, duration: 3.0, ease: "power2.out" },
+        0
       );
 
       heroTl.fromTo(
         heroTitleRef.current,
         { y: 50, opacity: 0 },
         { y: 0, opacity: 1, duration: 1.2 },
-        0.5 // Text comes in shortly after the aperture starts opening
+        0.2
       );
 
       heroTl.fromTo(
         heroSubRef.current,
         { y: 20, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.8 },
-        0.8
+        0.4
       );
 
       heroTl.fromTo(
         [getInTouchRef.current, audioIconRef.current],
         { y: 20, opacity: 0 },
-        { y: 0, opacity: 1, duration: 1.0, stagger: 0.2 },
-        0.8
+        { y: 0, opacity: 1, duration: 1.0, stagger: 0.1 },
+        0.4
       );
 
       /* ── Mouse Parallax ── */
@@ -223,19 +224,19 @@ export default function Home() {
           50% { transform: scaleY(1); }
           100% { transform: scaleY(0.2); }
         }
-        .music-bar { transform-origin: bottom; }
+        .music-bar { transform-origin: center; }
       `}</style>
 
       {/* Persistent Audio Icon (Bottom Right) */}
       <div 
         ref={audioIconRef}
-        className="fixed bottom-6 right-6 md:bottom-10 md:right-12 z-[100] cursor-pointer group mix-blend-difference flex items-end justify-center gap-[3px] h-4 w-6 opacity-0"
+        className="fixed bottom-6 right-6 md:bottom-10 md:right-12 z-[100] cursor-pointer group mix-blend-difference flex items-center justify-center gap-[4px] h-4 w-8 opacity-0"
         onClick={toggleAudio}
       >
-        <div className={`music-bar w-[2px] transition-all duration-300 ${isPlaying ? 'bg-white h-full animate-[sound_1.2s_ease-in-out_infinite]' : 'bg-white/30 h-1 group-hover:h-3 group-hover:bg-white/60'}`} />
-        <div className={`music-bar w-[2px] transition-all duration-300 ${isPlaying ? 'bg-white h-full animate-[sound_0.8s_ease-in-out_infinite_0.2s]' : 'bg-white/30 h-2 group-hover:h-4 group-hover:bg-white/60'}`} />
-        <div className={`music-bar w-[2px] transition-all duration-300 ${isPlaying ? 'bg-white h-full animate-[sound_1.5s_ease-in-out_infinite_0.4s]' : 'bg-white/30 h-1 group-hover:h-2 group-hover:bg-white/60'}`} />
-        <div className={`music-bar w-[2px] transition-all duration-300 ${isPlaying ? 'bg-white h-full animate-[sound_1.0s_ease-in-out_infinite_0.1s]' : 'bg-white/30 h-3 group-hover:h-full group-hover:bg-white/60'}`} />
+        <div className={`music-bar w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${isPlaying ? 'bg-white h-full animate-[sound_1.2s_ease-in-out_infinite]' : 'bg-white/40 h-[3px] group-hover:h-[6px] group-hover:bg-white'}`} />
+        <div className={`music-bar w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${isPlaying ? 'bg-white h-full animate-[sound_0.8s_ease-in-out_infinite_0.2s]' : 'bg-white/40 h-[3px] group-hover:h-[10px] group-hover:bg-white'}`} />
+        <div className={`music-bar w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${isPlaying ? 'bg-white h-full animate-[sound_1.5s_ease-in-out_infinite_0.4s]' : 'bg-white/40 h-[3px] group-hover:h-[6px] group-hover:bg-white'}`} />
+        <div className={`music-bar w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${isPlaying ? 'bg-white h-full animate-[sound_1.0s_ease-in-out_infinite_0.1s]' : 'bg-white/40 h-[3px] group-hover:h-[8px] group-hover:bg-white'}`} />
       </div>
 
       {/* Persistent Get In Touch (Bottom Left) */}
