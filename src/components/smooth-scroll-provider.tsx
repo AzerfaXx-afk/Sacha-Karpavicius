@@ -36,7 +36,7 @@ export default function SmoothScrollProvider({
         wheelMultiplier: 1,
       }}
     >
-      {children}
+      {children as any}
     </ReactLenis>
   );
 }
