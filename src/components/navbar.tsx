@@ -281,10 +281,13 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
             className="relative w-[260px] h-[340px] rounded-lg overflow-hidden border border-white/10 shadow-2xl transition-all duration-[600ms] ease-[cubic-bezier(0.25,1,0.5,1)] origin-center"
             style={{
               opacity: hoveredIndex !== null ? 1 : 0,
-              transform: `translate(-50%, -50%) scale(${hoveredIndex !== null ? 1 : 0.75}) rotate(${hoveredIndex !== null ? 0 : -5}deg)`,
+              transform: `translate(${hoveredIndex !== null ? '60px' : '40px'}, -50%) scale(${hoveredIndex !== null ? 1 : 0.75}) rotate(${hoveredIndex !== null ? 0 : -5}deg)`,
             }}
           >
             <div className="relative w-full h-full bg-[#111]">
+              {/* Subtle dark overlay to keep image contrast high and readable */}
+              <div className="absolute inset-0 bg-black/15 z-10 pointer-events-none" />
+
               {/* Image 01: Selected Works */}
               <div 
                 className="absolute inset-0 transition-opacity duration-700 ease-in-out overflow-hidden"
