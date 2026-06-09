@@ -106,6 +106,36 @@ const InteractiveListItem = ({ text }: { text: string }) => {
   );
 };
 
+/* ──── Rolling Letter Text Component ──── */
+const RollingText = ({ text, className }: { text: string; className?: string }) => {
+  return (
+    <span className={`inline-block relative overflow-hidden group/roll ${className || ""}`}>
+      <span className="relative inline-flex flex-wrap justify-center">
+        {text.split("").map((char, i) => (
+          <span
+            key={i}
+            className="inline-block transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] group-hover/roll:-translate-y-[115%]"
+            style={{ transitionDelay: `${i * 15}ms` }}
+          >
+            {char === " " ? "\u00A0" : char}
+          </span>
+        ))}
+      </span>
+      <span className="absolute left-0 top-0 inline-flex flex-wrap justify-center pointer-events-none w-full">
+        {text.split("").map((char, i) => (
+          <span
+            key={i}
+            className="inline-block translate-y-[115%] transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] group-hover/roll:translate-y-0"
+            style={{ transitionDelay: `${i * 15}ms` }}
+          >
+            {char === " " ? "\u00A0" : char}
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+};
+
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -480,19 +510,18 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Text Overlay at bottom center */}
         <div className="absolute bottom-24 md:bottom-20 left-1/2 -translate-x-1/2 text-center z-20 w-full px-4 pointer-events-none">
           <div ref={heroTitleRef} style={{ opacity: 0 }}>
-            <h1 className="font-syne font-medium text-[26px] md:text-[34px] leading-[1.25] pb-2 text-white tracking-wide uppercase">
+            <h1 className="font-syne font-medium text-[26px] md:text-[34px] leading-[1.25] pb-2 text-white tracking-wide uppercase pointer-events-auto cursor-default flex flex-col items-center">
               {lang === "fr" ? (
                 <>
-                  Sacha Karpavicius.<br />
-                  Arts Visuels.
+                  <RollingText text="Sacha Karpavicius" />
+                  <RollingText text="Arts Visuels" className="text-white/60 font-normal mt-1 text-[20px] md:text-[26px]" />
                 </>
               ) : (
                 <>
-                  Sacha Karpavicius.<br />
-                  Visual Arts.
+                  <RollingText text="Sacha Karpavicius" />
+                  <RollingText text="Visual Arts" className="text-white/60 font-normal mt-1 text-[20px] md:text-[26px]" />
                 </>
               )}
             </h1>
@@ -560,8 +589,8 @@ export default function Home() {
                 </h3>
                 <span className="font-inter text-[9px] md:text-[10px] tracking-[0.2em] text-white/40 uppercase">
                   {project.category === "Fashion" && lang === "fr" ? "Mode" :
-                   project.category === "Story" && lang === "fr" ? "Histoire" :
-                   project.category}
+                    project.category === "Story" && lang === "fr" ? "Histoire" :
+                      project.category}
                 </span>
               </div>
             </div>
@@ -661,38 +690,17 @@ export default function Home() {
                   rel="noopener noreferrer"
                   onMouseMove={handleMagnetMove}
                   onMouseLeave={handleMagnetLeave}
-                  className="group relative inline-flex items-center gap-4 overflow-hidden px-8 py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-all duration-500 font-syne font-semibold text-[18px] md:text-[22px] text-white cursor-pointer mt-2 w-fit mx-auto hover:shadow-[0_0_30px_rgba(255,255,255,0.06)]"
+                  className="group relative inline-flex items-center justify-center overflow-hidden px-10 py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-all duration-500 font-syne font-semibold text-[18px] md:text-[22px] text-white cursor-pointer mt-2 w-fit mx-auto hover:shadow-[0_0_30px_rgba(255,255,255,0.06)]"
                 >
                   <span className="absolute w-[120%] aspect-square bg-white rounded-full scale-0 group-hover:scale-[2.2] transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" />
                   
-                  <span className="btn-content relative z-10 flex items-center gap-4 pointer-events-none">
-                    {/* Left Symmetrical Arrow */}
-                    <span className="relative overflow-hidden w-4 h-4 flex items-center justify-center">
-                      <span className="absolute transform -translate-x-4 -translate-y-4 opacity-0 group-hover:translate-x-0 group-hover:translate-y-0 transition-all duration-500 ease-out font-mono text-[16px] text-black">
-                        ↗
-                      </span>
-                      <span className="absolute transform translate-x-0 translate-y-0 opacity-100 group-hover:translate-x-4 group-hover:translate-y-4 transition-all duration-500 ease-out font-mono text-[16px] text-white/50">
-                        ↗
-                      </span>
-                    </span>
-
-                    {/* Handle Text */}
+                  <span className="btn-content relative z-10 flex items-center justify-center pointer-events-none">
                     <span className="relative overflow-hidden flex items-center h-[1.2em]">
                       <span className="inline-block transition-transform duration-500 ease-out group-hover:-translate-y-[120%]">
                         @sachakarpaviciusss
                       </span>
                       <span className="absolute left-0 inline-block translate-y-[120%] transition-transform duration-500 ease-out group-hover:translate-y-0 text-black">
                         @sachakarpaviciusss
-                      </span>
-                    </span>
-
-                    {/* Right Symmetrical Arrow */}
-                    <span className="relative overflow-hidden w-4 h-4 flex items-center justify-center">
-                      <span className="absolute transform -translate-x-4 -translate-y-4 opacity-0 group-hover:translate-x-0 group-hover:translate-y-0 transition-all duration-500 ease-out font-mono text-[16px] text-black">
-                        ↗
-                      </span>
-                      <span className="absolute transform translate-x-0 translate-y-0 opacity-100 group-hover:translate-x-4 group-hover:translate-y-4 transition-all duration-500 ease-out font-mono text-[16px] text-white/50">
-                        ↗
                       </span>
                     </span>
                   </span>
