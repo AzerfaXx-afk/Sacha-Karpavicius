@@ -207,8 +207,8 @@ export default function Home() {
       // Desktop: Smooth, subtle mouse tracking
       const handleMouseMove = (e: MouseEvent) => {
         const { clientX, clientY } = e;
-        const xPos = (clientX / window.innerWidth - 0.5) * 60;
-        const yPos = (clientY / window.innerHeight - 0.5) * 60;
+        const xPos = (clientX / window.innerWidth - 0.5) * 150;
+        const yPos = (clientY / window.innerHeight - 0.5) * 150;
 
         xTo(xPos);
         yTo(yPos);

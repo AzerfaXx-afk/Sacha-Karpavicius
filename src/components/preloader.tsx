@@ -47,7 +47,14 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
     };
     window.addEventListener("keydown", preventKeys, { passive: false });
 
-    // Spotlight cursor logic
+    // Spotlight and parallax cursor logic
+    const xTo = gsap.quickTo(nameContainer, "x", { duration: 1, ease: "power2.out" });
+    const yTo = gsap.quickTo(nameContainer, "y", { duration: 1, ease: "power2.out" });
+    const sXTo = gsap.quickTo(letterS, "x", { duration: 1.5, ease: "power2.out" });
+    const sYTo = gsap.quickTo(letterS, "y", { duration: 1.5, ease: "power2.out" });
+    const kXTo = gsap.quickTo(letterK, "x", { duration: 1.5, ease: "power2.out" });
+    const kYTo = gsap.quickTo(letterK, "y", { duration: 1.5, ease: "power2.out" });
+
     const handleMouseMove = (e: MouseEvent) => {
       if (nameContainer) {
         const rect = nameContainer.getBoundingClientRect();
@@ -56,6 +63,17 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
         setMousePos({ x: e.clientX, y: e.clientY });
         nameContainer.style.setProperty("--mouse-x", `${x}px`);
         nameContainer.style.setProperty("--mouse-y", `${y}px`);
+
+        // Parallax for name and letters
+        const px = (e.clientX / window.innerWidth - 0.5) * 40;
+        const py = (e.clientY / window.innerHeight - 0.5) * 40;
+        
+        xTo(px);
+        yTo(py);
+        sXTo(px * 1.5);
+        sYTo(py * 1.5);
+        kXTo(px * 1.2);
+        kYTo(py * 1.2);
       }
     };
     window.addEventListener("mousemove", handleMouseMove);
@@ -64,6 +82,7 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
       // Set initial states
       gsap.set(lens, { width: 0, height: 0, rotation: 45, xPercent: -50, yPercent: -50 });
       gsap.set([letterS, letterK], { yPercent: 120, opacity: 0 });
+      gsap.set(nameContainer, { xPercent: -50, yPercent: -50 });
       gsap.set(nameContainer.querySelectorAll(".name-char"), { opacity: 1, y: 0 });
       return;
     }
@@ -169,7 +188,7 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
             }
           }
         }}
-        className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10 ${hasStarted ? 'pointer-events-none' : 'cursor-pointer group'}`}
+        className={`absolute top-1/2 left-1/2 flex flex-col items-center z-10 ${hasStarted ? 'pointer-events-none' : 'cursor-pointer group'}`}
       >
         <div
           className="relative flex font-inter text-sm md:text-xl tracking-[0.4em] uppercase whitespace-nowrap transition-transform duration-700 group-hover:scale-105"
