@@ -501,7 +501,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ ABOUT SECTION ═══════════════════ */}
-      <section ref={aboutRef} id="about" className="relative bg-[#0a0a0a] pt-20 md:pt-28 pb-20 md:pb-32 overflow-hidden">
+      <section ref={aboutRef} id="about" className="relative bg-[#0a0a0a] pt-20 md:pt-28 pb-32 md:pb-[50vh] overflow-hidden">
         <div className="px-5 md:px-16">
           <div data-text-reveal className="flex items-center gap-6 mb-16 md:mb-24">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
@@ -559,58 +559,62 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ CONTACT / FOOTER ═══════════════════ */}
-      <footer ref={contactRef} id="contact" className="relative bg-[#0a0a0a] pt-16 md:pt-24 pb-[45vh] overflow-hidden">
-        <div className="px-5 md:px-16">
-          <div data-text-reveal className="flex items-center gap-6 mb-16 md:mb-24">
-            <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
-              03
-            </span>
-            <div data-line-reveal className="flex-1 h-[1px] bg-white/10 origin-left" />
-          </div>
-
-          {/* Giant CTA */}
-          <div data-text-reveal className="mb-16 md:mb-24">
-            <a
-              href="mailto:hello@sachakarpavicius.com"
-              className="group inline-block"
-            >
-              <h2 className="font-syne font-bold text-[14vw] md:text-[10vw] leading-[0.9] tracking-tight text-white uppercase group-hover:text-white/60 transition-colors duration-700">
-                Let&apos;s<br />Talk
-              </h2>
-            </a>
-          </div>
-
-          {/* Footer bottom */}
-          <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 pb-4">
-            <div className="space-y-2">
-              <p className="font-inter text-[10px] md:text-[11px] tracking-[0.2em] text-white/30 uppercase">
-                hello@sachakarpavicius.com
-              </p>
-              <p className="font-inter text-[10px] md:text-[11px] tracking-[0.2em] text-white/30 uppercase">
-                Paris — Milan — New York
-              </p>
+      <footer ref={contactRef} id="contact" className="relative bg-[#0a0a0a] pt-20 md:pt-28 pb-8 md:pb-12 min-h-screen flex flex-col justify-between overflow-hidden">
+        <div className="px-5 md:px-16 flex-1 flex flex-col justify-between">
+          <div>
+            <div data-text-reveal className="flex items-center gap-6 mb-16 md:mb-24">
+              <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
+                03
+              </span>
+              <div data-line-reveal className="flex-1 h-[1px] bg-white/10 origin-left" />
             </div>
 
-            <div className="flex items-center gap-8">
-              {["Instagram", "LinkedIn", "Behance"].map((social) => (
-                <a
-                  key={social}
-                  href="#"
-                  className="font-inter text-[10px] md:text-[11px] tracking-[0.2em] text-white/30 uppercase hover:text-white/70 transition-colors duration-500"
-                >
-                  {social}
-                </a>
-              ))}
+            {/* Giant CTA */}
+            <div data-text-reveal className="mb-16 md:mb-24">
+              <a
+                href="mailto:hello@sachakarpavicius.com"
+                className="group inline-block"
+              >
+                <h2 className="font-syne font-bold text-[14vw] md:text-[10vw] leading-[0.9] tracking-tight text-white uppercase group-hover:text-white/60 transition-colors duration-700">
+                  Let&apos;s<br />Talk
+                </h2>
+              </a>
             </div>
           </div>
 
-          <div className="mt-20 pt-8 border-t border-white/5 flex items-center justify-between">
-            <span className="font-inter text-[9px] md:text-[10px] tracking-[0.2em] text-white/20 uppercase">
-              © 2026 Sacha Karpavicius
-            </span>
-            <span className="font-inter text-[9px] md:text-[10px] tracking-[0.2em] text-white/20 uppercase">
-              All Rights Reserved
-            </span>
+          <div>
+            {/* Footer bottom */}
+            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 pb-4">
+              <div className="space-y-2">
+                <p className="font-inter text-[10px] md:text-[11px] tracking-[0.2em] text-white/30 uppercase">
+                  hello@sachakarpavicius.com
+                </p>
+                <p className="font-inter text-[10px] md:text-[11px] tracking-[0.2em] text-white/30 uppercase">
+                  Paris — Milan — New York
+                </p>
+              </div>
+
+              <div className="flex items-center gap-8">
+                {["Instagram", "LinkedIn", "Behance"].map((social) => (
+                  <a
+                    key={social}
+                    href="#"
+                    className="font-inter text-[10px] md:text-[11px] tracking-[0.2em] text-white/30 uppercase hover:text-white/70 transition-colors duration-500"
+                  >
+                    {social}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-8 md:mt-16 pt-8 border-t border-white/5 flex items-center justify-between">
+              <span className="font-inter text-[9px] md:text-[10px] tracking-[0.2em] text-white/20 uppercase">
+                © 2026 Sacha Karpavicius
+              </span>
+              <span className="font-inter text-[9px] md:text-[10px] tracking-[0.2em] text-white/20 uppercase">
+                All Rights Reserved
+              </span>
+            </div>
           </div>
         </div>
       </footer>
