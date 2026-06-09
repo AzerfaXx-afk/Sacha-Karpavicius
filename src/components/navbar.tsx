@@ -55,7 +55,7 @@ const AnimatedLink = ({
       <a 
         href={href} 
         onClick={(e) => e.preventDefault()} // Handled by parent container click
-        className={`relative flex whitespace-nowrap overflow-hidden leading-none text-[7vw] md:text-[4.5vw] font-syne font-bold uppercase tracking-tight transition-all duration-[750ms] ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none ${
+        className={`relative flex whitespace-nowrap overflow-hidden px-2 md:px-4 leading-none text-[7vw] md:text-[4.5vw] font-syne font-bold uppercase tracking-tight transition-all duration-[750ms] ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none ${
           isDimmed 
             ? 'opacity-15 blur-[1px] scale-[0.98]' 
             : 'text-white scale-100'
@@ -72,7 +72,7 @@ const AnimatedLink = ({
             </span>
           ))}
         </div>
-        <div className="absolute inset-0 flex text-white pointer-events-none">
+        <div className="absolute inset-0 flex text-white pointer-events-none px-2 md:px-4">
           {text.split("").map((c, i) => (
             <span 
               key={i} 
@@ -281,7 +281,7 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
             className="relative w-[260px] h-[340px] rounded-lg overflow-hidden border border-white/10 shadow-2xl transition-all duration-[600ms] ease-[cubic-bezier(0.25,1,0.5,1)] origin-center"
             style={{
               opacity: hoveredIndex !== null ? 1 : 0,
-              transform: `translate(${hoveredIndex !== null ? '60px' : '40px'}, -50%) scale(${hoveredIndex !== null ? 1 : 0.75}) rotate(${hoveredIndex !== null ? 0 : -5}deg)`,
+              transform: `translate(-50%, -50%) scale(${hoveredIndex !== null ? 1 : 0.75}) rotate(${hoveredIndex !== null ? 0 : -5}deg)`,
             }}
           >
             <div className="relative w-full h-full bg-[#111]">
