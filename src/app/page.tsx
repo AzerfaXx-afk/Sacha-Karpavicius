@@ -21,6 +21,8 @@ const projects = [
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [siteStarted, setSiteStarted] = useState(false);
+  const [isHoveringName, setIsHoveringName] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -37,6 +39,7 @@ export default function Home() {
   }, []);
 
   const handleStartSite = useCallback(() => {
+    setSiteStarted(true);
     if (audioRef.current) {
       audioRef.current.play().catch(() => { /* ignore 404 audio error */ });
       setIsPlaying(true);
@@ -77,12 +80,21 @@ export default function Home() {
     setLoading(false);
   }, []);
 
+  /* UI Interfaces animation */
+  useEffect(() => {
+    if (siteStarted || isHoveringName) {
+      gsap.to([getInTouchRef.current, audioIconRef.current], { y: 0, opacity: 1, duration: 1.0, stagger: 0.1 });
+    } else {
+      gsap.to([getInTouchRef.current, audioIconRef.current], { y: 20, opacity: 0, duration: 0.8 });
+    }
+  }, [siteStarted, isHoveringName]);
+
   /* Page entry animations */
   useEffect(() => {
+    if (!siteStarted) return;
     const ctx = gsap.context(() => {
       /* ── Hero reveal ── */
-      // Reduced delay so UI elements appear faster, matching the start of the site
-      const heroTl = gsap.timeline({ defaults: { ease: "power3.out" }, delay: 2.0 });
+      const heroTl = gsap.timeline({ defaults: { ease: "power3.out" }, delay: 0.5 });
 
       heroTl.fromTo(
         heroImgRef.current,
@@ -102,13 +114,6 @@ export default function Home() {
         heroSubRef.current,
         { y: 20, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.8 },
-        0.4
-      );
-
-      heroTl.fromTo(
-        [getInTouchRef.current, audioIconRef.current],
-        { y: 20, opacity: 0 },
-        { y: 0, opacity: 1, duration: 1.0, stagger: 0.1 },
         0.4
       );
 
@@ -214,9 +219,9 @@ export default function Home() {
   return (
     <>
       {/* Preloader */}
-      {loading && <Preloader onComplete={onPreloaderComplete} onStart={handleStartSite} />}
+      {loading && <Preloader onComplete={onPreloaderComplete} onStart={handleStartSite} onHoverChange={setIsHoveringName} />}
 
-      <Navbar />
+      <Navbar showUI={siteStarted || isHoveringName} />
 
       <style>{`
         @keyframes sound {

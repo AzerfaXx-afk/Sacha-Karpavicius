@@ -44,10 +44,11 @@ const AnimatedLink = ({ text, href, onClick }: { text: string; href: string, onC
   );
 };
 
-export default function Navbar() {
+export default function Navbar({ showUI = true }: { showUI?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [time, setTime] = useState("");
   const navRef = useRef<HTMLElement>(null);
+  const timeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const updateTime = () => {
@@ -64,14 +65,12 @@ export default function Navbar() {
     const interval = setInterval(updateTime, 1000);
     
     // Navbar entry animation
-    if (navRef.current) {
-      gsap.to(navRef.current, {
-        y: 0,
-        opacity: 1,
-        duration: 2.0,
-        ease: "power4.out",
-        delay: 2.4,
-      });
+    if (showUI) {
+      if (navRef.current) gsap.to(navRef.current, { y: 0, opacity: 1, duration: 1.5, ease: "power4.out" });
+      if (timeRef.current) gsap.to(timeRef.current, { opacity: 1, duration: 1.5, ease: "power4.out" });
+    } else {
+      if (navRef.current) gsap.to(navRef.current, { y: -32, opacity: 0, duration: 1.0, ease: "power3.inOut" });
+      if (timeRef.current) gsap.to(timeRef.current, { opacity: 0, duration: 1.0, ease: "power3.inOut" });
     }
 
     // Prevent scroll when menu is open
@@ -129,11 +128,10 @@ export default function Navbar() {
       </div>
 
       {/* Time at top right */}
-      <div className="fixed top-6 right-6 md:top-8 md:right-12 z-[110] flex flex-col items-end gap-1 mix-blend-difference pointer-events-none opacity-0" ref={(el) => {
-        if (el && navRef.current) {
-          gsap.to(el, { opacity: 1, duration: 2.0, ease: "power4.out", delay: 2.4 });
-        }
-      }}>
+      <div 
+        ref={timeRef} 
+        className="fixed top-6 right-6 md:top-8 md:right-12 z-[110] flex flex-col items-end gap-1 mix-blend-difference pointer-events-none opacity-0"
+      >
         <div className="border border-white/20 px-2 py-0.5 rounded-sm text-[10px] text-white">
           {time || "00:00:00"}
         </div>

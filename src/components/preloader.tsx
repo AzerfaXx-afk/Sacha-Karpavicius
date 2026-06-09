@@ -6,9 +6,10 @@ import { gsap } from "gsap";
 interface PreloaderProps {
   onComplete: () => void;
   onStart: () => void;
+  onHoverChange?: (isHovering: boolean) => void;
 }
 
-export default function Preloader({ onComplete, onStart }: PreloaderProps) {
+export default function Preloader({ onComplete, onStart, onHoverChange }: PreloaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const lensRef = useRef<HTMLDivElement>(null);
   const letterSRef = useRef<HTMLHeadingElement>(null);
@@ -58,7 +59,7 @@ export default function Preloader({ onComplete, onStart }: PreloaderProps) {
 
     // Initial state setup regardless of start
     gsap.set(lens, { width: 0, height: 0, rotation: 45, xPercent: -50, yPercent: -50 });
-    
+
     if (!hasStarted) {
       gsap.set([letterS, letterK], { yPercent: 120, opacity: 0 });
       gsap.set(nameContainer.querySelectorAll(".name-char"), { opacity: 1, y: 0 });
@@ -139,16 +140,16 @@ export default function Preloader({ onComplete, onStart }: PreloaderProps) {
       ></div>
 
       {/* Center Animated Name with Spotlight */}
-      <div 
+      <div
         ref={nameRef}
         onMouseEnter={() => {
-          if (!hasStarted && lensRef.current) {
-            gsap.to(lensRef.current, { width: '30vw', height: '30vw', rotation: 0, duration: 0.8, ease: 'power3.out' });
+          if (!hasStarted) {
+            onHoverChange?.(true);
           }
         }}
         onMouseLeave={() => {
-          if (!hasStarted && lensRef.current) {
-            gsap.to(lensRef.current, { width: 0, height: 0, rotation: 45, duration: 0.8, ease: 'power3.out' });
+          if (!hasStarted) {
+            onHoverChange?.(false);
           }
         }}
         onClick={() => {
@@ -159,7 +160,7 @@ export default function Preloader({ onComplete, onStart }: PreloaderProps) {
         }}
         className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10 ${hasStarted ? 'pointer-events-none' : 'cursor-pointer group'}`}
       >
-        <div 
+        <div
           className="relative flex font-inter text-sm md:text-xl tracking-[0.4em] uppercase whitespace-nowrap transition-transform duration-700 group-hover:scale-105"
           style={{ color: "rgba(255, 255, 255, 0.15)" }}
         >
@@ -168,9 +169,9 @@ export default function Preloader({ onComplete, onStart }: PreloaderProps) {
               {char === " " ? "\u00A0" : char}
             </span>
           ))}
-          
+
           {/* Spotlight Overlay */}
-          <div 
+          <div
             className="absolute inset-0 flex text-white pointer-events-none"
             style={{
               WebkitMaskImage: `radial-gradient(100px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), black 0%, transparent 100%)`,
@@ -187,7 +188,7 @@ export default function Preloader({ onComplete, onStart }: PreloaderProps) {
 
         {/* Click Indicator */}
         <div className={`mt-2 font-inter text-[7px] md:text-[8px] tracking-[0.4em] uppercase text-white/40 transition-all duration-500 ${hasStarted ? 'opacity-0' : 'opacity-100 animate-pulse group-hover:opacity-0'}`}>
-          [ Click to enter ]
+          Click to enter
         </div>
       </div>
 
