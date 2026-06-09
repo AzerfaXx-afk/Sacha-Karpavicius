@@ -483,18 +483,16 @@ export default function Home() {
         {/* Text Overlay at bottom center */}
         <div className="absolute bottom-24 md:bottom-20 left-1/2 -translate-x-1/2 text-center z-20 w-full px-4 pointer-events-none">
           <div ref={heroTitleRef} style={{ opacity: 0 }}>
-            <h1 className="font-syne font-medium text-[22px] md:text-[28px] leading-[1.2] pb-2 text-white">
+            <h1 className="font-syne font-medium text-[26px] md:text-[34px] leading-[1.25] pb-2 text-white tracking-wide uppercase">
               {lang === "fr" ? (
                 <>
                   Sacha Karpavicius.<br />
-                  Photographie de mode & Direction artistique<br />
-                  basé à Paris et Milan.
+                  Arts Visuels.
                 </>
               ) : (
                 <>
                   Sacha Karpavicius.<br />
-                  Fashion Photography & Art Direction<br />
-                  based in Paris and Milan.
+                  Visual Arts.
                 </>
               )}
             </h1>
@@ -668,6 +666,17 @@ export default function Home() {
                   <span className="absolute w-[120%] aspect-square bg-white rounded-full scale-0 group-hover:scale-[2.2] transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" />
                   
                   <span className="btn-content relative z-10 flex items-center gap-4 pointer-events-none">
+                    {/* Left Symmetrical Arrow */}
+                    <span className="relative overflow-hidden w-4 h-4 flex items-center justify-center">
+                      <span className="absolute transform -translate-x-4 -translate-y-4 opacity-0 group-hover:translate-x-0 group-hover:translate-y-0 transition-all duration-500 ease-out font-mono text-[16px] text-black">
+                        ↗
+                      </span>
+                      <span className="absolute transform translate-x-0 translate-y-0 opacity-100 group-hover:translate-x-4 group-hover:translate-y-4 transition-all duration-500 ease-out font-mono text-[16px] text-white/50">
+                        ↗
+                      </span>
+                    </span>
+
+                    {/* Handle Text */}
                     <span className="relative overflow-hidden flex items-center h-[1.2em]">
                       <span className="inline-block transition-transform duration-500 ease-out group-hover:-translate-y-[120%]">
                         @sachakarpaviciusss
@@ -676,6 +685,8 @@ export default function Home() {
                         @sachakarpaviciusss
                       </span>
                     </span>
+
+                    {/* Right Symmetrical Arrow */}
                     <span className="relative overflow-hidden w-4 h-4 flex items-center justify-center">
                       <span className="absolute transform -translate-x-4 -translate-y-4 opacity-0 group-hover:translate-x-0 group-hover:translate-y-0 transition-all duration-500 ease-out font-mono text-[16px] text-black">
                         ↗
