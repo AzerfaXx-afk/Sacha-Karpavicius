@@ -98,7 +98,7 @@ const AnimatedLink = ({
   );
 };
 
-export default function Navbar({ showUI = true, clickable = true }: { showUI?: boolean, clickable?: boolean }) {
+export default function Navbar({ showUI = true, clickable = true, lang = "fr" }: { showUI?: boolean, clickable?: boolean, lang?: "fr" | "en" }) {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [time, setTime] = useState("");
@@ -248,7 +248,7 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
         {/* Menu Links Container */}
         <div className="relative max-w-7xl w-full mx-auto z-10 flex flex-col gap-6 md:gap-10 pl-2 md:pl-16">
           <AnimatedLink 
-            text="Selected Works" 
+            text={lang === "fr" ? "Projets" : "Selected Works"} 
             href="#works" 
             number="01" 
             onClick={handleLinkClick} 
@@ -259,7 +259,7 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
             index={0}
           />
           <AnimatedLink 
-            text="About & Vision" 
+            text={lang === "fr" ? "À Propos & Vision" : "About & Vision"} 
             href="#about" 
             number="02" 
             onClick={handleLinkClick} 
@@ -270,7 +270,7 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
             index={1}
           />
           <AnimatedLink 
-            text="Connect" 
+            text={lang === "fr" ? "Contact" : "Connect"} 
             href="#contact" 
             number="03" 
             onClick={handleLinkClick} 

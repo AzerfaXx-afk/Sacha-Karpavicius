@@ -7,9 +7,10 @@ interface PreloaderProps {
   onComplete: () => void;
   onStart: () => void;
   onHoverChange?: (isHovering: boolean) => void;
+  lang?: "fr" | "en";
 }
 
-export default function Preloader({ onComplete, onStart, onHoverChange }: PreloaderProps) {
+export default function Preloader({ onComplete, onStart, onHoverChange, lang = "fr" }: PreloaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const lensRef = useRef<HTMLDivElement>(null);
   const letterSRef = useRef<HTMLHeadingElement>(null);
@@ -209,7 +210,7 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
         {/* Click Indicator */}
         <div className={`mt-2 transition-opacity duration-500 ${hasStarted ? 'opacity-0' : 'group-hover:opacity-0'}`}>
           <div className="font-inter text-[7px] md:text-[8px] tracking-[0.4em] uppercase text-white/40 animate-pulse">
-            Click to enter
+            {lang === "fr" ? "Cliquer pour entrer" : "Click to enter"}
           </div>
         </div>
       </div>

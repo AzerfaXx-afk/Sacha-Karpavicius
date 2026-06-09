@@ -112,10 +112,19 @@ export default function Home() {
   const [siteStarted, setSiteStarted] = useState(false);
   const [isHoveringName, setIsHoveringName] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [lang, setLang] = useState<"fr" | "en">("fr");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
+
+    // Language detection
+    if (typeof window !== "undefined" && navigator) {
+      const userLang = navigator.language || (navigator as any).userLanguage;
+      if (userLang && !userLang.toLowerCase().startsWith("fr")) {
+        setLang("en");
+      }
+    }
 
     audioRef.current = new Audio("/musique.mp3");
     audioRef.current.loop = true;
@@ -352,9 +361,9 @@ export default function Home() {
   return (
     <>
       {/* Preloader */}
-      {loading && <Preloader onComplete={onPreloaderComplete} onStart={handleStartSite} onHoverChange={setIsHoveringName} />}
+      {loading && <Preloader onComplete={onPreloaderComplete} onStart={handleStartSite} onHoverChange={setIsHoveringName} lang={lang} />}
 
-      <Navbar showUI={siteStarted || isHoveringName} clickable={siteStarted} />
+      <Navbar showUI={siteStarted || isHoveringName} clickable={siteStarted} lang={lang} />
 
       <style>{`
         @keyframes sound {
@@ -380,7 +389,7 @@ export default function Home() {
       {/* Persistent Get In Touch (Bottom Left) */}
       <div ref={getInTouchRef} className={`fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference opacity-0 ${siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}>
         <a href="#contact" className="inline-flex items-center gap-2 border border-white/20 px-4 py-2.5 rounded-sm hover:bg-white hover:text-black transition-all duration-300 font-inter text-[11px] md:text-[12px] text-white cursor-pointer group">
-          Get in touch
+          {lang === "fr" ? "Contactez-moi" : "Get in touch"}
           <div className="relative overflow-hidden w-3 h-3 flex items-center justify-center">
             <span className="absolute transform -translate-x-3 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 ease-out font-mono text-[11px]">
               →
@@ -425,14 +434,24 @@ export default function Home() {
         <div className="absolute bottom-24 md:bottom-20 left-1/2 -translate-x-1/2 text-center z-20 w-full px-4 pointer-events-none">
           <div ref={heroTitleRef} style={{ opacity: 0 }}>
             <h1 className="font-syne font-medium text-[22px] md:text-[28px] leading-[1.2] pb-2 text-white">
-              Sacha Karpavicius.<br />
-              Design & Direction for those<br />
-              who refuse to settle.
+              {lang === "fr" ? (
+                <>
+                  Sacha Karpavicius.<br />
+                  Design & Direction pour ceux<br />
+                  qui refusent les compromis.
+                </>
+              ) : (
+                <>
+                  Sacha Karpavicius.<br />
+                  Design & Direction for those<br />
+                  who refuse to settle.
+                </>
+              )}
             </h1>
           </div>
           <div ref={heroSubRef} style={{ opacity: 0 }} className="mt-8 flex items-center justify-center gap-12 font-inter text-[12px] md:text-[14px] text-white">
             <span className="w-1.5 h-1.5 bg-white/50 block rounded-sm"></span>
-            <span>2026 — Future</span>
+            <span>{lang === "fr" ? "2026 — Futur" : "2026 — Future"}</span>
             <span className="w-1.5 h-1.5 bg-white/50 block rounded-sm"></span>
           </div>
         </div>
@@ -457,7 +476,7 @@ export default function Home() {
             data-text-reveal
             className="font-syne font-bold text-[8vw] md:text-[4vw] leading-none tracking-tight text-white uppercase"
           >
-            Selected Works
+            {lang === "fr" ? "Projets Sélectionnés" : "Selected Works"}
           </h2>
         </div>
 
@@ -492,7 +511,9 @@ export default function Home() {
                   {project.title}
                 </h3>
                 <span className="font-inter text-[9px] md:text-[10px] tracking-[0.2em] text-white/40 uppercase">
-                  {project.category}
+                  {project.category === "Fashion" && lang === "fr" ? "Mode" :
+                   project.category === "Story" && lang === "fr" ? "Histoire" :
+                   project.category}
                 </span>
               </div>
             </div>
@@ -517,11 +538,15 @@ export default function Home() {
                 Sacha<br />Karpavicius
               </h2>
               <p className="font-inter text-[13px] md:text-[14px] leading-relaxed text-white/50 max-w-md">
-                Visual Storyteller basé entre Paris et Milan.
-                Spécialisé dans la photographie de mode, le portrait éditorial
-                et la direction artistique. Chaque image est une invitation à
-                entrer dans un univers singulier, où la lumière et l&apos;ombre
-                racontent une histoire.
+                {lang === "fr" ? (
+                  <>
+                    Visual Storyteller basé entre Paris et Milan. Spécialisé dans la photographie de mode, le portrait éditorial et la direction artistique. Chaque image est une invitation à entrer dans un univers singulier, où la lumière et l&apos;ombre racontent une histoire.
+                  </>
+                ) : (
+                  <>
+                    Visual Storyteller based between Paris and Milan. Specializing in fashion photography, editorial portraiture and art direction. Each image is an invitation to enter a singular universe, where light and shadow tell a story.
+                  </>
+                )}
               </p>
             </div>
 
@@ -537,10 +562,10 @@ export default function Home() {
                   Services
                 </h3>
                 <ul className="font-inter text-[13px] md:text-[14px] text-white/70">
-                  <InteractiveListItem text="Photography" />
-                  <InteractiveListItem text="Art Direction" />
-                  <InteractiveListItem text="Fashion Editorial" />
-                  <InteractiveListItem text="Film & Motion" />
+                  <InteractiveListItem text={lang === "fr" ? "Photographie" : "Photography"} />
+                  <InteractiveListItem text={lang === "fr" ? "Direction Artistique" : "Art Direction"} />
+                  <InteractiveListItem text={lang === "fr" ? "Éditorial de Mode" : "Fashion Editorial"} />
+                  <InteractiveListItem text={lang === "fr" ? "Film & Vidéo" : "Film & Motion"} />
                 </ul>
               </div>
               <div>
@@ -550,7 +575,7 @@ export default function Home() {
                 <ul className="font-inter text-[13px] md:text-[14px] text-white/70">
                   <InteractiveListItem text="Vogue — L'Officiel — Numéro" />
                   <InteractiveListItem text="Dior — Chanel — Saint Laurent" />
-                  <InteractiveListItem text="Independent Editorials" />
+                  <InteractiveListItem text={lang === "fr" ? "Éditoriaux Indépendants" : "Independent Editorials"} />
                 </ul>
               </div>
             </div>
@@ -572,57 +597,46 @@ export default function Home() {
             {/* Giant Heading (Non-clickable) */}
             <div data-text-reveal className="mb-16 md:mb-20">
               <h2 className="font-syne font-bold text-[14vw] md:text-[9vw] leading-[0.85] tracking-tight text-white uppercase select-none">
-                Let&apos;s<br />Talk
+                {lang === "fr" ? (
+                  <>
+                    Parlons-<br />en
+                  </>
+                ) : (
+                  <>
+                    Let&apos;s<br />Talk
+                  </>
+                )}
               </h2>
             </div>
 
             {/* Info Grid */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 pt-8 md:pt-12 border-t border-white/5" data-text-reveal>
-              {/* Column 1: Contact Info */}
+              {/* Column 1: Collaboration */}
               <div className="md:col-span-5 space-y-4">
                 <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/30 uppercase block">
-                  01 / GET IN TOUCH
+                  01 / COLLABORATION
+                </span>
+                <span className="font-syne font-semibold text-[22px] md:text-[28px] text-white block mt-2 select-all">
+                  {lang === "fr" ? "DM POUR COLLABORER" : "DM FOR COLLAB"}
+                </span>
+              </div>
+
+              {/* Column 2: Instagram Only */}
+              <div className="md:col-span-5 space-y-4 md:col-start-8">
+                <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/30 uppercase block">
+                  02 / INSTAGRAM
                 </span>
                 <a
-                  href="mailto:hello@sachakarpavicius.com"
+                  href="https://www.instagram.com/sachakarpaviciusss/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="group inline-flex items-center gap-3 font-syne font-semibold text-[22px] md:text-[28px] text-white hover:text-white/60 transition-colors duration-500 mt-2 break-all"
                 >
-                  hello@sachakarpavicius.com
+                  @sachakarpaviciusss
                   <span className="inline-block transform group-hover:translate-x-1.5 group-hover:-translate-y-1.5 transition-transform duration-300 font-mono text-[20px] text-white/40">
                     ↗
                   </span>
                 </a>
-              </div>
-
-              {/* Column 2: Socials */}
-              <div className="md:col-span-3 space-y-4 md:col-start-7">
-                <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/30 uppercase block">
-                  02 / NETWORKS
-                </span>
-                <div className="flex flex-col gap-2.5 mt-2">
-                  {["Instagram", "LinkedIn", "Behance"].map((social) => (
-                    <a
-                      key={social}
-                      href="#"
-                      className="group inline-flex items-center gap-2 font-inter text-[13px] md:text-[14px] text-white/60 hover:text-white transition-colors duration-300 w-fit"
-                    >
-                      {social}
-                      <span className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 font-mono text-[11px]">
-                        →
-                      </span>
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-              {/* Column 3: Location */}
-              <div className="md:col-span-3 space-y-4">
-                <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/30 uppercase block">
-                  03 / OFFICES
-                </span>
-                <div className="font-inter text-[13px] md:text-[14px] text-white/60 leading-relaxed mt-2">
-                  <p>Paris — Milan — New York</p>
-                </div>
               </div>
             </div>
           </div>
@@ -640,13 +654,21 @@ export default function Home() {
             {/* Credit to Adam */}
             <div className="col-span-1 md:col-span-2 text-center">
               <span className="text-white/40 font-medium tracking-[0.25em]">
-                Website by <span className="text-white hover:text-white/70 transition-colors duration-300 cursor-pointer font-bold">Adam</span>
+                {lang === "fr" ? (
+                  <>
+                    Site créé par <span className="text-white hover:text-white/70 transition-colors duration-300 cursor-pointer font-bold">Adam</span>
+                  </>
+                ) : (
+                  <>
+                    Website created by <span className="text-white hover:text-white/70 transition-colors duration-300 cursor-pointer font-bold">Adam</span>
+                  </>
+                )}
               </span>
             </div>
 
             {/* All Rights Reserved */}
             <div className="col-span-1 md:col-span-3 text-center md:text-right">
-              <span>All Rights Reserved</span>
+              <span>{lang === "fr" ? "Tous droits réservés" : "All Rights Reserved"}</span>
             </div>
 
             {/* Column 11 & 12: Empty on desktop (covers right audio bars floating button) */}
