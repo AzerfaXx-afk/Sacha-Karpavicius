@@ -103,13 +103,6 @@ export default function Home() {
       const heroTl = gsap.timeline({ defaults: { ease: "power3.out" }, delay: 0.5 });
 
       heroTl.fromTo(
-        heroImgRef.current,
-        { scale: 1.1 },
-        { scale: 1, duration: 2.5, ease: "power3.inOut" },
-        0
-      );
-
-      heroTl.fromTo(
         heroTitleRef.current,
         { y: 50, opacity: 0 },
         { y: 0, opacity: 1, duration: 1.2 },
@@ -269,8 +262,7 @@ export default function Home() {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-10 md:mt-0">
           <div
             ref={heroImgRef}
-            className="relative w-[90vw] md:w-[45vw] h-[75vh] md:h-[85vh]"
-            style={{ perspective: "1000px" }}
+            className="absolute top-1/2 left-1/2 w-[400px] h-[500px] md:w-[600px] md:h-[700px] object-cover -translate-x-1/2 -translate-y-1/2"
           >
             <Image
               src="/5.jpg"

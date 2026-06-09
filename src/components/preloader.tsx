@@ -60,10 +60,9 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
     };
     window.addEventListener("mousemove", handleMouseMove);
 
-    // Initial state setup regardless of start
-    gsap.set(lens, { width: 0, height: 0, rotation: 45, xPercent: -50, yPercent: -50 });
-
     if (!hasStarted) {
+      // Set initial states
+      gsap.set(lens, { width: 0, height: 0, rotation: 45, xPercent: -50, yPercent: -50 });
       gsap.set([letterS, letterK], { yPercent: 120, opacity: 0 });
       gsap.set(nameContainer.querySelectorAll(".name-char"), { opacity: 1, y: 0 });
       return;

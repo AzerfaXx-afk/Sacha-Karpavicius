@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description:
     "High-end portfolio of Sacha Karpavicius — Visual Storyteller, Fashion Photographer & Art Director.",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/logo.png",
   },
 };
 
