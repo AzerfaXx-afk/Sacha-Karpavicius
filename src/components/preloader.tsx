@@ -103,16 +103,28 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
       0
     );
 
-    // 4. Letters and center name fade out immediately as the aperture opens
+    // 4. Center name fades out immediately
     tl.to(
-      [letterS, letterK, nameContainer],
+      nameContainer,
+      {
+        opacity: 0,
+        scale: 1.05,
+        duration: 0.4,
+        ease: "power2.out",
+      },
+      0
+    );
+
+    // 5. Giant S and K letters fade out slightly later
+    tl.to(
+      [letterS, letterK],
       {
         opacity: 0,
         scale: 1.05,
         duration: 0.8,
         ease: "power2.out",
       },
-      0
+      0.3
     );
 
     return () => {
