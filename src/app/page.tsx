@@ -220,7 +220,7 @@ export default function Home() {
 
       // Mobile: Gyroscope / Tilt tracking
       const handleOrientation = (e: DeviceOrientationEvent) => {
-        if (e.gamma === null || e.beta === null) return;
+        if (e.gamma == null || e.beta == null) return;
         const xPos = (e.gamma / 90) * 20; // gamma: left-to-right tilt
         const yPos = (e.beta / 90) * 20;  // beta: front-to-back tilt
 
