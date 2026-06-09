@@ -95,8 +95,8 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
         width: "300vmax",
         height: "300vmax",
         rotation: 45,
-        duration: 1.5,
-        ease: "power4.inOut",
+        duration: 2.8,
+        ease: "power3.inOut",
         overwrite: true,
       },
       0
@@ -107,11 +107,11 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
       [letterS, letterK, nameContainer],
       {
         opacity: 0,
-        scale: 1.1,
-        duration: 1.0,
+        scale: 1.05,
+        duration: 1.8,
         ease: "power2.inOut",
       },
-      "-=1.2"
+      "-=1.8"
     );
 
     return () => {
