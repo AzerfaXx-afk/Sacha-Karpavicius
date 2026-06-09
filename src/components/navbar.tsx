@@ -1,54 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { gsap } from "gsap";
+import React, { useState, useEffect } from "react";
 
-const AnimatedLink = ({ text, href, onClick }: { text: string; href: string, onClick: () => void }) => {
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    onClick();
-    setTimeout(() => {
-      document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
-    }, 1000); // Wait for the menu to close
-  };
-
-  return (
-    <a 
-      href={href} 
-      onClick={handleClick}
-      className="group relative flex cursor-pointer overflow-hidden leading-tight text-[10vw] md:text-[6vw] font-syne font-bold uppercase text-white tracking-tight"
-    >
-      <div className="flex">
-        {text.split("").map((c, i) => (
-          <span 
-            key={i} 
-            className="inline-block transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] group-hover:-translate-y-[120%] group-hover:skew-y-[10deg]"
-            style={{ transitionDelay: `${i * 0.02}s` }}
-          >
-            {c === " " ? "\u00A0" : c}
-          </span>
-        ))}
-      </div>
-      <div className="absolute inset-0 flex text-white pointer-events-none">
-        {text.split("").map((c, i) => (
-          <span 
-            key={i} 
-            className="inline-block translate-y-[120%] skew-y-[10deg] transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] group-hover:translate-y-0 group-hover:skew-y-0"
-            style={{ transitionDelay: `${i * 0.02}s` }}
-          >
-            {c === " " ? "\u00A0" : c}
-          </span>
-        ))}
-      </div>
-    </a>
-  );
-};
-
-export default function Navbar({ showUI = true, clickable = true }: { showUI?: boolean, clickable?: boolean }) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function Navbar() {
   const [time, setTime] = useState("");
-  const navRef = useRef<HTMLElement>(null);
-  const timeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const updateTime = () => {
@@ -66,83 +21,67 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    // Navbar entry animation
-    if (showUI) {
-      if (navRef.current) gsap.to(navRef.current, { y: 0, opacity: 1, duration: 1.5, ease: "power4.out", overwrite: true });
-      if (timeRef.current) gsap.to(timeRef.current, { opacity: 1, duration: 1.5, ease: "power4.out", overwrite: true });
-    } else {
-      if (navRef.current) gsap.to(navRef.current, { y: -32, opacity: 0, duration: 1.0, ease: "power3.inOut", overwrite: true });
-      if (timeRef.current) gsap.to(timeRef.current, { opacity: 0, duration: 1.0, ease: "power3.inOut", overwrite: true });
-    }
-  }, [showUI]);
-
-  useEffect(() => {
-    // Prevent scroll when menu is open
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isOpen]);
-
   return (
-    <>
-      <nav 
-        ref={navRef}
-        className={`fixed top-0 left-0 w-full z-[110] px-6 py-6 md:px-12 md:py-8 mix-blend-difference -translate-y-8 opacity-0 ${clickable ? 'pointer-events-auto' : 'pointer-events-none'}`}
-      >
-        <div className="flex justify-between items-start w-full">
-          {/* Top Left: Hamburger Menu */}
-          <button 
-            onClick={() => setIsOpen(!isOpen)}
-            className="group flex flex-col gap-2 w-12 h-10 items-start justify-center cursor-pointer"
-          >
-            <div className={`h-[1px] bg-white transition-all duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] ${isOpen ? 'w-8 rotate-45 translate-y-[4.5px]' : 'w-10 group-hover:w-6'}`} />
-            <div className={`h-[1px] bg-white transition-all duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] ${isOpen ? 'w-8 -rotate-45 -translate-y-[4.5px]' : 'w-6 group-hover:w-10'}`} />
-          </button>
+    <nav className="fixed top-0 left-0 w-full z-[90] px-5 py-6 md:px-10 md:py-8 font-inter text-[11px] md:text-[12px] tracking-wide text-white mix-blend-difference pointer-events-auto flex flex-col md:flex-row md:items-start justify-between gap-8 md:gap-0">
 
-          {/* Top Center: Logo */}
-          <div 
-            className="absolute left-1/2 -translate-x-1/2 top-4 md:top-4 w-14 h-14 md:w-20 md:h-20 cursor-pointer group"
-            onClick={() => {
-              setIsOpen(false);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-          >
-            <img src="/logo.png" alt="Sacha Karpavicius Logo" className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
+      {/* Left Logo - Sacha Knight */}
+      <div className="w-12 h-12 md:w-16 md:h-16 shrink-0 group cursor-pointer">
+        <svg viewBox="0 0 100 100" fill="currentColor" className="w-full h-full group-hover:scale-105 transition-transform duration-500">
+          <path d="M50 0 C77.6 0 100 22.4 100 50 C100 77.6 77.6 100 50 100 C22.4 100 0 77.6 0 50 C0 22.4 22.4 0 50 0 Z" opacity="0.1" />
+          {/* Abstract S-K horse/knight shape representing the logo */}
+          <path d="M40 20 L60 30 L55 50 L70 60 L60 80 L40 70 L30 50 Z" />
+          <path d="M30 30 L45 25 L40 40 Z" />
+        </svg>
+      </div>
+
+      {/* Center Columns Container */}
+      <div className="flex-1 flex flex-row justify-between md:justify-center md:gap-32 w-full">
+        {/* Column 1 */}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2 text-white/90 mb-1">
+            <span className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[6px] border-l-white border-b-[4px] border-b-transparent"></span>
+            <span className="font-medium">Portfolio</span>
           </div>
+          <a href="#works" className="text-white/60 hover:text-white transition-colors cursor-pointer">Selected Works</a>
+          <a href="#works" className="text-white/60 hover:text-white transition-colors cursor-pointer">Editorials</a>
         </div>
-      </nav>
 
-      {/* Fullscreen Overlay Menu */}
-      <div 
-        className="fixed inset-0 z-[100] bg-[#050505] flex items-center justify-center transition-transform duration-[1s] ease-[cubic-bezier(0.76,0,0.24,1)]"
-        style={{ transform: isOpen ? 'translateY(0)' : 'translateY(-100%)' }}
-      >
-        <div className="flex flex-col items-center gap-6 md:gap-10">
-          <AnimatedLink text="Selected Works" href="#works" onClick={() => setIsOpen(false)} />
-          <AnimatedLink text="About & Vision" href="#about" onClick={() => setIsOpen(false)} />
-          <AnimatedLink text="Connect" href="#contact" onClick={() => setIsOpen(false)} />
+        {/* Column 2 */}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2 text-white/90 mb-1">
+            <span className="w-2 h-2 rounded-full bg-white"></span>
+            <span className="font-medium">Narrative</span>
+          </div>
+          <a href="#about" className="text-white/60 hover:text-white transition-colors cursor-pointer">About</a>
+          <a href="#about" className="text-white/60 hover:text-white transition-colors cursor-pointer">Vision</a>
+          <a href="#contact" className="text-white/60 hover:text-white transition-colors cursor-pointer">Connect</a>
+        </div>
+
+        {/* Column 3 (Hidden on very small screens) */}
+        <div className="hidden sm:flex flex-col gap-1.5">
+          <div className="flex items-center gap-2 text-white/90 mb-1">
+            <span className="w-2 h-2 bg-white"></span>
+            <span className="font-medium">Services</span>
+          </div>
+          <span className="text-white/60">For Brands</span>
+          <span className="text-white/60">For Agencies</span>
         </div>
       </div>
 
-      {/* Time at top right */}
-      <div 
-        ref={timeRef} 
-        className="fixed top-6 right-6 md:top-8 md:right-12 z-[110] flex flex-col items-end gap-1 mix-blend-difference pointer-events-none opacity-0"
-      >
-        <div className="border border-white/20 px-2 py-0.5 rounded-sm text-[10px] text-white">
+      {/* Right Time / Info */}
+      <div className="hidden md:flex flex-col items-end gap-1 shrink-0">
+        <div className="border border-white/20 px-2 py-0.5 rounded-sm text-[10px]">
           {time || "00:00:00"}
         </div>
-        <div className="text-[10px] text-white/50 text-right uppercase font-inter tracking-[0.2em]">
-          Paris<br/>CET
+        <div className="text-[10px] text-white/50 text-right">
+          PARIS<br />CET
         </div>
       </div>
-    </>
+
+      {/* Far Right Discover (Like Ravi site) */}
+      <div className="hidden lg:block ml-16 text-white/90 font-medium">
+        Discover
+      </div>
+    </nav>
   );
 }

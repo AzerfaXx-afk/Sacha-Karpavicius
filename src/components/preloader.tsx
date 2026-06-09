@@ -47,15 +47,23 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
     };
     window.addEventListener("keydown", preventKeys, { passive: false });
 
-    // Spotlight cursor logic
+    // Spotlight and parallax cursor logic
     const handleMouseMove = (e: MouseEvent) => {
-      if (nameContainer) {
+      if (nameContainer && letterS && letterK) {
         const rect = nameContainer.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         setMousePos({ x: e.clientX, y: e.clientY });
         nameContainer.style.setProperty("--mouse-x", `${x}px`);
         nameContainer.style.setProperty("--mouse-y", `${y}px`);
+
+        // Parallax for name and letters
+        const px = (e.clientX / window.innerWidth - 0.5) * 40;
+        const py = (e.clientY / window.innerHeight - 0.5) * 40;
+        
+        gsap.to(nameContainer, { x: px, y: py, duration: 1, ease: "power2.out", overwrite: "auto" });
+        gsap.to(letterS, { x: px * 1.5, y: py * 1.5, duration: 1.5, ease: "power2.out", overwrite: "auto" });
+        gsap.to(letterK, { x: px * 1.2, y: py * 1.2, duration: 1.5, ease: "power2.out", overwrite: "auto" });
       }
     };
     window.addEventListener("mousemove", handleMouseMove);
@@ -103,7 +111,7 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
       0
     );
 
-    // 4. Center name fades out immediately
+    // 4. Center name fades out immediately as the aperture opens
     tl.to(
       nameContainer,
       {
