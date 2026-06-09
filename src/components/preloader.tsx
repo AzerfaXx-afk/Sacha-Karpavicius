@@ -47,14 +47,7 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
     };
     window.addEventListener("keydown", preventKeys, { passive: false });
 
-    // Spotlight and parallax cursor logic
-    const xTo = gsap.quickTo(nameContainer, "x", { duration: 1, ease: "power2.out" });
-    const yTo = gsap.quickTo(nameContainer, "y", { duration: 1, ease: "power2.out" });
-    const sXTo = gsap.quickTo(letterS, "x", { duration: 1.5, ease: "power2.out" });
-    const sYTo = gsap.quickTo(letterS, "y", { duration: 1.5, ease: "power2.out" });
-    const kXTo = gsap.quickTo(letterK, "x", { duration: 1.5, ease: "power2.out" });
-    const kYTo = gsap.quickTo(letterK, "y", { duration: 1.5, ease: "power2.out" });
-
+    // Spotlight cursor logic
     const handleMouseMove = (e: MouseEvent) => {
       if (nameContainer) {
         const rect = nameContainer.getBoundingClientRect();
@@ -63,17 +56,6 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
         setMousePos({ x: e.clientX, y: e.clientY });
         nameContainer.style.setProperty("--mouse-x", `${x}px`);
         nameContainer.style.setProperty("--mouse-y", `${y}px`);
-
-        // Parallax for name and letters
-        const px = (e.clientX / window.innerWidth - 0.5) * 40;
-        const py = (e.clientY / window.innerHeight - 0.5) * 40;
-        
-        xTo(px);
-        yTo(py);
-        sXTo(px * 1.5);
-        sYTo(py * 1.5);
-        kXTo(px * 1.2);
-        kYTo(py * 1.2);
       }
     };
     window.addEventListener("mousemove", handleMouseMove);

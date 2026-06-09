@@ -207,13 +207,13 @@ export default function Home() {
       // Desktop: Smooth, subtle mouse tracking
       const handleMouseMove = (e: MouseEvent) => {
         const { clientX, clientY } = e;
-        const xPos = (clientX / window.innerWidth - 0.5) * 150;
-        const yPos = (clientY / window.innerHeight - 0.5) * 150;
+        const xPos = (clientX / window.innerWidth - 0.5) * 250;
+        const yPos = (clientY / window.innerHeight - 0.5) * 250;
 
         xTo(xPos);
         yTo(yPos);
-        rotYTo(xPos * 0.1);
-        rotXTo(-yPos * 0.1);
+        rotYTo(xPos * 0.05);
+        rotXTo(-yPos * 0.05);
       };
 
       // Mobile: Gyroscope / Tilt tracking
