@@ -189,8 +189,10 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
         </div>
 
         {/* Click Indicator */}
-        <div className={`mt-2 font-inter text-[7px] md:text-[8px] tracking-[0.4em] uppercase text-white/40 transition-all duration-500 ${hasStarted ? 'opacity-0' : 'opacity-100 animate-pulse group-hover:opacity-0'}`}>
-          Click to enter
+        <div className={`mt-2 transition-opacity duration-500 ${hasStarted ? 'opacity-0' : 'group-hover:opacity-0'}`}>
+          <div className="font-inter text-[7px] md:text-[8px] tracking-[0.4em] uppercase text-white/40 animate-pulse">
+            Click to enter
+          </div>
         </div>
       </div>
 
@@ -198,7 +200,6 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
       <h1
         ref={letterSRef}
         className="absolute bottom-[-2vw] left-4 md:left-12 font-syne font-bold text-[30vw] md:text-[25vw] leading-none text-white/90"
-        style={{ opacity: 0, transform: 'translateY(120%)' }}
       >
         S
       </h1>
@@ -207,7 +208,6 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
       <h1
         ref={letterKRef}
         className="absolute bottom-[-2vw] right-4 md:right-12 font-syne font-bold text-[30vw] md:text-[25vw] leading-none text-white/90"
-        style={{ opacity: 0, transform: 'translateY(120%)' }}
       >
         K
       </h1>

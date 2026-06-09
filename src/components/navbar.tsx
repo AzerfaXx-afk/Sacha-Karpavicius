@@ -44,7 +44,7 @@ const AnimatedLink = ({ text, href, onClick }: { text: string; href: string, onC
   );
 };
 
-export default function Navbar({ showUI = true }: { showUI?: boolean }) {
+export default function Navbar({ showUI = true, clickable = true }: { showUI?: boolean, clickable?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [time, setTime] = useState("");
   const navRef = useRef<HTMLElement>(null);
@@ -94,7 +94,7 @@ export default function Navbar({ showUI = true }: { showUI?: boolean }) {
     <>
       <nav 
         ref={navRef}
-        className="fixed top-0 left-0 w-full z-[110] px-6 py-6 md:px-12 md:py-8 pointer-events-auto mix-blend-difference -translate-y-8 opacity-0"
+        className={`fixed top-0 left-0 w-full z-[110] px-6 py-6 md:px-12 md:py-8 mix-blend-difference -translate-y-8 opacity-0 ${clickable ? 'pointer-events-auto' : 'pointer-events-none'}`}
       >
         <div className="flex justify-between items-start w-full">
           {/* Top Left: Hamburger Menu */}

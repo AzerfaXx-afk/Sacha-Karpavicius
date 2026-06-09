@@ -117,26 +117,6 @@ export default function Home() {
         0.4
       );
 
-      /* ── Mouse Parallax ── */
-      const xTo = gsap.quickTo(heroImgRef.current, "x", { duration: 1.5, ease: "power2.out" });
-      const yTo = gsap.quickTo(heroImgRef.current, "y", { duration: 1.5, ease: "power2.out" });
-      const rotXTo = gsap.quickTo(heroImgRef.current, "rotationX", { duration: 1.5, ease: "power2.out" });
-      const rotYTo = gsap.quickTo(heroImgRef.current, "rotationY", { duration: 1.5, ease: "power2.out" });
-
-      const handleMouseMove = (e: MouseEvent) => {
-        const { clientX, clientY } = e;
-        // Calculate offset from center (-0.5 to 0.5)
-        const xPos = (clientX / window.innerWidth - 0.5) * 40; // max 20px
-        const yPos = (clientY / window.innerHeight - 0.5) * 40;
-
-        xTo(xPos);
-        yTo(yPos);
-        rotYTo(xPos * 0.05);
-        rotXTo(-yPos * 0.05);
-      };
-
-      window.addEventListener("mousemove", handleMouseMove);
-
       /* ── Hero parallax on scroll ── */
       gsap.to(heroRef.current, {
         y: 100,
@@ -187,7 +167,6 @@ export default function Home() {
         );
       });
 
-      /* ── Text reveals ── */
       document.querySelectorAll("[data-text-reveal]").forEach((el) => {
         gsap.fromTo(
           el,
@@ -205,15 +184,36 @@ export default function Home() {
           }
         );
       });
-
-      return () => {
-        window.removeEventListener("mousemove", handleMouseMove);
-      };
     });
 
     return () => {
       ctx.revert();
     };
+  }, [siteStarted]);
+
+  /* Mouse Parallax (always active) */
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const xTo = gsap.quickTo(heroImgRef.current, "x", { duration: 1.5, ease: "power2.out" });
+      const yTo = gsap.quickTo(heroImgRef.current, "y", { duration: 1.5, ease: "power2.out" });
+      const rotXTo = gsap.quickTo(heroImgRef.current, "rotationX", { duration: 1.5, ease: "power2.out" });
+      const rotYTo = gsap.quickTo(heroImgRef.current, "rotationY", { duration: 1.5, ease: "power2.out" });
+
+      const handleMouseMove = (e: MouseEvent) => {
+        const { clientX, clientY } = e;
+        const xPos = (clientX / window.innerWidth - 0.5) * 40;
+        const yPos = (clientY / window.innerHeight - 0.5) * 40;
+
+        xTo(xPos);
+        yTo(yPos);
+        rotYTo(xPos * 0.05);
+        rotXTo(-yPos * 0.05);
+      };
+
+      window.addEventListener("mousemove", handleMouseMove);
+      return () => window.removeEventListener("mousemove", handleMouseMove);
+    });
+    return () => ctx.revert();
   }, []);
 
   return (
@@ -221,7 +221,7 @@ export default function Home() {
       {/* Preloader */}
       {loading && <Preloader onComplete={onPreloaderComplete} onStart={handleStartSite} onHoverChange={setIsHoveringName} />}
 
-      <Navbar showUI={siteStarted || isHoveringName} />
+      <Navbar showUI={siteStarted || isHoveringName} clickable={siteStarted} />
 
       <style>{`
         @keyframes sound {
@@ -235,7 +235,7 @@ export default function Home() {
       {/* Persistent Audio Icon (Bottom Right) */}
       <div 
         ref={audioIconRef}
-        className="fixed bottom-6 right-6 md:bottom-10 md:right-12 z-[100] cursor-pointer group mix-blend-difference flex items-center justify-center gap-[4px] h-4 w-8 opacity-0"
+        className={`fixed bottom-6 right-6 md:bottom-10 md:right-12 z-[100] cursor-pointer group mix-blend-difference flex items-center justify-center gap-[4px] h-4 w-8 opacity-0 ${siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}
         onClick={toggleAudio}
       >
         <div className={`music-bar w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${isPlaying ? 'bg-white h-full animate-[sound_1.2s_ease-in-out_infinite]' : 'bg-white/40 h-[3px] group-hover:h-[6px] group-hover:bg-white'}`} />
@@ -245,7 +245,7 @@ export default function Home() {
       </div>
 
       {/* Persistent Get In Touch (Bottom Left) */}
-      <div ref={getInTouchRef} className="fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference pointer-events-auto opacity-0">
+      <div ref={getInTouchRef} className={`fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference opacity-0 ${siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}>
         <a href="#contact" className="inline-flex items-center gap-2 border border-white/20 px-4 py-2.5 rounded-sm hover:bg-white hover:text-black transition-all duration-300 font-inter text-[11px] md:text-[12px] text-white cursor-pointer group">
           Get in touch <span className="group-hover:translate-x-1 transition-transform">→</span >
         </a>
