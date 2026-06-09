@@ -163,6 +163,10 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
           if (!hasStarted) {
             setHasStarted(true);
             onStart();
+            // Request device orientation permission for iOS devices to enable mobile parallax
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+              (DeviceOrientationEvent as any).requestPermission().catch(console.error);
+            }
           }
         }}
         className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10 ${hasStarted ? 'pointer-events-none' : 'cursor-pointer group'}`}

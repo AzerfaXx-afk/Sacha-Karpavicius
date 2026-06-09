@@ -199,26 +199,41 @@ export default function Home() {
   /* Mouse Parallax (always active) */
   useEffect(() => {
     const ctx = gsap.context(() => {
-      const xTo = gsap.quickTo(heroImgRef.current, "x", { duration: 1.0, ease: "power3.out" });
-      const yTo = gsap.quickTo(heroImgRef.current, "y", { duration: 1.0, ease: "power3.out" });
-      const rotXTo = gsap.quickTo(heroImgRef.current, "rotationX", { duration: 1.2, ease: "power3.out" });
-      const rotYTo = gsap.quickTo(heroImgRef.current, "rotationY", { duration: 1.2, ease: "power3.out" });
+      const xTo = gsap.quickTo(heroImgRef.current, "x", { duration: 1.5, ease: "power2.out" });
+      const yTo = gsap.quickTo(heroImgRef.current, "y", { duration: 1.5, ease: "power2.out" });
+      const rotXTo = gsap.quickTo(heroImgRef.current, "rotationX", { duration: 1.5, ease: "power2.out" });
+      const rotYTo = gsap.quickTo(heroImgRef.current, "rotationY", { duration: 1.5, ease: "power2.out" });
 
+      // Desktop: Smooth, subtle mouse tracking
       const handleMouseMove = (e: MouseEvent) => {
         const { clientX, clientY } = e;
-        // Image intensely follows the cursor (Ravi Klaassens style)
-        const xPos = (clientX - window.innerWidth / 2) * 0.6;
-        const yPos = (clientY - window.innerHeight / 2) * 0.6;
+        const xPos = (clientX / window.innerWidth - 0.5) * 60;
+        const yPos = (clientY / window.innerHeight - 0.5) * 60;
 
         xTo(xPos);
         yTo(yPos);
-        // Add subtle 3D rotation based on mouse position
-        rotYTo((clientX / window.innerWidth - 0.5) * 20);
-        rotXTo(-(clientY / window.innerHeight - 0.5) * 20);
+        rotYTo(xPos * 0.1);
+        rotXTo(-yPos * 0.1);
+      };
+
+      // Mobile: Gyroscope / Tilt tracking
+      const handleOrientation = (e: DeviceOrientationEvent) => {
+        if (e.gamma === null || e.beta === null) return;
+        const xPos = (e.gamma / 90) * 60; // gamma: left-to-right tilt
+        const yPos = (e.beta / 90) * 60;  // beta: front-to-back tilt
+
+        xTo(xPos);
+        yTo(yPos);
+        rotYTo(xPos * 0.1);
+        rotXTo(-yPos * 0.1);
       };
 
       window.addEventListener("mousemove", handleMouseMove);
-      return () => window.removeEventListener("mousemove", handleMouseMove);
+      window.addEventListener("deviceorientation", handleOrientation);
+      return () => {
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("deviceorientation", handleOrientation);
+      };
     });
     return () => ctx.revert();
   }, []);
@@ -270,7 +285,7 @@ export default function Home() {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-10 md:mt-0" style={{ perspective: "1000px" }}>
           <div
             ref={heroImgRef}
-            className="relative w-[400px] h-[500px] md:w-[600px] md:h-[700px] object-cover"
+            className="relative w-[85vw] h-[65vh] md:w-[600px] md:h-[700px] object-cover"
           >
             <Image
               src="/5.jpg"
