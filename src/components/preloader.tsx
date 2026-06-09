@@ -192,10 +192,11 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
 
           {/* Spotlight Overlay */}
           <div
-            className="absolute inset-0 flex text-white pointer-events-none"
+            className="absolute inset-0 flex text-white pointer-events-none transition-opacity duration-1000"
             style={{
               WebkitMaskImage: `radial-gradient(100px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), black 0%, transparent 100%)`,
               maskImage: `radial-gradient(100px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), black 0%, transparent 100%)`,
+              opacity: hasStarted ? 0 : (isHoveringLocal ? 1 : 0)
             }}
           >
             {"Sacha Karpavicius".split("").map((char, i) => (
