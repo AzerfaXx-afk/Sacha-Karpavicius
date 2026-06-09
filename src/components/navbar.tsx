@@ -237,13 +237,6 @@ export default function Navbar({ showUI = true, clickable = true, lang = "fr" }:
         style={{ transform: isOpen ? 'translateY(0)' : 'translateY(-100%)' }}
         onMouseMove={handleOverlayMouseMove}
       >
-        {/* Navigation Grid Lines */}
-        <div className="absolute inset-0 pointer-events-none flex justify-between px-6 md:px-12 z-0">
-          <div className="w-[1px] h-full bg-white/[0.02]" />
-          <div className="w-[1px] h-full bg-white/[0.02] hidden md:block" />
-          <div className="w-[1px] h-full bg-white/[0.02] hidden md:block" />
-          <div className="w-[1px] h-full bg-white/[0.02]" />
-        </div>
 
         {/* Menu Links Container */}
         <div className="relative max-w-7xl w-full mx-auto z-10 flex flex-col gap-6 md:gap-10 pl-2 md:pl-16">

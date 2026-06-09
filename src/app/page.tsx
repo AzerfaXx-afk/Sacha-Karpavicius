@@ -437,14 +437,14 @@ export default function Home() {
               {lang === "fr" ? (
                 <>
                   Sacha Karpavicius.<br />
-                  Design & Direction pour ceux<br />
-                  qui refusent les compromis.
+                  Photographie de mode & Direction artistique<br />
+                  basé à Paris et Milan.
                 </>
               ) : (
                 <>
                   Sacha Karpavicius.<br />
-                  Design & Direction for those<br />
-                  who refuse to settle.
+                  Fashion Photography & Art Direction<br />
+                  based in Paris and Milan.
                 </>
               )}
             </h1>
@@ -602,7 +602,7 @@ export default function Home() {
             </div>
 
             {/* Info Grid - Centered Collab Link */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-8 md:pt-12 border-t border-white/5" data-text-reveal>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-8 md:pt-12" data-text-reveal>
               <div className="md:col-start-4 md:col-span-6 text-center space-y-4">
                 <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/30 uppercase block">
                   COLLAB
