@@ -202,8 +202,8 @@ export default function Home() {
       // Desktop: Smooth, subtle mouse tracking using gsap.to directly to avoid StrictMode issues
       const handleMouseMove = (e: MouseEvent) => {
         const { clientX, clientY } = e;
-        const xPos = (clientX / window.innerWidth - 0.5) * 120;
-        const yPos = (clientY / window.innerHeight - 0.5) * 120;
+        const xPos = (clientX / window.innerWidth - 0.5) * 40;
+        const yPos = (clientY / window.innerHeight - 0.5) * 40;
 
         if (heroImgRef.current) {
           gsap.to(heroImgRef.current, {
@@ -211,7 +211,7 @@ export default function Home() {
             y: yPos,
             rotationY: xPos * 0.05,
             rotationX: -yPos * 0.05,
-            duration: 1.5,
+            duration: 2.5,
             ease: "power2.out",
             overwrite: "auto"
           });
@@ -221,8 +221,8 @@ export default function Home() {
       // Mobile: Gyroscope / Tilt tracking
       const handleOrientation = (e: DeviceOrientationEvent) => {
         if (e.gamma === null || e.beta === null) return;
-        const xPos = (e.gamma / 90) * 50; // gamma: left-to-right tilt
-        const yPos = (e.beta / 90) * 50;  // beta: front-to-back tilt
+        const xPos = (e.gamma / 90) * 20; // gamma: left-to-right tilt
+        const yPos = (e.beta / 90) * 20;  // beta: front-to-back tilt
 
         if (heroImgRef.current) {
           gsap.to(heroImgRef.current, {
@@ -230,7 +230,7 @@ export default function Home() {
             y: yPos,
             rotationY: xPos * 0.1,
             rotationX: -yPos * 0.1,
-            duration: 1.5,
+            duration: 2.5,
             ease: "power2.out",
             overwrite: "auto"
           });
