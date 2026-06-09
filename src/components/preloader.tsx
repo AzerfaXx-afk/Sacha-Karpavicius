@@ -64,7 +64,7 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
     gsap.set(lens, { width: 0, height: 0, rotation: 45, xPercent: -50, yPercent: -50 });
 
     if (!hasStarted) {
-      gsap.set([letterS, letterK], { opacity: 0 });
+      gsap.set([letterS, letterK], { yPercent: 120, opacity: 0 });
       gsap.set(nameContainer.querySelectorAll(".name-char"), { opacity: 1, y: 0 });
       return;
     }
@@ -161,13 +161,6 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
         }}
         onClick={() => {
           if (!hasStarted) {
-            // Letters slide up and out
-            if (letterSRef.current) {
-              gsap.fromTo(letterSRef.current, { opacity: 0, y: "100vh" }, { opacity: 1, y: "-100vh", duration: 1.5, ease: "power3.inOut" });
-            }
-            if (letterKRef.current) {
-              gsap.fromTo(letterKRef.current, { opacity: 0, y: "100vh" }, { opacity: 1, y: "-100vh", duration: 1.5, ease: "power3.inOut", delay: 0.1 });
-            }
             setHasStarted(true);
             onStart();
           }

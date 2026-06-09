@@ -28,10 +28,6 @@ export default function Home() {
 
   useEffect(() => {
     setIsMounted(true);
-    if (sessionStorage.getItem("siteEntered") === "true") {
-      setLoading(false);
-      setSiteStarted(true);
-    }
     
     audioRef.current = new Audio("/musique.mp3");
     audioRef.current.loop = true;
@@ -47,7 +43,6 @@ export default function Home() {
 
   const handleStartSite = useCallback(() => {
     setSiteStarted(true);
-    sessionStorage.setItem("siteEntered", "true");
     if (audioRef.current) {
       audioRef.current.play().catch(() => { /* ignore 404 audio error */ });
       setIsPlaying(true);
