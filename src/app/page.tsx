@@ -501,7 +501,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ ABOUT SECTION ═══════════════════ */}
-      <section ref={aboutRef} id="about" className="relative bg-[#0a0a0a] pt-20 md:pt-28 pb-32 md:pb-44 overflow-hidden">
+      <section ref={aboutRef} id="about" className="relative bg-[#0a0a0a] pt-20 md:pt-28 pb-20 md:pb-32 overflow-hidden">
         <div className="px-5 md:px-16">
           <div data-text-reveal className="flex items-center gap-6 mb-16 md:mb-24">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
@@ -561,8 +561,12 @@ export default function Home() {
       {/* ═══════════════════ CONTACT / FOOTER ═══════════════════ */}
       <footer ref={contactRef} id="contact" className="relative bg-[#0a0a0a] pt-16 md:pt-24 pb-[45vh] overflow-hidden">
         <div className="px-5 md:px-16">
-          {/* Separator line */}
-          <div data-line-reveal className="w-full h-[1px] bg-white/10 origin-left mb-16 md:mb-24" />
+          <div data-text-reveal className="flex items-center gap-6 mb-16 md:mb-24">
+            <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
+              03
+            </span>
+            <div data-line-reveal className="flex-1 h-[1px] bg-white/10 origin-left" />
+          </div>
 
           {/* Giant CTA */}
           <div data-text-reveal className="mb-16 md:mb-24">
