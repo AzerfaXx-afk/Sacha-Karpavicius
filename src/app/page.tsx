@@ -69,6 +69,8 @@ export default function Home() {
   const worksRef = useRef<HTMLElement>(null);
   const aboutRef = useRef<HTMLElement>(null);
   const contactRef = useRef<HTMLElement>(null);
+  const audioIconRef = useRef<HTMLDivElement>(null);
+  const getInTouchRef = useRef<HTMLDivElement>(null);
 
   /* Preloader done callback */
   const onPreloaderComplete = useCallback(() => {
@@ -99,6 +101,13 @@ export default function Home() {
         heroSubRef.current,
         { y: 20, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.8 },
+        0.8
+      );
+
+      heroTl.fromTo(
+        [getInTouchRef.current, audioIconRef.current],
+        { y: 20, opacity: 0 },
+        { y: 0, opacity: 1, duration: 1.0, stagger: 0.2 },
         0.8
       );
 
@@ -219,17 +228,18 @@ export default function Home() {
 
       {/* Persistent Audio Icon (Bottom Right) */}
       <div 
-        className="fixed bottom-6 right-6 md:bottom-10 md:right-12 z-[100] cursor-pointer group mix-blend-difference flex items-end justify-center gap-[3px] h-4 w-6"
+        ref={audioIconRef}
+        className="fixed bottom-6 right-6 md:bottom-10 md:right-12 z-[100] cursor-pointer group mix-blend-difference flex items-end justify-center gap-[3px] h-4 w-6 opacity-0"
         onClick={toggleAudio}
       >
-        <div className={`music-bar w-[2px] bg-white transition-all duration-300 ${isPlaying ? 'h-full animate-[sound_1.2s_ease-in-out_infinite]' : 'h-1 group-hover:h-3'}`} />
-        <div className={`music-bar w-[2px] bg-white transition-all duration-300 ${isPlaying ? 'h-full animate-[sound_0.8s_ease-in-out_infinite_0.2s]' : 'h-2 group-hover:h-4'}`} />
-        <div className={`music-bar w-[2px] bg-white transition-all duration-300 ${isPlaying ? 'h-full animate-[sound_1.5s_ease-in-out_infinite_0.4s]' : 'h-1 group-hover:h-2'}`} />
-        <div className={`music-bar w-[2px] bg-white transition-all duration-300 ${isPlaying ? 'h-full animate-[sound_1.0s_ease-in-out_infinite_0.1s]' : 'h-3 group-hover:h-full'}`} />
+        <div className={`music-bar w-[2px] transition-all duration-300 ${isPlaying ? 'bg-white h-full animate-[sound_1.2s_ease-in-out_infinite]' : 'bg-white/30 h-1 group-hover:h-3 group-hover:bg-white/60'}`} />
+        <div className={`music-bar w-[2px] transition-all duration-300 ${isPlaying ? 'bg-white h-full animate-[sound_0.8s_ease-in-out_infinite_0.2s]' : 'bg-white/30 h-2 group-hover:h-4 group-hover:bg-white/60'}`} />
+        <div className={`music-bar w-[2px] transition-all duration-300 ${isPlaying ? 'bg-white h-full animate-[sound_1.5s_ease-in-out_infinite_0.4s]' : 'bg-white/30 h-1 group-hover:h-2 group-hover:bg-white/60'}`} />
+        <div className={`music-bar w-[2px] transition-all duration-300 ${isPlaying ? 'bg-white h-full animate-[sound_1.0s_ease-in-out_infinite_0.1s]' : 'bg-white/30 h-3 group-hover:h-full group-hover:bg-white/60'}`} />
       </div>
 
       {/* Persistent Get In Touch (Bottom Left) */}
-      <div className="fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference pointer-events-auto">
+      <div ref={getInTouchRef} className="fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference pointer-events-auto opacity-0">
         <a href="#contact" className="inline-flex items-center gap-2 border border-white/20 px-4 py-2.5 rounded-sm hover:bg-white hover:text-black transition-all duration-300 font-inter text-[11px] md:text-[12px] text-white cursor-pointer group">
           Get in touch <span className="group-hover:translate-x-1 transition-transform">→</span >
         </a>
