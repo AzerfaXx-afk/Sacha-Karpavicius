@@ -569,52 +569,88 @@ export default function Home() {
               <div data-line-reveal className="flex-1 h-[1px] bg-white/10 origin-left" />
             </div>
 
-            {/* Giant CTA */}
-            <div data-text-reveal className="mb-16 md:mb-24">
-              <a
-                href="mailto:hello@sachakarpavicius.com"
-                className="group inline-block"
-              >
-                <h2 className="font-syne font-bold text-[14vw] md:text-[10vw] leading-[0.9] tracking-tight text-white uppercase group-hover:text-white/60 transition-colors duration-700">
-                  Let&apos;s<br />Talk
-                </h2>
-              </a>
+            {/* Giant Heading (Non-clickable) */}
+            <div data-text-reveal className="mb-16 md:mb-20">
+              <h2 className="font-syne font-bold text-[14vw] md:text-[9vw] leading-[0.85] tracking-tight text-white uppercase select-none">
+                Let&apos;s<br />Talk
+              </h2>
+            </div>
+
+            {/* Info Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 pt-8 md:pt-12 border-t border-white/5" data-text-reveal>
+              {/* Column 1: Contact Info */}
+              <div className="md:col-span-5 space-y-4">
+                <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/30 uppercase block">
+                  01 / GET IN TOUCH
+                </span>
+                <a
+                  href="mailto:hello@sachakarpavicius.com"
+                  className="group inline-flex items-center gap-3 font-syne font-semibold text-[22px] md:text-[28px] text-white hover:text-white/60 transition-colors duration-500 mt-2 break-all"
+                >
+                  hello@sachakarpavicius.com
+                  <span className="inline-block transform group-hover:translate-x-1.5 group-hover:-translate-y-1.5 transition-transform duration-300 font-mono text-[20px] text-white/40">
+                    ↗
+                  </span>
+                </a>
+              </div>
+
+              {/* Column 2: Socials */}
+              <div className="md:col-span-3 space-y-4 md:col-start-7">
+                <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/30 uppercase block">
+                  02 / NETWORKS
+                </span>
+                <div className="flex flex-col gap-2.5 mt-2">
+                  {["Instagram", "LinkedIn", "Behance"].map((social) => (
+                    <a
+                      key={social}
+                      href="#"
+                      className="group inline-flex items-center gap-2 font-inter text-[13px] md:text-[14px] text-white/60 hover:text-white transition-colors duration-300 w-fit"
+                    >
+                      {social}
+                      <span className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 font-mono text-[11px]">
+                        →
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              {/* Column 3: Location */}
+              <div className="md:col-span-3 space-y-4">
+                <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/30 uppercase block">
+                  03 / OFFICES
+                </span>
+                <div className="font-inter text-[13px] md:text-[14px] text-white/60 leading-relaxed mt-2">
+                  <p>Paris — Milan — New York</p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div>
-            {/* Footer bottom */}
-            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 pb-4">
-              <div className="space-y-2">
-                <p className="font-inter text-[10px] md:text-[11px] tracking-[0.2em] text-white/30 uppercase">
-                  hello@sachakarpavicius.com
-                </p>
-                <p className="font-inter text-[10px] md:text-[11px] tracking-[0.2em] text-white/30 uppercase">
-                  Paris — Milan — New York
-                </p>
-              </div>
+          {/* Bottom Copyright Bar with 12-column grid layout to clear floating buttons */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-8 mt-16 border-t border-white/5 text-[9px] md:text-[10px] tracking-[0.2em] uppercase text-white/20">
+            {/* Column 1 & 2: Empty on desktop (covers left Get in Touch floating button) */}
+            <div className="hidden md:block md:col-span-2" />
 
-              <div className="flex items-center gap-8">
-                {["Instagram", "LinkedIn", "Behance"].map((social) => (
-                  <a
-                    key={social}
-                    href="#"
-                    className="font-inter text-[10px] md:text-[11px] tracking-[0.2em] text-white/30 uppercase hover:text-white/70 transition-colors duration-500"
-                  >
-                    {social}
-                  </a>
-                ))}
-              </div>
+            {/* Copyright */}
+            <div className="col-span-1 md:col-span-3 text-center md:text-left">
+              <span>© 2026 Sacha Karpavicius</span>
             </div>
 
-            <div className="mt-8 md:mt-16 pt-8 border-t border-white/5 flex items-center justify-between">
-              <span className="font-inter text-[9px] md:text-[10px] tracking-[0.2em] text-white/20 uppercase">
-                © 2026 Sacha Karpavicius
-              </span>
-              <span className="font-inter text-[9px] md:text-[10px] tracking-[0.2em] text-white/20 uppercase">
-                All Rights Reserved
+            {/* Credit to Adam */}
+            <div className="col-span-1 md:col-span-2 text-center">
+              <span className="text-white/40 font-medium tracking-[0.25em]">
+                Website by <span className="text-white hover:text-white/70 transition-colors duration-300 cursor-pointer font-bold">Adam</span>
               </span>
             </div>
+
+            {/* All Rights Reserved */}
+            <div className="col-span-1 md:col-span-3 text-center md:text-right">
+              <span>All Rights Reserved</span>
+            </div>
+
+            {/* Column 11 & 12: Empty on desktop (covers right audio bars floating button) */}
+            <div className="hidden md:block md:col-span-2" />
           </div>
         </div>
       </footer>
