@@ -45,7 +45,7 @@ const AnimatedLink = ({
       onClick={handleClick}
     >
       {/* Sliding Number prefix */}
-      <div className="relative overflow-hidden font-mono text-[2.5vw] md:text-[1vw] text-white/20 mr-4 md:mr-8 self-start mt-2 md:mt-4 h-[1.2em] pointer-events-none">
+      <div className="relative shrink-0 overflow-hidden font-mono text-[2.5vw] md:text-[1vw] text-white/20 mr-4 md:mr-8 self-start mt-2 md:mt-4 h-[1.2em] pointer-events-none">
         <div className={`transition-transform duration-[600ms] ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${isDimmed ? '' : 'group-hover:-translate-y-1/2'}`}>
           <span className="h-[1.2em] flex items-center">{number}</span>
           <span className="h-[1.2em] flex items-center text-white">{number}</span>
@@ -55,7 +55,7 @@ const AnimatedLink = ({
       <a 
         href={href} 
         onClick={(e) => e.preventDefault()} // Handled by parent container click
-        className={`relative flex whitespace-nowrap overflow-hidden px-2 md:px-4 leading-none text-[7vw] md:text-[4.5vw] font-syne font-bold uppercase tracking-tight transition-all duration-[750ms] ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none ${
+        className={`relative flex shrink-0 whitespace-nowrap overflow-hidden px-6 md:px-16 leading-none text-[7vw] md:text-[4.5vw] font-syne font-bold uppercase tracking-tight transition-all duration-[750ms] ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none ${
           isDimmed 
             ? 'opacity-15 blur-[1px] scale-[0.98]' 
             : 'text-white scale-100'
@@ -72,7 +72,7 @@ const AnimatedLink = ({
             </span>
           ))}
         </div>
-        <div className="absolute inset-0 flex text-white pointer-events-none px-2 md:px-4">
+        <div className="absolute inset-0 flex text-white pointer-events-none px-6 md:px-16">
           {text.split("").map((c, i) => (
             <span 
               key={i} 
@@ -236,7 +236,7 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
         </div>
 
         {/* Menu Links Container */}
-        <div className="relative max-w-5xl w-full mx-auto z-10 flex flex-col gap-6 md:gap-10 pl-2 md:pl-16">
+        <div className="relative max-w-7xl w-full mx-auto z-10 flex flex-col gap-6 md:gap-10 pl-2 md:pl-16">
           <AnimatedLink 
             text="Selected Works" 
             href="#works" 
