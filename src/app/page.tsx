@@ -115,6 +115,56 @@ export default function Home() {
   const [lang, setLang] = useState<"fr" | "en">("fr");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const handleMagnetMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const btn = e.currentTarget;
+    const rect = btn.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+
+    gsap.to(btn, {
+      x: x * 0.35,
+      y: y * 0.35,
+      scale: 1.02,
+      duration: 0.3,
+      ease: "power2.out",
+      overwrite: "auto",
+    });
+
+    const content = btn.querySelector(".btn-content");
+    if (content) {
+      gsap.to(content, {
+        x: x * 0.15,
+        y: y * 0.15,
+        duration: 0.3,
+        ease: "power2.out",
+        overwrite: "auto",
+      });
+    }
+  };
+
+  const handleMagnetLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const btn = e.currentTarget;
+    gsap.to(btn, {
+      x: 0,
+      y: 0,
+      scale: 1,
+      duration: 0.6,
+      ease: "elastic.out(1.2, 0.4)",
+      overwrite: "auto",
+    });
+
+    const content = btn.querySelector(".btn-content");
+    if (content) {
+      gsap.to(content, {
+        x: 0,
+        y: 0,
+        duration: 0.6,
+        ease: "elastic.out(1.2, 0.4)",
+        overwrite: "auto",
+      });
+    }
+  };
+
   useEffect(() => {
     setIsMounted(true);
 
@@ -603,7 +653,7 @@ export default function Home() {
 
             {/* Info Grid - Centered Collab Link */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-8 md:pt-12" data-text-reveal>
-              <div className="md:col-start-4 md:col-span-6 text-center space-y-4">
+              <div className="md:col-start-4 md:col-span-6 text-center space-y-4 flex flex-col items-center">
                 <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/30 uppercase block">
                   COLLAB
                 </span>
@@ -611,11 +661,29 @@ export default function Home() {
                   href="https://www.instagram.com/sachakarpaviciusss/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-3 font-syne font-semibold text-[22px] md:text-[32px] text-white hover:text-white/60 transition-colors duration-500 mt-2 break-all justify-center"
+                  onMouseMove={handleMagnetMove}
+                  onMouseLeave={handleMagnetLeave}
+                  className="group relative inline-flex items-center gap-4 overflow-hidden px-8 py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-all duration-500 font-syne font-semibold text-[18px] md:text-[22px] text-white cursor-pointer mt-2 w-fit mx-auto hover:shadow-[0_0_30px_rgba(255,255,255,0.06)]"
                 >
-                  @sachakarpaviciusss
-                  <span className="inline-block transform group-hover:translate-x-1.5 group-hover:-translate-y-1.5 transition-transform duration-300 font-mono text-[20px] text-white/40">
-                    ↗
+                  <span className="absolute w-[120%] aspect-square bg-white rounded-full scale-0 group-hover:scale-[2.2] transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" />
+                  
+                  <span className="btn-content relative z-10 flex items-center gap-4 pointer-events-none">
+                    <span className="relative overflow-hidden flex items-center h-[1.2em]">
+                      <span className="inline-block transition-transform duration-500 ease-out group-hover:-translate-y-[120%]">
+                        @sachakarpaviciusss
+                      </span>
+                      <span className="absolute left-0 inline-block translate-y-[120%] transition-transform duration-500 ease-out group-hover:translate-y-0 text-black">
+                        @sachakarpaviciusss
+                      </span>
+                    </span>
+                    <span className="relative overflow-hidden w-4 h-4 flex items-center justify-center">
+                      <span className="absolute transform -translate-x-4 -translate-y-4 opacity-0 group-hover:translate-x-0 group-hover:translate-y-0 transition-all duration-500 ease-out font-mono text-[16px] text-black">
+                        ↗
+                      </span>
+                      <span className="absolute transform translate-x-0 translate-y-0 opacity-100 group-hover:translate-x-4 group-hover:translate-y-4 transition-all duration-500 ease-out font-mono text-[16px] text-white/50">
+                        ↗
+                      </span>
+                    </span>
                   </span>
                 </a>
               </div>
@@ -637,11 +705,11 @@ export default function Home() {
               <span className="text-white/40 font-medium tracking-[0.25em]">
                 {lang === "fr" ? (
                   <>
-                    Site créé par <span className="text-white hover:text-white/70 transition-colors duration-300 cursor-pointer font-bold">Adam</span>
+                    Site créé par <a href="https://www.instagram.com/adam_btp/" target="_blank" rel="noopener noreferrer" className="text-white hover:text-white/70 transition-colors duration-300 cursor-pointer font-bold">Adam</a>
                   </>
                 ) : (
                   <>
-                    Website created by <span className="text-white hover:text-white/70 transition-colors duration-300 cursor-pointer font-bold">Adam</span>
+                    Website created by <a href="https://www.instagram.com/adam_btp/" target="_blank" rel="noopener noreferrer" className="text-white hover:text-white/70 transition-colors duration-300 cursor-pointer font-bold">Adam</a>
                   </>
                 )}
               </span>
