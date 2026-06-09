@@ -249,7 +249,7 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
           className="fixed top-0 left-0 pointer-events-none z-[95] will-change-transform hidden md:block"
         >
           <div 
-            className="w-[260px] h-[340px] rounded-lg overflow-hidden border border-white/10 shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] origin-center"
+            className="relative w-[260px] h-[340px] rounded-lg overflow-hidden border border-white/10 shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] origin-center"
             style={{
               opacity: hoveredIndex !== null ? 1 : 0,
               transform: `translate(-50%, -50%) scale(${hoveredIndex !== null ? 1 : 0.75}) rotate(${hoveredIndex !== null ? 0 : -5}deg)`,
