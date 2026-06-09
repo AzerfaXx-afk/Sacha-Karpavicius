@@ -597,15 +597,7 @@ export default function Home() {
             {/* Giant Heading (Non-clickable) */}
             <div data-text-reveal className="mb-16 md:mb-20">
               <h2 className="font-syne font-bold text-[14vw] md:text-[9vw] leading-[0.85] tracking-tight text-white uppercase select-none">
-                {lang === "fr" ? (
-                  <>
-                    Créer<br />Ensemble
-                  </>
-                ) : (
-                  <>
-                    Let&apos;s<br />Create
-                  </>
-                )}
+                Contact
               </h2>
             </div>
 
