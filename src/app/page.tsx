@@ -68,17 +68,17 @@ const AboutImageCard = () => {
   };
 
   return (
-    <div 
+    <div
       ref={cardRef}
       className="relative w-full max-w-[300px] aspect-[3/4] rounded-lg overflow-hidden border border-white/10 shadow-2xl cursor-pointer group will-change-transform"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       data-about-img
     >
-      <img 
+      <img
         ref={imgRef}
-        src="/1.jpg" 
-        alt="Sacha Karpavicius Portrait" 
+        src="/1.jpg"
+        alt="Sacha Karpavicius Portrait"
         className="w-full h-full object-cover transition-transform duration-700 ease-out"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
@@ -116,11 +116,11 @@ export default function Home() {
 
   useEffect(() => {
     setIsMounted(true);
-    
+
     audioRef.current = new Audio("/musique.mp3");
     audioRef.current.loop = true;
     audioRef.current.volume = 0;
-    
+
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -142,10 +142,10 @@ export default function Home() {
     if (!audioRef.current) return;
     if (isPlaying) {
       setIsPlaying(false);
-      gsap.to(audioRef.current, { 
-        volume: 0, 
-        duration: 1.5, 
-        onComplete: () => audioRef.current?.pause() 
+      gsap.to(audioRef.current, {
+        volume: 0,
+        duration: 1.5,
+        onComplete: () => audioRef.current?.pause()
       });
     } else {
       audioRef.current.play().catch(e => console.warn("No audio file yet:", e));
@@ -265,7 +265,7 @@ export default function Home() {
             ease: "power3.inOut",
             scrollTrigger: {
               trigger: line,
-              start: "top 90%",
+              start: "top 95%",
               toggleActions: "play none none none",
             },
           }
@@ -366,7 +366,7 @@ export default function Home() {
       `}</style>
 
       {/* Persistent Audio Icon (Bottom Right) */}
-      <div 
+      <div
         ref={audioIconRef}
         className={`fixed bottom-6 right-6 md:bottom-10 md:right-12 z-[100] cursor-pointer group mix-blend-difference flex items-center justify-center gap-[4px] h-4 w-8 opacity-0 ${siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}
         onClick={toggleAudio}
@@ -380,7 +380,7 @@ export default function Home() {
       {/* Persistent Get In Touch (Bottom Left) */}
       <div ref={getInTouchRef} className={`fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference opacity-0 ${siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}>
         <a href="#contact" className="inline-flex items-center gap-2 border border-white/20 px-4 py-2.5 rounded-sm hover:bg-white hover:text-black transition-all duration-300 font-inter text-[11px] md:text-[12px] text-white cursor-pointer group">
-          Get in touch 
+          Get in touch
           <div className="relative overflow-hidden w-3 h-3 flex items-center justify-center">
             <span className="absolute transform -translate-x-3 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 ease-out font-mono text-[11px]">
               →
@@ -526,7 +526,7 @@ export default function Home() {
             </div>
 
             {/* Center: Interactive Portrait Card */}
-            <div className="md:col-span-4 flex justify-center py-6 md:py-0 md:translate-y-10" data-text-reveal>
+            <div className="md:col-span-4 flex justify-center py-6 md:py-0 md:mt-[40px]" data-text-reveal>
               <AboutImageCard />
             </div>
 
