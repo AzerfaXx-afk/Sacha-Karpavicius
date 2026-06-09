@@ -33,7 +33,6 @@ export default function SmoothScrollProvider({
       options={{ 
         lerp: 0.08, 
         duration: 1.2, 
-        smoothTouch: false,
         wheelMultiplier: 1,
       }}
     >
