@@ -323,12 +323,45 @@ export default function Home() {
     entranceAudioRef.current = new Audio("/entrance.mp3");
     entranceAudioRef.current.volume = 0.3;
 
+    // Browser audio policy unlock helper on first gesture
+    const unlockAudio = () => {
+      if (playerRef.current) {
+        const ctx = (playerRef.current as any).ctx;
+        if (ctx && ctx.state === "suspended") {
+          ctx.resume().catch((err: any) => console.warn("AudioContext resume failed:", err));
+        }
+      }
+      
+      // Warm up HTML5 Audio nodes by playing & pausing immediately
+      if (hoverAudioRef.current) hoverAudioRef.current.play().then(() => hoverAudioRef.current?.pause()).catch(() => {});
+      if (clickAudioRef.current) clickAudioRef.current.play().then(() => clickAudioRef.current?.pause()).catch(() => {});
+      if (entranceAudioRef.current) entranceAudioRef.current.play().then(() => entranceAudioRef.current?.pause()).catch(() => {});
+
+      window.removeEventListener("click", unlockAudio);
+      window.removeEventListener("touchstart", unlockAudio);
+      window.removeEventListener("pointerdown", unlockAudio);
+    };
+
+    window.addEventListener("click", unlockAudio, { passive: true });
+    window.addEventListener("touchstart", unlockAudio, { passive: true });
+    window.addEventListener("pointerdown", unlockAudio, { passive: true });
+
     return () => {
       if (playerRef.current) {
         playerRef.current.pause(0);
       }
+      window.removeEventListener("click", unlockAudio);
+      window.removeEventListener("touchstart", unlockAudio);
+      window.removeEventListener("pointerdown", unlockAudio);
     };
   }, []);
+
+  // Play hover sound when user hovers Sacha's name in the preloader
+  useEffect(() => {
+    if (isHoveringName) {
+      playHoverSfx();
+    }
+  }, [isHoveringName, playHoverSfx]);
 
   const handleStartSite = useCallback(() => {
     setSiteStarted(true);
