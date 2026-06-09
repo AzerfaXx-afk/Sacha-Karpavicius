@@ -58,7 +58,7 @@ const AnimatedLink = ({
         className={`relative flex whitespace-nowrap overflow-hidden leading-none text-[7vw] md:text-[4.5vw] font-syne font-bold uppercase tracking-tight transition-all duration-[750ms] ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none ${
           isDimmed 
             ? 'opacity-15 blur-[1px] scale-[0.98]' 
-            : 'text-white scale-100 group-hover:translate-x-4'
+            : 'text-white scale-100'
         }`}
       >
         <div className="flex">
@@ -236,7 +236,7 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
         </div>
 
         {/* Menu Links Container */}
-        <div className="max-w-5xl w-full mx-auto z-10 flex flex-col gap-6 md:gap-10 pl-2 md:pl-16">
+        <div className="relative max-w-5xl w-full mx-auto z-10 flex flex-col gap-6 md:gap-10 pl-2 md:pl-16">
           <AnimatedLink 
             text="Selected Works" 
             href="#works" 
@@ -275,7 +275,7 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
         {/* Floating Image Cursor Follower */}
         <div 
           ref={floatingRef}
-          className="fixed top-0 left-0 pointer-events-none z-[95] will-change-transform hidden md:block"
+          className="fixed top-0 left-0 pointer-events-none z-[5] will-change-transform hidden md:block"
         >
           <div 
             className="relative w-[260px] h-[340px] rounded-lg overflow-hidden border border-white/10 shadow-2xl transition-all duration-[600ms] ease-[cubic-bezier(0.25,1,0.5,1)] origin-center"
