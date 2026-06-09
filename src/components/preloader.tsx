@@ -85,20 +85,7 @@ export default function Preloader({ onComplete, onStart }: PreloaderProps) {
       0
     );
 
-    // 3. Open the square aperture partially (camera lens effect)
-    tl.to(
-      lens,
-      {
-        width: "25vw",
-        height: "25vw",
-        rotation: 0,
-        duration: 1.5,
-        ease: "power3.inOut",
-      },
-      "-=0.5"
-    );
-
-    // 4. Expand the aperture to reveal the entire site
+    // 3. Expand the aperture to reveal the entire site
     tl.to(
       lens,
       {
@@ -108,10 +95,10 @@ export default function Preloader({ onComplete, onStart }: PreloaderProps) {
         duration: 1.5,
         ease: "power4.inOut",
       },
-      "+=0.4"
+      "-=0.5"
     );
 
-    // 5. Letters and center name fade out as the aperture opens
+    // 4. Letters and center name fade out as the aperture opens
     tl.to(
       [letterS, letterK, nameContainer],
       {
@@ -154,6 +141,16 @@ export default function Preloader({ onComplete, onStart }: PreloaderProps) {
       {/* Center Animated Name with Spotlight */}
       <div 
         ref={nameRef}
+        onMouseEnter={() => {
+          if (!hasStarted && lensRef.current) {
+            gsap.to(lensRef.current, { width: '30vw', height: '30vw', rotation: 0, duration: 0.8, ease: 'power3.out' });
+          }
+        }}
+        onMouseLeave={() => {
+          if (!hasStarted && lensRef.current) {
+            gsap.to(lensRef.current, { width: 0, height: 0, rotation: 45, duration: 0.8, ease: 'power3.out' });
+          }
+        }}
         onClick={() => {
           if (!hasStarted) {
             setHasStarted(true);
@@ -189,7 +186,7 @@ export default function Preloader({ onComplete, onStart }: PreloaderProps) {
         </div>
 
         {/* Click Indicator */}
-        <div className={`mt-6 md:mt-8 font-inter text-[9px] md:text-[10px] tracking-[0.3em] uppercase text-white/40 transition-all duration-700 ${hasStarted ? 'opacity-0' : 'opacity-100 animate-pulse group-hover:text-white group-hover:scale-105'}`}>
+        <div className={`mt-2 font-inter text-[7px] md:text-[8px] tracking-[0.4em] uppercase text-white/40 transition-all duration-500 ${hasStarted ? 'opacity-0' : 'opacity-100 animate-pulse group-hover:opacity-0'}`}>
           [ Click to enter ]
         </div>
       </div>
