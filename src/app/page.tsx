@@ -70,7 +70,7 @@ const AboutImageCard = () => {
   return (
     <div 
       ref={cardRef}
-      className="relative w-full max-w-[260px] aspect-[3/4] rounded-lg overflow-hidden border border-white/10 shadow-2xl cursor-pointer group will-change-transform"
+      className="relative w-full max-w-[300px] aspect-[3/4] rounded-lg overflow-hidden border border-white/10 shadow-2xl cursor-pointer group will-change-transform"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       data-about-img
@@ -488,7 +488,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ ABOUT SECTION ═══════════════════ */}
-      <section ref={aboutRef} id="about" className="relative bg-[#0a0a0a] pt-20 md:pt-28 pb-24 md:pb-36 overflow-hidden">
+      <section ref={aboutRef} id="about" className="relative bg-[#0a0a0a] pt-20 md:pt-28 pb-32 md:pb-44 overflow-hidden">
         <div className="px-5 md:px-16">
           <div data-text-reveal className="flex items-center gap-6 mb-16 md:mb-24">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
@@ -499,7 +499,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 items-center">
             {/* Left: Text Info */}
-            <div className="md:col-span-5 space-y-8" data-text-reveal>
+            <div className="md:col-span-4 space-y-8" data-text-reveal>
               <h2 className="font-syne font-bold text-[10vw] md:text-[4vw] leading-[0.95] tracking-tight text-white uppercase">
                 Sacha<br />Karpavicius
               </h2>
@@ -513,12 +513,12 @@ export default function Home() {
             </div>
 
             {/* Center: Interactive Portrait Card */}
-            <div className="md:col-span-3 flex justify-center py-6 md:py-0" data-text-reveal>
+            <div className="md:col-span-4 flex justify-center py-6 md:py-0" data-text-reveal>
               <AboutImageCard />
             </div>
 
             {/* Right: Interactive Lists */}
-            <div className="md:col-start-9 md:col-span-4 space-y-12" data-text-reveal>
+            <div className="md:col-span-4 space-y-12" data-text-reveal>
               <div>
                 <h3 className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase mb-4">
                   Services
