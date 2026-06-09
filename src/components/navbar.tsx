@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { gsap } from "gsap";
+import { useLenis } from "@studio-freight/react-lenis";
 
 const AnimatedLink = ({ 
   text, 
@@ -24,11 +25,20 @@ const AnimatedLink = ({
   isOpen: boolean;
   index: number;
 }) => {
+  const lenis = useLenis();
+
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     onClick();
     setTimeout(() => {
-      document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
+      if (lenis) {
+        lenis.scrollTo(href, { 
+          offset: 0,
+          duration: 1.5,
+        });
+      } else {
+        document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
+      }
     }, 1000); // Wait for the menu to close
   };
 
