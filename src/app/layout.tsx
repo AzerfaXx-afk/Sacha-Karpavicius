@@ -17,9 +17,6 @@ export const metadata: Metadata = {
   title: "SACHA KARPAVICIUS | Visual Storyteller",
   description:
     "High-end portfolio of Sacha Karpavicius — Visual Storyteller, Fashion Photographer & Art Director.",
-  icons: {
-    icon: "/silhouette-logo.ico",
-  },
 };
 
 export default function RootLayout({
