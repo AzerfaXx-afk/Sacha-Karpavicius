@@ -89,9 +89,9 @@ export default function Home() {
     if (uiElements.length === 0) return;
 
     if (siteStarted || isHoveringName) {
-      gsap.to(uiElements, { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" });
+      gsap.to(uiElements, { y: 0, opacity: 1, duration: 0.8, ease: "power3.out", overwrite: true });
     } else {
-      gsap.to(uiElements, { y: 20, opacity: 0, duration: 0.5, ease: "power3.in" });
+      gsap.to(uiElements, { y: 20, opacity: 0, duration: 0.5, ease: "power3.in", overwrite: true });
     }
   }, [siteStarted, isHoveringName]);
 
@@ -259,10 +259,10 @@ export default function Home() {
         className="relative w-full h-screen overflow-hidden bg-[#050505]"
       >
         {/* Central Image Container */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-10 md:mt-0">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-10 md:mt-0" style={{ perspective: "1000px" }}>
           <div
             ref={heroImgRef}
-            className="absolute top-1/2 left-1/2 w-[400px] h-[500px] md:w-[600px] md:h-[700px] object-cover -translate-x-1/2 -translate-y-1/2"
+            className="relative w-[400px] h-[500px] md:w-[600px] md:h-[700px] object-cover"
           >
             <Image
               src="/5.jpg"

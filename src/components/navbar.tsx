@@ -69,11 +69,11 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
   useEffect(() => {
     // Navbar entry animation
     if (showUI) {
-      if (navRef.current) gsap.to(navRef.current, { y: 0, opacity: 1, duration: 1.5, ease: "power4.out" });
-      if (timeRef.current) gsap.to(timeRef.current, { opacity: 1, duration: 1.5, ease: "power4.out" });
+      if (navRef.current) gsap.to(navRef.current, { y: 0, opacity: 1, duration: 1.5, ease: "power4.out", overwrite: true });
+      if (timeRef.current) gsap.to(timeRef.current, { opacity: 1, duration: 1.5, ease: "power4.out", overwrite: true });
     } else {
-      if (navRef.current) gsap.to(navRef.current, { y: -32, opacity: 0, duration: 1.0, ease: "power3.inOut" });
-      if (timeRef.current) gsap.to(timeRef.current, { opacity: 0, duration: 1.0, ease: "power3.inOut" });
+      if (navRef.current) gsap.to(navRef.current, { y: -32, opacity: 0, duration: 1.0, ease: "power3.inOut", overwrite: true });
+      if (timeRef.current) gsap.to(timeRef.current, { opacity: 0, duration: 1.0, ease: "power3.inOut", overwrite: true });
     }
   }, [showUI]);
 

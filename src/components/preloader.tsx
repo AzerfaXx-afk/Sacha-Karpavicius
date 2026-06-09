@@ -97,8 +97,9 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
         rotation: 45,
         duration: 1.5,
         ease: "power4.inOut",
+        overwrite: true,
       },
-      "-=0.5"
+      0
     );
 
     // 4. Letters and center name fade out as the aperture opens
@@ -148,14 +149,14 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
           setIsHoveringLocal(true);
           if (!hasStarted) {
             onHoverChange?.(true);
-            if (lensRef.current) gsap.to(lensRef.current, { width: '30vw', height: '30vw', rotation: 0, duration: 0.8, ease: 'power3.out' });
+            if (lensRef.current) gsap.to(lensRef.current, { width: '30vw', height: '30vw', rotation: 0, duration: 0.8, ease: 'power3.out', overwrite: true });
           }
         }}
         onMouseLeave={() => {
           setIsHoveringLocal(false);
           if (!hasStarted) {
             onHoverChange?.(false);
-            if (lensRef.current) gsap.to(lensRef.current, { width: 0, height: 0, rotation: 45, duration: 0.8, ease: 'power3.out' });
+            if (lensRef.current) gsap.to(lensRef.current, { width: 0, height: 0, rotation: 45, duration: 0.8, ease: 'power3.out', overwrite: true });
           }
         }}
         onClick={() => {
