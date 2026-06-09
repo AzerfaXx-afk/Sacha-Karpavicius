@@ -526,7 +526,7 @@ export default function Home() {
             </div>
 
             {/* Center: Interactive Portrait Card */}
-            <div className="md:col-span-4 flex justify-center py-6 md:py-0 md:translate-y-6" data-text-reveal>
+            <div className="md:col-span-4 flex justify-center py-6 md:py-0 md:translate-y-10" data-text-reveal>
               <AboutImageCard />
             </div>
 
