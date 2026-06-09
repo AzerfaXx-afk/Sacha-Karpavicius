@@ -526,7 +526,7 @@ export default function Home() {
             </div>
 
             {/* Center: Interactive Portrait Card */}
-            <div className="md:col-span-4 flex justify-center py-6 md:py-0 md:mt-[40px]" data-text-reveal>
+            <div className="md:col-span-4 flex justify-center py-6 md:py-0 md:mt-[20px]" data-text-reveal>
               <AboutImageCard />
             </div>
 
@@ -559,7 +559,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ CONTACT / FOOTER ═══════════════════ */}
-      <footer ref={contactRef} id="contact" className="relative bg-[#0a0a0a] pt-16 md:pt-24 pb-24 md:pb-36 overflow-hidden">
+      <footer ref={contactRef} id="contact" className="relative bg-[#0a0a0a] pt-16 md:pt-24 pb-[45vh] overflow-hidden">
         <div className="px-5 md:px-16">
           {/* Separator line */}
           <div data-line-reveal className="w-full h-[1px] bg-white/10 origin-left mb-16 md:mb-24" />
