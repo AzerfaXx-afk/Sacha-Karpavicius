@@ -34,7 +34,7 @@ const AnimatedLink = ({
 
   return (
     <div 
-      className={`group flex items-start cursor-pointer transition-all duration-[1200ms] ease-[cubic-bezier(0.76,0,0.24,1)] ${
+      className={`group flex items-start cursor-pointer transition-all duration-[1200ms] ease-[cubic-bezier(0.25,1,0.5,1)] ${
         isOpen ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0'
       }`}
       style={{ 
@@ -46,7 +46,7 @@ const AnimatedLink = ({
     >
       {/* Sliding Number prefix */}
       <div className="relative overflow-hidden font-mono text-[2.5vw] md:text-[1vw] text-white/20 mr-4 md:mr-8 self-start mt-2 md:mt-4 h-[1.2em] pointer-events-none">
-        <div className={`transition-transform duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] flex flex-col ${isDimmed ? '' : 'group-hover:-translate-y-1/2'}`}>
+        <div className={`transition-transform duration-[600ms] ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${isDimmed ? '' : 'group-hover:-translate-y-1/2'}`}>
           <span className="h-[1.2em] flex items-center">{number}</span>
           <span className="h-[1.2em] flex items-center text-white">{number}</span>
         </div>
@@ -55,9 +55,9 @@ const AnimatedLink = ({
       <a 
         href={href} 
         onClick={(e) => e.preventDefault()} // Handled by parent container click
-        className={`relative flex whitespace-nowrap overflow-hidden leading-none text-[7vw] md:text-[4.5vw] font-syne font-bold uppercase tracking-tight transition-all duration-[800ms] ease-[cubic-bezier(0.76,0,0.24,1)] pointer-events-none ${
+        className={`relative flex whitespace-nowrap overflow-hidden leading-none text-[7vw] md:text-[4.5vw] font-syne font-bold uppercase tracking-tight transition-all duration-[750ms] ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none ${
           isDimmed 
-            ? 'opacity-10 blur-[1px] scale-95' 
+            ? 'opacity-15 blur-[1px] scale-[0.98]' 
             : 'text-white scale-100 group-hover:translate-x-4'
         }`}
       >
@@ -65,7 +65,7 @@ const AnimatedLink = ({
           {text.split("").map((c, i) => (
             <span 
               key={i} 
-              className="inline-block transition-transform duration-[700ms] ease-[cubic-bezier(0.76,0,0.24,1)] group-hover:-translate-y-[120%] group-hover:skew-y-[6deg]"
+              className="inline-block transition-transform duration-[750ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:-translate-y-[120%] group-hover:skew-y-[6deg]"
               style={{ transitionDelay: `${i * 0.015}s` }}
             >
               {c === " " ? "\u00A0" : c}
@@ -76,7 +76,7 @@ const AnimatedLink = ({
           {text.split("").map((c, i) => (
             <span 
               key={i} 
-              className="inline-block translate-y-[120%] skew-y-[6deg] transition-transform duration-[700ms] ease-[cubic-bezier(0.76,0,0.24,1)] group-hover:translate-y-0 group-hover:skew-y-0"
+              className="inline-block translate-y-[120%] skew-y-[6deg] transition-transform duration-[750ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:translate-y-0 group-hover:skew-y-0"
               style={{ transitionDelay: `${i * 0.015}s` }}
             >
               {c === " " ? "\u00A0" : c}
@@ -95,6 +95,7 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
   const navRef = useRef<HTMLElement>(null);
   const timeRef = useRef<HTMLDivElement>(null);
   const floatingRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const updateTime = () => {
@@ -136,6 +137,36 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  const handleMouseEnter = (index: number) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setHoveredIndex(index);
+  };
+
+  const handleMouseLeave = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setHoveredIndex(null);
+    }, 120); // Bridge short gaps between menu links smoothly
+  };
+
+  const handleLinkClick = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setHoveredIndex(null);
+    setIsOpen(false);
+  };
+
   const handleOverlayMouseMove = (e: React.MouseEvent) => {
     if (!floatingRef.current) return;
     const x = e.clientX;
@@ -166,8 +197,7 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
           <button 
             onClick={() => {
               if (isOpen) {
-                setIsOpen(false);
-                setHoveredIndex(null);
+                handleLinkClick();
               } else {
                 setIsOpen(true);
               }
@@ -182,8 +212,7 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
           <div 
             className="absolute left-1/2 -translate-x-1/2 top-4 md:top-4 w-14 h-14 md:w-20 md:h-20 cursor-pointer group"
             onClick={() => {
-              setIsOpen(false);
-              setHoveredIndex(null);
+              handleLinkClick();
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           >
@@ -212,10 +241,10 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
             text="Selected Works" 
             href="#works" 
             number="01" 
-            onClick={() => setIsOpen(false)} 
+            onClick={handleLinkClick} 
             isDimmed={hoveredIndex !== null && hoveredIndex !== 0}
-            onMouseEnter={() => setHoveredIndex(0)}
-            onMouseLeave={() => setHoveredIndex(null)}
+            onMouseEnter={() => handleMouseEnter(0)}
+            onMouseLeave={handleMouseLeave}
             isOpen={isOpen}
             index={0}
           />
@@ -223,10 +252,10 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
             text="About & Vision" 
             href="#about" 
             number="02" 
-            onClick={() => setIsOpen(false)} 
+            onClick={handleLinkClick} 
             isDimmed={hoveredIndex !== null && hoveredIndex !== 1}
-            onMouseEnter={() => setHoveredIndex(1)}
-            onMouseLeave={() => setHoveredIndex(null)}
+            onMouseEnter={() => handleMouseEnter(1)}
+            onMouseLeave={handleMouseLeave}
             isOpen={isOpen}
             index={1}
           />
@@ -234,10 +263,10 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
             text="Connect" 
             href="#contact" 
             number="03" 
-            onClick={() => setIsOpen(false)} 
+            onClick={handleLinkClick} 
             isDimmed={hoveredIndex !== null && hoveredIndex !== 2}
-            onMouseEnter={() => setHoveredIndex(2)}
-            onMouseLeave={() => setHoveredIndex(null)}
+            onMouseEnter={() => handleMouseEnter(2)}
+            onMouseLeave={handleMouseLeave}
             isOpen={isOpen}
             index={2}
           />
@@ -249,7 +278,7 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
           className="fixed top-0 left-0 pointer-events-none z-[95] will-change-transform hidden md:block"
         >
           <div 
-            className="relative w-[260px] h-[340px] rounded-lg overflow-hidden border border-white/10 shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] origin-center"
+            className="relative w-[260px] h-[340px] rounded-lg overflow-hidden border border-white/10 shadow-2xl transition-all duration-[600ms] ease-[cubic-bezier(0.25,1,0.5,1)] origin-center"
             style={{
               opacity: hoveredIndex !== null ? 1 : 0,
               transform: `translate(-50%, -50%) scale(${hoveredIndex !== null ? 1 : 0.75}) rotate(${hoveredIndex !== null ? 0 : -5}deg)`,
@@ -258,13 +287,13 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
             <div className="relative w-full h-full bg-[#111]">
               {/* Image 01: Selected Works */}
               <div 
-                className="absolute inset-0 transition-opacity duration-500 overflow-hidden"
+                className="absolute inset-0 transition-opacity duration-700 ease-in-out overflow-hidden"
                 style={{ opacity: hoveredIndex === 0 ? 1 : 0 }}
               >
                 <img 
                   src="/2.jpg" 
                   alt="Selected Works Preview" 
-                  className={`w-full h-full object-cover transition-transform duration-700 ease-out ${
+                  className={`w-full h-full object-cover transition-transform duration-1000 ease-out ${
                     hoveredIndex === 0 ? "scale-100" : "scale-110"
                   }`} 
                 />
@@ -272,13 +301,13 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
               
               {/* Image 02: About */}
               <div 
-                className="absolute inset-0 transition-opacity duration-500 overflow-hidden"
+                className="absolute inset-0 transition-opacity duration-700 ease-in-out overflow-hidden"
                 style={{ opacity: hoveredIndex === 1 ? 1 : 0 }}
               >
                 <img 
                   src="/5.jpg" 
                   alt="About & Vision Preview" 
-                  className={`w-full h-full object-cover transition-transform duration-700 ease-out ${
+                  className={`w-full h-full object-cover transition-transform duration-1000 ease-out ${
                     hoveredIndex === 1 ? "scale-100" : "scale-110"
                   }`} 
                 />
@@ -286,13 +315,13 @@ export default function Navbar({ showUI = true, clickable = true }: { showUI?: b
               
               {/* Image 03: Connect */}
               <div 
-                className="absolute inset-0 transition-opacity duration-500 overflow-hidden"
+                className="absolute inset-0 transition-opacity duration-700 ease-in-out overflow-hidden"
                 style={{ opacity: hoveredIndex === 2 ? 1 : 0 }}
               >
                 <img 
                   src="/6.jpg" 
                   alt="Connect Preview" 
-                  className={`w-full h-full object-cover transition-transform duration-700 ease-out ${
+                  className={`w-full h-full object-cover transition-transform duration-1000 ease-out ${
                     hoveredIndex === 2 ? "scale-100" : "scale-110"
                   }`} 
                 />
