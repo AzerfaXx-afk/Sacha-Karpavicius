@@ -14,9 +14,12 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SACHA KARPAVICIUS",
+  title: "SACHA KARPAVICIUS | Visual Storyteller",
   description:
     "High-end portfolio of Sacha Karpavicius — Visual Storyteller, Fashion Photographer & Art Director.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

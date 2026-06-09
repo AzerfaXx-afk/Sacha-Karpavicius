@@ -23,9 +23,16 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [siteStarted, setSiteStarted] = useState(false);
   const [isHoveringName, setIsHoveringName] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    setIsMounted(true);
+    if (sessionStorage.getItem("siteEntered") === "true") {
+      setLoading(false);
+      setSiteStarted(true);
+    }
+    
     audioRef.current = new Audio("/musique.mp3");
     audioRef.current.loop = true;
     audioRef.current.volume = 0;
@@ -40,6 +47,7 @@ export default function Home() {
 
   const handleStartSite = useCallback(() => {
     setSiteStarted(true);
+    sessionStorage.setItem("siteEntered", "true");
     if (audioRef.current) {
       audioRef.current.play().catch(() => { /* ignore 404 audio error */ });
       setIsPlaying(true);
@@ -215,6 +223,8 @@ export default function Home() {
     });
     return () => ctx.revert();
   }, []);
+
+  if (!isMounted) return <div className="bg-[#0a0a0a] min-h-screen" />;
 
   return (
     <>

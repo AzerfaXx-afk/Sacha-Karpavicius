@@ -16,6 +16,8 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
   const letterKRef = useRef<HTMLHeadingElement>(null);
   const nameRef = useRef<HTMLDivElement>(null);
   const [hasStarted, setHasStarted] = useState(false);
+  const [isHoveringLocal, setIsHoveringLocal] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const container = containerRef.current;
@@ -51,6 +53,7 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
         const rect = nameContainer.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
+        setMousePos({ x: e.clientX, y: e.clientY });
         nameContainer.style.setProperty("--mouse-x", `${x}px`);
         nameContainer.style.setProperty("--mouse-y", `${y}px`);
       }
@@ -61,7 +64,7 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
     gsap.set(lens, { width: 0, height: 0, rotation: 45, xPercent: -50, yPercent: -50 });
 
     if (!hasStarted) {
-      gsap.set([letterS, letterK], { yPercent: 120, opacity: 0 });
+      gsap.set([letterS, letterK], { opacity: 0 });
       gsap.set(nameContainer.querySelectorAll(".name-char"), { opacity: 1, y: 0 });
       return;
     }
@@ -143,12 +146,14 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
       <div
         ref={nameRef}
         onMouseEnter={() => {
+          setIsHoveringLocal(true);
           if (!hasStarted) {
             onHoverChange?.(true);
             if (lensRef.current) gsap.to(lensRef.current, { width: '30vw', height: '30vw', rotation: 0, duration: 0.8, ease: 'power3.out' });
           }
         }}
         onMouseLeave={() => {
+          setIsHoveringLocal(false);
           if (!hasStarted) {
             onHoverChange?.(false);
             if (lensRef.current) gsap.to(lensRef.current, { width: 0, height: 0, rotation: 45, duration: 0.8, ease: 'power3.out' });
@@ -156,6 +161,13 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
         }}
         onClick={() => {
           if (!hasStarted) {
+            // Letters slide up and out
+            if (letterSRef.current) {
+              gsap.fromTo(letterSRef.current, { opacity: 0, y: "100vh" }, { opacity: 1, y: "-100vh", duration: 1.5, ease: "power3.inOut" });
+            }
+            if (letterKRef.current) {
+              gsap.fromTo(letterKRef.current, { opacity: 0, y: "100vh" }, { opacity: 1, y: "-100vh", duration: 1.5, ease: "power3.inOut", delay: 0.1 });
+            }
             setHasStarted(true);
             onStart();
           }
@@ -166,6 +178,14 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
           className="relative flex font-inter text-sm md:text-xl tracking-[0.4em] uppercase whitespace-nowrap transition-transform duration-700 group-hover:scale-105"
           style={{ color: "rgba(255, 255, 255, 0.15)" }}
         >
+          {/* Spotlight Effect - only active when hovering */}
+          <div
+            className="pointer-events-none absolute inset-0 mix-blend-soft-light transition-opacity duration-1000"
+            style={{
+              background: `radial-gradient(circle 800px at ${mousePos.x}px ${mousePos.y}px, rgba(255,255,255,0.1), transparent 40%)`,
+              opacity: hasStarted ? 0 : (isHoveringLocal ? 1 : 0)
+            }}
+          />
           {"Sacha Karpavicius".split("").map((char, i) => (
             <span key={`base-${i}`} className="name-char inline-block">
               {char === " " ? "\u00A0" : char}
@@ -200,6 +220,7 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
       <h1
         ref={letterSRef}
         className="absolute bottom-[-2vw] left-4 md:left-12 font-syne font-bold text-[30vw] md:text-[25vw] leading-none text-white/90"
+        style={{ opacity: 0 }}
       >
         S
       </h1>
@@ -208,6 +229,7 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
       <h1
         ref={letterKRef}
         className="absolute bottom-[-2vw] right-4 md:right-12 font-syne font-bold text-[30vw] md:text-[25vw] leading-none text-white/90"
+        style={{ opacity: 0 }}
       >
         K
       </h1>
