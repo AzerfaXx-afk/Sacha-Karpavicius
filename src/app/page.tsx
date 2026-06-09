@@ -87,9 +87,13 @@ const AboutImageCard = () => {
 };
 
 /* ──── Interactive List Item ──── */
-const InteractiveListItem = ({ text }: { text: string }) => {
+const InteractiveListItem = ({ text, onMouseEnter, onClick }: { text: string; onMouseEnter?: () => void; onClick?: () => void }) => {
   return (
-    <li className="group flex items-center justify-between py-2.5 border-b border-white/[0.04] transition-colors duration-300 hover:text-white cursor-pointer">
+    <li 
+      onMouseEnter={onMouseEnter}
+      onClick={onClick}
+      className="group flex items-center justify-between py-2.5 border-b border-white/[0.04] transition-colors duration-300 hover:text-white cursor-pointer"
+    >
       <span className="transition-transform duration-300 group-hover:translate-x-2 flex items-center gap-2">
         <span className="w-1 h-1 rounded-full bg-white opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300" />
         {text}
@@ -136,6 +140,81 @@ const RollingText = ({ text, className }: { text: string; className?: string }) 
   );
 };
 
+/* ──── Gapless Web Audio Player ──── */
+class GaplessPlayer {
+  private ctx: AudioContext | null = null;
+  private buffer: AudioBuffer | null = null;
+  private source: AudioBufferSourceNode | null = null;
+  private gainNode: GainNode | null = null;
+  private isPlaying = false;
+  private url: string;
+  private loaded = false;
+
+  constructor(url: string) {
+    this.url = url;
+  }
+
+  async load() {
+    if (typeof window === "undefined") return;
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    
+    try {
+      this.ctx = new AudioContextClass();
+      const response = await fetch(this.url);
+      const arrayBuffer = await response.arrayBuffer();
+      this.buffer = await this.ctx.decodeAudioData(arrayBuffer);
+      this.loaded = true;
+    } catch (e) {
+      console.warn("Failed to load/decode audio:", e);
+    }
+  }
+
+  play(targetVolume = 0.5, fadeDuration = 1.5) {
+    if (!this.loaded || !this.buffer || !this.ctx) return;
+    if (this.isPlaying) return;
+
+    if (this.ctx.state === "suspended") {
+      this.ctx.resume();
+    }
+
+    this.source = this.ctx.createBufferSource();
+    this.source.buffer = this.buffer;
+    this.source.loop = true;
+
+    this.gainNode = this.ctx.createGain();
+    this.gainNode.gain.setValueAtTime(0, this.ctx.currentTime);
+    this.gainNode.gain.linearRampToValueAtTime(targetVolume, this.ctx.currentTime + fadeDuration);
+
+    this.source.connect(this.gainNode);
+    this.gainNode.connect(this.ctx.destination);
+
+    this.source.start(0);
+    this.isPlaying = true;
+  }
+
+  pause(fadeDuration = 1.5) {
+    if (!this.ctx || !this.gainNode || !this.source || !this.isPlaying) return;
+
+    const currentVolume = this.gainNode.gain.value;
+    this.gainNode.gain.setValueAtTime(currentVolume, this.ctx.currentTime);
+    this.gainNode.gain.linearRampToValueAtTime(0, this.ctx.currentTime + fadeDuration);
+
+    const activeSource = this.source;
+    setTimeout(() => {
+      if (!this.isPlaying) {
+        try {
+          activeSource.stop();
+        } catch (e) {
+          // ignore already stopped sources
+        }
+      }
+    }, fadeDuration * 1000);
+
+    this.isPlaying = false;
+  }
+}
+
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -143,7 +222,31 @@ export default function Home() {
   const [isHoveringName, setIsHoveringName] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [lang, setLang] = useState<"fr" | "en">("fr");
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const playerRef = useRef<GaplessPlayer | null>(null);
+  const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
+  const clickAudioRef = useRef<HTMLAudioElement | null>(null);
+  const entranceAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playHoverSfx = useCallback(() => {
+    if (hoverAudioRef.current) {
+      hoverAudioRef.current.currentTime = 0;
+      hoverAudioRef.current.play().catch(() => {});
+    }
+  }, []);
+
+  const playClickSfx = useCallback(() => {
+    if (clickAudioRef.current) {
+      clickAudioRef.current.currentTime = 0;
+      clickAudioRef.current.play().catch(() => {});
+    }
+  }, []);
+
+  const playEntranceSfx = useCallback(() => {
+    if (entranceAudioRef.current) {
+      entranceAudioRef.current.currentTime = 0;
+      entranceAudioRef.current.play().catch(() => {});
+    }
+  }, []);
 
   const handleMagnetMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
     const btn = e.currentTarget;
@@ -206,40 +309,44 @@ export default function Home() {
       }
     }
 
-    audioRef.current = new Audio("/musique.mp3");
-    audioRef.current.loop = true;
-    audioRef.current.volume = 0;
+    // Initialize gapless background music player
+    playerRef.current = new GaplessPlayer("/musique.mp3");
+    playerRef.current.load();
+
+    // Initialize SFX
+    hoverAudioRef.current = new Audio("/hover.mp3");
+    hoverAudioRef.current.volume = 0.08;
+
+    clickAudioRef.current = new Audio("/click.mp3");
+    clickAudioRef.current.volume = 0.15;
+
+    entranceAudioRef.current = new Audio("/entrance.mp3");
+    entranceAudioRef.current.volume = 0.3;
 
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = "";
+      if (playerRef.current) {
+        playerRef.current.pause(0);
       }
     };
   }, []);
 
   const handleStartSite = useCallback(() => {
     setSiteStarted(true);
-    if (audioRef.current) {
-      audioRef.current.play().catch(() => { /* ignore 404 audio error */ });
+    playEntranceSfx();
+    if (playerRef.current) {
+      playerRef.current.play(0.5, 4);
       setIsPlaying(true);
-      gsap.to(audioRef.current, { volume: 0.5, duration: 4 });
     }
-  }, []);
+  }, [playEntranceSfx]);
 
   const toggleAudio = () => {
-    if (!audioRef.current) return;
+    if (!playerRef.current) return;
     if (isPlaying) {
       setIsPlaying(false);
-      gsap.to(audioRef.current, {
-        volume: 0,
-        duration: 1.5,
-        onComplete: () => audioRef.current?.pause()
-      });
+      playerRef.current.pause(1.5);
     } else {
-      audioRef.current.play().catch(e => console.warn("No audio file yet:", e));
       setIsPlaying(true);
-      gsap.to(audioRef.current, { volume: 0.5, duration: 1.5 });
+      playerRef.current.play(0.5, 1.5);
     }
   };
 
@@ -443,7 +550,13 @@ export default function Home() {
       {/* Preloader */}
       {loading && <Preloader onComplete={onPreloaderComplete} onStart={handleStartSite} onHoverChange={setIsHoveringName} lang={lang} />}
 
-      <Navbar showUI={siteStarted || isHoveringName} clickable={siteStarted} lang={lang} />
+      <Navbar 
+        showUI={siteStarted || isHoveringName} 
+        clickable={siteStarted} 
+        lang={lang} 
+        onPlayHoverSfx={playHoverSfx}
+        onPlayClickSfx={playClickSfx}
+      />
 
       <style>{`
         @keyframes sound {
@@ -459,6 +572,7 @@ export default function Home() {
         ref={audioIconRef}
         className={`fixed bottom-6 right-6 md:bottom-10 md:right-12 z-[100] cursor-pointer group mix-blend-difference flex items-center justify-center gap-[4px] h-4 w-8 opacity-0 ${siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}
         onClick={toggleAudio}
+        onMouseEnter={playHoverSfx}
       >
         <div className={`music-bar w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${isPlaying ? 'bg-white h-full animate-[sound_1.2s_ease-in-out_infinite]' : 'bg-white/40 h-[3px] group-hover:h-[6px] group-hover:bg-white'}`} />
         <div className={`music-bar w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${isPlaying ? 'bg-white h-full animate-[sound_0.8s_ease-in-out_infinite_0.2s]' : 'bg-white/40 h-[3px] group-hover:h-[10px] group-hover:bg-white'}`} />
@@ -468,7 +582,12 @@ export default function Home() {
 
       {/* Persistent Get In Touch (Bottom Left) */}
       <div ref={getInTouchRef} className={`fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference opacity-0 ${siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-        <a href="#contact" className="inline-flex items-center gap-2 border border-white/20 px-4 py-2.5 rounded-sm hover:bg-white hover:text-black transition-all duration-300 font-inter text-[11px] md:text-[12px] text-white cursor-pointer group">
+        <a 
+          href="#contact" 
+          onMouseEnter={playHoverSfx}
+          onClick={playClickSfx}
+          className="inline-flex items-center gap-2 border border-white/20 px-4 py-2.5 rounded-sm hover:bg-white hover:text-black transition-all duration-300 font-inter text-[11px] md:text-[12px] text-white cursor-pointer group"
+        >
           {lang === "fr" ? "Contactez-moi" : "Get in touch"}
           <div className="relative overflow-hidden w-3 h-3 flex items-center justify-center">
             <span className="absolute transform -translate-x-3 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 ease-out font-mono text-[11px]">
@@ -639,10 +758,10 @@ export default function Home() {
                   Services
                 </h3>
                 <ul className="font-inter text-[13px] md:text-[14px] text-white/70">
-                  <InteractiveListItem text={lang === "fr" ? "Photographie" : "Photography"} />
-                  <InteractiveListItem text={lang === "fr" ? "Direction Artistique" : "Art Direction"} />
-                  <InteractiveListItem text={lang === "fr" ? "Éditorial de Mode" : "Fashion Editorial"} />
-                  <InteractiveListItem text={lang === "fr" ? "Film & Vidéo" : "Film & Motion"} />
+                  <InteractiveListItem text={lang === "fr" ? "Photographie" : "Photography"} onMouseEnter={playHoverSfx} onClick={playClickSfx} />
+                  <InteractiveListItem text={lang === "fr" ? "Direction Artistique" : "Art Direction"} onMouseEnter={playHoverSfx} onClick={playClickSfx} />
+                  <InteractiveListItem text={lang === "fr" ? "Éditorial de Mode" : "Fashion Editorial"} onMouseEnter={playHoverSfx} onClick={playClickSfx} />
+                  <InteractiveListItem text={lang === "fr" ? "Film & Vidéo" : "Film & Motion"} onMouseEnter={playHoverSfx} onClick={playClickSfx} />
                 </ul>
               </div>
               <div>
@@ -650,9 +769,9 @@ export default function Home() {
                   Clients
                 </h3>
                 <ul className="font-inter text-[13px] md:text-[14px] text-white/70">
-                  <InteractiveListItem text="Vogue — L'Officiel — Numéro" />
-                  <InteractiveListItem text="Dior — Chanel — Saint Laurent" />
-                  <InteractiveListItem text={lang === "fr" ? "Éditoriaux Indépendants" : "Independent Editorials"} />
+                  <InteractiveListItem text="Vogue — L'Officiel — Numéro" onMouseEnter={playHoverSfx} onClick={playClickSfx} />
+                  <InteractiveListItem text="Dior — Chanel — Saint Laurent" onMouseEnter={playHoverSfx} onClick={playClickSfx} />
+                  <InteractiveListItem text={lang === "fr" ? "Éditoriaux Indépendants" : "Independent Editorials"} onMouseEnter={playHoverSfx} onClick={playClickSfx} />
                 </ul>
               </div>
             </div>
@@ -690,6 +809,8 @@ export default function Home() {
                   rel="noopener noreferrer"
                   onMouseMove={handleMagnetMove}
                   onMouseLeave={handleMagnetLeave}
+                  onMouseEnter={playHoverSfx}
+                  onClick={playClickSfx}
                   className="group relative inline-flex items-center justify-center overflow-hidden px-10 py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-all duration-500 font-syne font-semibold text-[18px] md:text-[22px] text-white cursor-pointer mt-2 w-fit mx-auto hover:shadow-[0_0_30px_rgba(255,255,255,0.06)]"
                 >
                   <span className="absolute w-[120%] aspect-square bg-white rounded-full scale-0 group-hover:scale-[2.2] transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" />

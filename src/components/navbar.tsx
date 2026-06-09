@@ -98,7 +98,19 @@ const AnimatedLink = ({
   );
 };
 
-export default function Navbar({ showUI = true, clickable = true, lang = "fr" }: { showUI?: boolean, clickable?: boolean, lang?: "fr" | "en" }) {
+export default function Navbar({ 
+  showUI = true, 
+  clickable = true, 
+  lang = "fr",
+  onPlayHoverSfx,
+  onPlayClickSfx
+}: { 
+  showUI?: boolean; 
+  clickable?: boolean; 
+  lang?: "fr" | "en";
+  onPlayHoverSfx?: () => void;
+  onPlayClickSfx?: () => void;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [time, setTime] = useState("");
@@ -206,6 +218,7 @@ export default function Navbar({ showUI = true, clickable = true, lang = "fr" }:
           {/* Top Left: Hamburger Menu */}
           <button 
             onClick={() => {
+              onPlayClickSfx?.();
               if (isOpen) {
                 handleLinkClick();
               } else {
@@ -222,6 +235,7 @@ export default function Navbar({ showUI = true, clickable = true, lang = "fr" }:
           <div 
             className="absolute left-1/2 -translate-x-1/2 top-4 md:top-4 w-14 h-14 md:w-20 md:h-20 cursor-pointer group"
             onClick={() => {
+              onPlayClickSfx?.();
               handleLinkClick();
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
@@ -244,9 +258,15 @@ export default function Navbar({ showUI = true, clickable = true, lang = "fr" }:
             text={lang === "fr" ? "Projets" : "Selected Works"} 
             href="#works" 
             number="01" 
-            onClick={handleLinkClick} 
+            onClick={() => {
+              onPlayClickSfx?.();
+              handleLinkClick();
+            }} 
             isDimmed={hoveredIndex !== null && hoveredIndex !== 0}
-            onMouseEnter={() => handleMouseEnter(0)}
+            onMouseEnter={() => {
+              onPlayHoverSfx?.();
+              handleMouseEnter(0);
+            }}
             onMouseLeave={handleMouseLeave}
             isOpen={isOpen}
             index={0}
@@ -255,9 +275,15 @@ export default function Navbar({ showUI = true, clickable = true, lang = "fr" }:
             text={lang === "fr" ? "À Propos & Vision" : "About & Vision"} 
             href="#about" 
             number="02" 
-            onClick={handleLinkClick} 
+            onClick={() => {
+              onPlayClickSfx?.();
+              handleLinkClick();
+            }} 
             isDimmed={hoveredIndex !== null && hoveredIndex !== 1}
-            onMouseEnter={() => handleMouseEnter(1)}
+            onMouseEnter={() => {
+              onPlayHoverSfx?.();
+              handleMouseEnter(1);
+            }}
             onMouseLeave={handleMouseLeave}
             isOpen={isOpen}
             index={1}
@@ -266,9 +292,15 @@ export default function Navbar({ showUI = true, clickable = true, lang = "fr" }:
             text={lang === "fr" ? "Contact" : "Connect"} 
             href="#contact" 
             number="03" 
-            onClick={handleLinkClick} 
+            onClick={() => {
+              onPlayClickSfx?.();
+              handleLinkClick();
+            }} 
             isDimmed={hoveredIndex !== null && hoveredIndex !== 2}
-            onMouseEnter={() => handleMouseEnter(2)}
+            onMouseEnter={() => {
+              onPlayHoverSfx?.();
+              handleMouseEnter(2);
+            }}
             onMouseLeave={handleMouseLeave}
             isOpen={isOpen}
             index={2}
