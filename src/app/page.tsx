@@ -199,33 +199,42 @@ export default function Home() {
   /* Mouse Parallax (always active) */
   useEffect(() => {
     const ctx = gsap.context(() => {
-      const xTo = gsap.quickTo(heroImgRef.current, "x", { duration: 1.5, ease: "power2.out" });
-      const yTo = gsap.quickTo(heroImgRef.current, "y", { duration: 1.5, ease: "power2.out" });
-      const rotXTo = gsap.quickTo(heroImgRef.current, "rotationX", { duration: 1.5, ease: "power2.out" });
-      const rotYTo = gsap.quickTo(heroImgRef.current, "rotationY", { duration: 1.5, ease: "power2.out" });
-
-      // Desktop: Smooth, subtle mouse tracking
+      // Desktop: Smooth, subtle mouse tracking using gsap.to directly to avoid StrictMode issues
       const handleMouseMove = (e: MouseEvent) => {
         const { clientX, clientY } = e;
         const xPos = (clientX / window.innerWidth - 0.5) * 250;
         const yPos = (clientY / window.innerHeight - 0.5) * 250;
 
-        xTo(xPos);
-        yTo(yPos);
-        rotYTo(xPos * 0.05);
-        rotXTo(-yPos * 0.05);
+        if (heroImgRef.current) {
+          gsap.to(heroImgRef.current, {
+            x: xPos,
+            y: yPos,
+            rotationY: xPos * 0.05,
+            rotationX: -yPos * 0.05,
+            duration: 1.5,
+            ease: "power2.out",
+            overwrite: "auto"
+          });
+        }
       };
 
       // Mobile: Gyroscope / Tilt tracking
       const handleOrientation = (e: DeviceOrientationEvent) => {
         if (e.gamma === null || e.beta === null) return;
-        const xPos = (e.gamma / 90) * 60; // gamma: left-to-right tilt
-        const yPos = (e.beta / 90) * 60;  // beta: front-to-back tilt
+        const xPos = (e.gamma / 90) * 100; // gamma: left-to-right tilt
+        const yPos = (e.beta / 90) * 100;  // beta: front-to-back tilt
 
-        xTo(xPos);
-        yTo(yPos);
-        rotYTo(xPos * 0.1);
-        rotXTo(-yPos * 0.1);
+        if (heroImgRef.current) {
+          gsap.to(heroImgRef.current, {
+            x: xPos,
+            y: yPos,
+            rotationY: xPos * 0.1,
+            rotationX: -yPos * 0.1,
+            duration: 1.5,
+            ease: "power2.out",
+            overwrite: "auto"
+          });
+        }
       };
 
       window.addEventListener("mousemove", handleMouseMove);

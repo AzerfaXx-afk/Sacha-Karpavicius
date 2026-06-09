@@ -146,9 +146,9 @@ export default function Preloader({ onComplete, onStart, onHoverChange }: Preloa
       {/* Center Animated Name with Spotlight */}
       <div
         ref={nameRef}
-        onMouseEnter={() => {
-          setIsHoveringLocal(true);
-          if (!hasStarted) {
+        onMouseMove={() => {
+          if (!isHoveringLocal && !hasStarted) {
+            setIsHoveringLocal(true);
             onHoverChange?.(true);
             if (lensRef.current) gsap.to(lensRef.current, { width: '30vw', height: '30vw', rotation: 0, duration: 0.8, ease: 'power3.out', overwrite: true });
           }
