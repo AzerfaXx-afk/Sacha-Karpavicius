@@ -196,20 +196,16 @@ class GaplessPlayer {
   pause(fadeDuration = 1.5) {
     if (!this.ctx || !this.gainNode || !this.source || !this.isPlaying) return;
 
-    const currentVolume = this.gainNode.gain.value;
-    this.gainNode.gain.setValueAtTime(currentVolume, this.ctx.currentTime);
+    // Cancel any upcoming changes and smoothly ramp down to 0
+    this.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
+    this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, this.ctx.currentTime);
     this.gainNode.gain.linearRampToValueAtTime(0, this.ctx.currentTime + fadeDuration);
 
-    const activeSource = this.source;
-    setTimeout(() => {
-      if (!this.isPlaying) {
-        try {
-          activeSource.stop();
-        } catch (e) {
-          // ignore already stopped sources
-        }
-      }
-    }, fadeDuration * 1000);
+    try {
+      this.source.stop(this.ctx.currentTime + fadeDuration);
+    } catch (e) {
+      // ignore errors if source was already stopped or not started
+    }
 
     this.isPlaying = false;
   }
