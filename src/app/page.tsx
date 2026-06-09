@@ -88,12 +88,15 @@ export default function Home() {
     setLoading(false);
   }, []);
 
-  /* UI Interfaces animation */
+  /* ── UI animations (audio, get in touch) ── */
   useEffect(() => {
+    const uiElements = [getInTouchRef.current, audioIconRef.current].filter(Boolean);
+    if (uiElements.length === 0) return;
+
     if (siteStarted || isHoveringName) {
-      gsap.to([getInTouchRef.current, audioIconRef.current], { y: 0, opacity: 1, duration: 1.0, stagger: 0.1 });
+      gsap.to(uiElements, { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" });
     } else {
-      gsap.to([getInTouchRef.current, audioIconRef.current], { y: 20, opacity: 0, duration: 0.8 });
+      gsap.to(uiElements, { y: 20, opacity: 0, duration: 0.5, ease: "power3.in" });
     }
   }, [siteStarted, isHoveringName]);
 
