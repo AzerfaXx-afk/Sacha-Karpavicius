@@ -170,12 +170,20 @@ class GaplessPlayer {
     }
   }
 
+  /** Resume AudioContext – must be called inside a user-gesture handler */
+  async resume() {
+    if (this.ctx && this.ctx.state === "suspended") {
+      try { await this.ctx.resume(); } catch (e) { console.warn("AudioContext resume failed:", e); }
+    }
+  }
+
   play(targetVolume = 0.5, fadeDuration = 1.5) {
     if (!this.loaded || !this.buffer || !this.ctx) return;
     if (this.isPlaying) return;
 
+    // Always attempt resume (no-op if already running)
     if (this.ctx.state === "suspended") {
-      this.ctx.resume();
+      this.ctx.resume().catch(() => {});
     }
 
     this.source = this.ctx.createBufferSource();
@@ -196,7 +204,6 @@ class GaplessPlayer {
   pause(fadeDuration = 1.5) {
     if (!this.ctx || !this.gainNode || !this.source || !this.isPlaying) return;
 
-    // Cancel any upcoming changes and smoothly ramp down to 0
     this.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
     this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, this.ctx.currentTime);
     this.gainNode.gain.linearRampToValueAtTime(0, this.ctx.currentTime + fadeDuration);
@@ -211,6 +218,17 @@ class GaplessPlayer {
   }
 }
 
+/** Helper: warm up an HTMLAudioElement inside a user-gesture so the browser
+ *  marks it as "user-activated" and allows future programmatic plays. */
+function warmUpAudio(el: HTMLAudioElement | null) {
+  if (!el) return;
+  const prevVol = el.volume;
+  el.volume = 0;
+  el.play()
+    .then(() => { el.pause(); el.currentTime = 0; el.volume = prevVol; })
+    .catch(() => { el.volume = prevVol; });
+}
+
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -222,6 +240,23 @@ export default function Home() {
   const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
   const clickAudioRef = useRef<HTMLAudioElement | null>(null);
   const entranceAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUnlockedRef = useRef(false);
+
+  /** Unlock all audio nodes – safe to call multiple times, only acts once */
+  const unlockAllAudio = useCallback(() => {
+    if (audioUnlockedRef.current) return;
+    audioUnlockedRef.current = true;
+
+    // Resume Web Audio API context
+    if (playerRef.current) {
+      playerRef.current.resume();
+    }
+
+    // Warm up all HTML5 Audio elements
+    warmUpAudio(hoverAudioRef.current);
+    warmUpAudio(clickAudioRef.current);
+    warmUpAudio(entranceAudioRef.current);
+  }, []);
 
   const playHoverSfx = useCallback(() => {
     if (hoverAudioRef.current) {
@@ -312,43 +347,20 @@ export default function Home() {
     // Initialize SFX
     hoverAudioRef.current = new Audio("/hover.mp3");
     hoverAudioRef.current.volume = 0.08;
+    hoverAudioRef.current.preload = "auto";
 
     clickAudioRef.current = new Audio("/click.mp3");
     clickAudioRef.current.volume = 0.15;
+    clickAudioRef.current.preload = "auto";
 
     entranceAudioRef.current = new Audio("/entrance.mp3");
     entranceAudioRef.current.volume = 0.3;
-
-    // Browser audio policy unlock helper on first gesture
-    const unlockAudio = () => {
-      if (playerRef.current) {
-        const ctx = (playerRef.current as any).ctx;
-        if (ctx && ctx.state === "suspended") {
-          ctx.resume().catch((err: any) => console.warn("AudioContext resume failed:", err));
-        }
-      }
-      
-      // Warm up HTML5 Audio nodes by playing & pausing immediately
-      if (hoverAudioRef.current) hoverAudioRef.current.play().then(() => hoverAudioRef.current?.pause()).catch(() => {});
-      if (clickAudioRef.current) clickAudioRef.current.play().then(() => clickAudioRef.current?.pause()).catch(() => {});
-      if (entranceAudioRef.current) entranceAudioRef.current.play().then(() => entranceAudioRef.current?.pause()).catch(() => {});
-
-      window.removeEventListener("click", unlockAudio);
-      window.removeEventListener("touchstart", unlockAudio);
-      window.removeEventListener("pointerdown", unlockAudio);
-    };
-
-    window.addEventListener("click", unlockAudio, { passive: true });
-    window.addEventListener("touchstart", unlockAudio, { passive: true });
-    window.addEventListener("pointerdown", unlockAudio, { passive: true });
+    entranceAudioRef.current.preload = "auto";
 
     return () => {
       if (playerRef.current) {
         playerRef.current.pause(0);
       }
-      window.removeEventListener("click", unlockAudio);
-      window.removeEventListener("touchstart", unlockAudio);
-      window.removeEventListener("pointerdown", unlockAudio);
     };
   }, []);
 
@@ -360,13 +372,20 @@ export default function Home() {
   }, [isHoveringName, playHoverSfx]);
 
   const handleStartSite = useCallback(() => {
+    // ★ This runs inside a user click – the ONLY reliable place to unlock audio
+    unlockAllAudio();
+
     setSiteStarted(true);
-    playEntranceSfx();
-    if (playerRef.current) {
-      playerRef.current.play(0.5, 4);
-      setIsPlaying(true);
-    }
-  }, [playEntranceSfx]);
+
+    // Small delay so the browser registers the gesture before we play
+    setTimeout(() => {
+      playEntranceSfx();
+      if (playerRef.current) {
+        playerRef.current.play(0.5, 4);
+        setIsPlaying(true);
+      }
+    }, 50);
+  }, [playEntranceSfx, unlockAllAudio]);
 
   const toggleAudio = () => {
     if (!playerRef.current) return;
