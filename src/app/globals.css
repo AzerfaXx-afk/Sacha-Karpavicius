@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  --font-syne: var(--font-syne);
+  --font-inter: var(--font-inter);
+}
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #f0f0f0;
+  --accent: #dadada;
+}
+
+html {
+  overscroll-behavior-y: none;
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---- Scrollbar hide ---- */
+::-webkit-scrollbar { display: none; }
+* { scrollbar-width: none; -ms-overflow-style: none; }
+
+/* ---- Selection ---- */
+::selection {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* ---- Smooth resize transitions ---- */
+h1, h2, h3, h4, h5, h6, p, span, a {
+  transition-property: font-size;
+  transition-duration: 0.3s;
+  transition-timing-function: cubic-bezier(.77, 0, .18, 1);
+}
+
+/* ---- Scroll indicator keyframe ---- */
+@keyframes scrollLine {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
+}
+.animate-scroll-line {
+  animation: scrollLine 2s cubic-bezier(0.76, 0, 0.24, 1) infinite;
+}
+
+/* ---- Shimmer (preloader) ---- */
+@keyframes shimmer {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+.animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
