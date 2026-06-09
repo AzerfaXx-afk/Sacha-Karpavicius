@@ -18,6 +18,89 @@ const projects = [
   { src: "/6.jpg", title: "NOCTURNE", category: "Film" },
 ];
 
+/* ──── About Image Card with 3D Tilt Glare Effect ──── */
+const AboutImageCard = () => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current || !imgRef.current) return;
+    const { left, top, width, height } = cardRef.current.getBoundingClientRect();
+    const x = (e.clientX - left) / width - 0.5;
+    const y = (e.clientY - top) / height - 0.5;
+
+    gsap.to(cardRef.current, {
+      rotateY: x * 20,
+      rotateX: -y * 20,
+      transformPerspective: 1000,
+      duration: 0.6,
+      ease: "power2.out",
+      overwrite: "auto",
+    });
+
+    gsap.to(imgRef.current, {
+      x: -x * 12,
+      y: -y * 12,
+      scale: 1.08,
+      duration: 0.6,
+      ease: "power2.out",
+      overwrite: "auto",
+    });
+  };
+
+  const handleMouseLeave = () => {
+    if (!cardRef.current || !imgRef.current) return;
+    gsap.to(cardRef.current, {
+      rotateY: 0,
+      rotateX: 0,
+      duration: 0.8,
+      ease: "power3.out",
+      overwrite: "auto",
+    });
+    gsap.to(imgRef.current, {
+      x: 0,
+      y: 0,
+      scale: 1.0,
+      duration: 0.8,
+      ease: "power3.out",
+      overwrite: "auto",
+    });
+  };
+
+  return (
+    <div 
+      ref={cardRef}
+      className="relative w-full max-w-[260px] aspect-[3/4] rounded-lg overflow-hidden border border-white/10 shadow-2xl cursor-pointer group will-change-transform"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      data-about-img
+    >
+      <img 
+        ref={imgRef}
+        src="/1.jpg" 
+        alt="Sacha Karpavicius Portrait" 
+        className="w-full h-full object-cover transition-transform duration-700 ease-out"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+    </div>
+  );
+};
+
+/* ──── Interactive List Item ──── */
+const InteractiveListItem = ({ text }: { text: string }) => {
+  return (
+    <li className="group flex items-center justify-between py-2.5 border-b border-white/[0.04] transition-colors duration-300 hover:text-white cursor-pointer">
+      <span className="transition-transform duration-300 group-hover:translate-x-2 flex items-center gap-2">
+        <span className="w-1 h-1 rounded-full bg-white opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300" />
+        {text}
+      </span>
+      <span className="font-mono text-[10px] text-white/30 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+        →
+      </span>
+    </li>
+  );
+};
+
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -131,6 +214,18 @@ export default function Home() {
           start: "top top",
           end: "bottom top",
           scrub: 1,
+        },
+      });
+
+      /* ── About image parallax ── */
+      gsap.to("[data-about-img]", {
+        yPercent: -12,
+        ease: "none",
+        scrollTrigger: {
+          trigger: aboutRef.current,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: true,
         },
       });
 
@@ -393,7 +488,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ ABOUT SECTION ═══════════════════ */}
-      <section ref={aboutRef} id="about" className="relative bg-[#0a0a0a] py-32 md:py-48">
+      <section ref={aboutRef} id="about" className="relative bg-[#0a0a0a] py-32 md:py-48 overflow-hidden">
         <div className="px-5 md:px-16">
           <div data-text-reveal className="flex items-center gap-6 mb-16 md:mb-24">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
@@ -402,9 +497,10 @@ export default function Home() {
             <div data-line-reveal className="flex-1 h-[1px] bg-white/10 origin-left" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8">
-            <div className="md:col-span-5" data-text-reveal>
-              <h2 className="font-syne font-bold text-[10vw] md:text-[4vw] leading-[0.95] tracking-tight text-white uppercase mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 items-center">
+            {/* Left: Text Info */}
+            <div className="md:col-span-5 space-y-8" data-text-reveal>
+              <h2 className="font-syne font-bold text-[10vw] md:text-[4vw] leading-[0.95] tracking-tight text-white uppercase">
                 Sacha<br />Karpavicius
               </h2>
               <p className="font-inter text-[13px] md:text-[14px] leading-relaxed text-white/50 max-w-md">
@@ -416,26 +512,32 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="md:col-start-8 md:col-span-5 space-y-12" data-text-reveal>
+            {/* Center: Interactive Portrait Card */}
+            <div className="md:col-span-3 flex justify-center py-6 md:py-0" data-text-reveal>
+              <AboutImageCard />
+            </div>
+
+            {/* Right: Interactive Lists */}
+            <div className="md:col-start-9 md:col-span-4 space-y-12" data-text-reveal>
               <div>
                 <h3 className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase mb-4">
                   Services
                 </h3>
-                <ul className="font-inter text-[13px] md:text-[14px] text-white/70 space-y-2">
-                  <li>Photography</li>
-                  <li>Art Direction</li>
-                  <li>Fashion Editorial</li>
-                  <li>Film & Motion</li>
+                <ul className="font-inter text-[13px] md:text-[14px] text-white/70">
+                  <InteractiveListItem text="Photography" />
+                  <InteractiveListItem text="Art Direction" />
+                  <InteractiveListItem text="Fashion Editorial" />
+                  <InteractiveListItem text="Film & Motion" />
                 </ul>
               </div>
               <div>
                 <h3 className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase mb-4">
                   Clients
                 </h3>
-                <ul className="font-inter text-[13px] md:text-[14px] text-white/70 space-y-2">
-                  <li>Vogue — L&apos;Officiel — Numéro</li>
-                  <li>Dior — Chanel — Saint Laurent</li>
-                  <li>Independent Editorials</li>
+                <ul className="font-inter text-[13px] md:text-[14px] text-white/70">
+                  <InteractiveListItem text="Vogue — L'Officiel — Numéro" />
+                  <InteractiveListItem text="Dior — Chanel — Saint Laurent" />
+                  <InteractiveListItem text="Independent Editorials" />
                 </ul>
               </div>
             </div>
@@ -444,7 +546,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ CONTACT / FOOTER ═══════════════════ */}
-      <footer ref={contactRef} id="contact" className="relative bg-[#0a0a0a] pt-20 md:pt-32 pb-8 overflow-hidden">
+      <footer ref={contactRef} id="contact" className="relative bg-[#0a0a0a] pt-20 md:pt-32 pb-24 md:pb-36 overflow-hidden">
         <div className="px-5 md:px-16">
           {/* Separator line */}
           <div data-line-reveal className="w-full h-[1px] bg-white/10 origin-left mb-16 md:mb-24" />
@@ -485,7 +587,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between">
+          <div className="mt-20 pt-8 border-t border-white/5 flex items-center justify-between">
             <span className="font-inter text-[9px] md:text-[10px] tracking-[0.2em] text-white/20 uppercase">
               © 2026 Sacha Karpavicius
             </span>
