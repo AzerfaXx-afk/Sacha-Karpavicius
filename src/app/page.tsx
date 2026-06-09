@@ -38,7 +38,7 @@ export default function Home() {
 
   const handleStartSite = useCallback(() => {
     if (audioRef.current) {
-      audioRef.current.play().catch(e => console.error(e));
+      audioRef.current.play().catch(() => { /* ignore 404 audio error */ });
       setIsPlaying(true);
       gsap.to(audioRef.current, { volume: 0.5, duration: 4 });
     }

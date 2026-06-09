@@ -160,28 +160,37 @@ export default function Preloader({ onComplete, onStart }: PreloaderProps) {
             onStart();
           }
         }}
-        className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex font-inter text-sm md:text-xl tracking-[0.4em] uppercase whitespace-nowrap z-10 ${hasStarted ? 'pointer-events-none' : 'cursor-pointer hover:scale-105 transition-transform duration-500'}`}
-        style={{ color: "rgba(255, 255, 255, 0.15)" }}
+        className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10 ${hasStarted ? 'pointer-events-none' : 'cursor-pointer group'}`}
       >
-        {"Sacha Karpavicius".split("").map((char, i) => (
-          <span key={`base-${i}`} className="name-char inline-block">
-            {char === " " ? "\u00A0" : char}
-          </span>
-        ))}
-        
-        {/* Spotlight Overlay */}
         <div 
-          className="absolute inset-0 flex text-white pointer-events-none"
-          style={{
-            WebkitMaskImage: `radial-gradient(100px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), black 0%, transparent 100%)`,
-            maskImage: `radial-gradient(100px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), black 0%, transparent 100%)`,
-          }}
+          className="relative flex font-inter text-sm md:text-xl tracking-[0.4em] uppercase whitespace-nowrap transition-transform duration-700 group-hover:scale-105"
+          style={{ color: "rgba(255, 255, 255, 0.15)" }}
         >
           {"Sacha Karpavicius".split("").map((char, i) => (
-            <span key={`spotlight-${i}`} className="name-char inline-block">
+            <span key={`base-${i}`} className="name-char inline-block">
               {char === " " ? "\u00A0" : char}
             </span>
           ))}
+          
+          {/* Spotlight Overlay */}
+          <div 
+            className="absolute inset-0 flex text-white pointer-events-none"
+            style={{
+              WebkitMaskImage: `radial-gradient(100px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), black 0%, transparent 100%)`,
+              maskImage: `radial-gradient(100px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), black 0%, transparent 100%)`,
+            }}
+          >
+            {"Sacha Karpavicius".split("").map((char, i) => (
+              <span key={`spotlight-${i}`} className="name-char inline-block">
+                {char === " " ? "\u00A0" : char}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Click Indicator */}
+        <div className={`mt-6 md:mt-8 font-inter text-[9px] md:text-[10px] tracking-[0.3em] uppercase text-white/40 transition-all duration-700 ${hasStarted ? 'opacity-0' : 'opacity-100 animate-pulse group-hover:text-white group-hover:scale-105'}`}>
+          [ Click to enter ]
         </div>
       </div>
 

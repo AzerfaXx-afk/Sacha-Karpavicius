@@ -16,14 +16,14 @@ const AnimatedLink = ({ text, href, onClick }: { text: string; href: string, onC
     <a 
       href={href} 
       onClick={handleClick}
-      className="group relative flex cursor-pointer overflow-visible leading-none text-[10vw] md:text-[6vw] font-syne font-bold uppercase text-white tracking-tight"
+      className="group relative flex cursor-pointer overflow-hidden leading-tight text-[10vw] md:text-[6vw] font-syne font-bold uppercase text-white tracking-tight"
     >
       <div className="flex">
         {text.split("").map((c, i) => (
           <span 
             key={i} 
-            className="inline-block transition-all duration-[800ms] ease-[cubic-bezier(0.76,0,0.24,1)] group-hover:blur-[12px] group-hover:scale-150 group-hover:opacity-0 group-hover:-translate-y-10"
-            style={{ transitionDelay: `${i * 0.03}s` }}
+            className="inline-block transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] group-hover:-translate-y-[120%] group-hover:skew-y-[10deg]"
+            style={{ transitionDelay: `${i * 0.02}s` }}
           >
             {c === " " ? "\u00A0" : c}
           </span>
@@ -33,8 +33,8 @@ const AnimatedLink = ({ text, href, onClick }: { text: string; href: string, onC
         {text.split("").map((c, i) => (
           <span 
             key={i} 
-            className="inline-block opacity-0 blur-[12px] translate-y-10 scale-50 transition-all duration-[800ms] ease-[cubic-bezier(0.76,0,0.24,1)] group-hover:opacity-100 group-hover:blur-0 group-hover:scale-100 group-hover:translate-y-0"
-            style={{ transitionDelay: `${i * 0.03}s` }}
+            className="inline-block translate-y-[120%] skew-y-[10deg] transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] group-hover:translate-y-0 group-hover:skew-y-0"
+            style={{ transitionDelay: `${i * 0.02}s` }}
           >
             {c === " " ? "\u00A0" : c}
           </span>
