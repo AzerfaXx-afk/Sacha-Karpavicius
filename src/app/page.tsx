@@ -583,7 +583,6 @@ export default function Home() {
         showUI={siteStarted || isHoveringName} 
         clickable={siteStarted} 
         lang={lang} 
-        onPlayHoverSfx={playHoverSfx}
         onPlayClickSfx={playClickSfx}
       />
 
@@ -601,7 +600,6 @@ export default function Home() {
         ref={audioIconRef}
         className={`fixed bottom-6 right-6 md:bottom-10 md:right-12 z-[100] cursor-pointer group mix-blend-difference flex items-center justify-center gap-[4px] h-4 w-8 opacity-0 ${siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}
         onClick={toggleAudio}
-        onMouseEnter={playHoverSfx}
       >
         <div className={`music-bar w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${isPlaying ? 'bg-white h-full animate-[sound_1.2s_ease-in-out_infinite]' : 'bg-white/40 h-[3px] group-hover:h-[6px] group-hover:bg-white'}`} />
         <div className={`music-bar w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${isPlaying ? 'bg-white h-full animate-[sound_0.8s_ease-in-out_infinite_0.2s]' : 'bg-white/40 h-[3px] group-hover:h-[10px] group-hover:bg-white'}`} />
@@ -613,7 +611,6 @@ export default function Home() {
       <div ref={getInTouchRef} className={`fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference opacity-0 ${siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}>
         <a 
           href="#contact" 
-          onMouseEnter={playHoverSfx}
           onClick={playClickSfx}
           className="inline-flex items-center gap-2 border border-white/20 px-4 py-2.5 rounded-sm hover:bg-white hover:text-black transition-all duration-300 font-inter text-[11px] md:text-[12px] text-white cursor-pointer group"
         >
@@ -787,10 +784,10 @@ export default function Home() {
                   Services
                 </h3>
                 <ul className="font-inter text-[13px] md:text-[14px] text-white/70">
-                  <InteractiveListItem text={lang === "fr" ? "Photographie" : "Photography"} onMouseEnter={playHoverSfx} onClick={playClickSfx} />
-                  <InteractiveListItem text={lang === "fr" ? "Direction Artistique" : "Art Direction"} onMouseEnter={playHoverSfx} onClick={playClickSfx} />
-                  <InteractiveListItem text={lang === "fr" ? "Éditorial de Mode" : "Fashion Editorial"} onMouseEnter={playHoverSfx} onClick={playClickSfx} />
-                  <InteractiveListItem text={lang === "fr" ? "Film & Vidéo" : "Film & Motion"} onMouseEnter={playHoverSfx} onClick={playClickSfx} />
+                  <InteractiveListItem text={lang === "fr" ? "Photographie" : "Photography"} onClick={playClickSfx} />
+                  <InteractiveListItem text={lang === "fr" ? "Direction Artistique" : "Art Direction"} onClick={playClickSfx} />
+                  <InteractiveListItem text={lang === "fr" ? "Éditorial de Mode" : "Fashion Editorial"} onClick={playClickSfx} />
+                  <InteractiveListItem text={lang === "fr" ? "Film & Vidéo" : "Film & Motion"} onClick={playClickSfx} />
                 </ul>
               </div>
               <div>
@@ -798,9 +795,9 @@ export default function Home() {
                   Clients
                 </h3>
                 <ul className="font-inter text-[13px] md:text-[14px] text-white/70">
-                  <InteractiveListItem text="Vogue — L'Officiel — Numéro" onMouseEnter={playHoverSfx} onClick={playClickSfx} />
-                  <InteractiveListItem text="Dior — Chanel — Saint Laurent" onMouseEnter={playHoverSfx} onClick={playClickSfx} />
-                  <InteractiveListItem text={lang === "fr" ? "Éditoriaux Indépendants" : "Independent Editorials"} onMouseEnter={playHoverSfx} onClick={playClickSfx} />
+                  <InteractiveListItem text="Vogue — L'Officiel — Numéro" onClick={playClickSfx} />
+                  <InteractiveListItem text="Dior — Chanel — Saint Laurent" onClick={playClickSfx} />
+                  <InteractiveListItem text={lang === "fr" ? "Éditoriaux Indépendants" : "Independent Editorials"} onClick={playClickSfx} />
                 </ul>
               </div>
             </div>
@@ -838,7 +835,6 @@ export default function Home() {
                   rel="noopener noreferrer"
                   onMouseMove={handleMagnetMove}
                   onMouseLeave={handleMagnetLeave}
-                  onMouseEnter={playHoverSfx}
                   onClick={playClickSfx}
                   className="group relative inline-flex items-center justify-center overflow-hidden px-10 py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-all duration-500 font-syne font-semibold text-[18px] md:text-[22px] text-white cursor-pointer mt-2 w-fit mx-auto hover:shadow-[0_0_30px_rgba(255,255,255,0.06)]"
                 >
