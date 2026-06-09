@@ -14,7 +14,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SACHA KARPAVICIUS | Visual Storyteller",
+  title: "SACHA KARPAVICIUS",
   description:
     "High-end portfolio of Sacha Karpavicius — Visual Storyteller, Fashion Photographer & Art Director.",
   icons: {
