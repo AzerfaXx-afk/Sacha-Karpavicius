@@ -105,7 +105,7 @@ export default function Home() {
       heroTl.fromTo(
         heroImgRef.current,
         { scale: 1.1 },
-        { scale: 1, duration: 3.0, ease: "power2.out" },
+        { scale: 1, duration: 2.5, ease: "power3.inOut" },
         0
       );
 
