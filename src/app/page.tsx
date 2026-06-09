@@ -599,38 +599,27 @@ export default function Home() {
               <h2 className="font-syne font-bold text-[14vw] md:text-[9vw] leading-[0.85] tracking-tight text-white uppercase select-none">
                 {lang === "fr" ? (
                   <>
-                    Parlons-<br />en
+                    Créer<br />Ensemble
                   </>
                 ) : (
                   <>
-                    Let&apos;s<br />Talk
+                    Let&apos;s<br />Create
                   </>
                 )}
               </h2>
             </div>
 
-            {/* Info Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 pt-8 md:pt-12 border-t border-white/5" data-text-reveal>
-              {/* Column 1: Collaboration */}
-              <div className="md:col-span-5 space-y-4">
+            {/* Info Grid - Centered Collab Link */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-8 md:pt-12 border-t border-white/5" data-text-reveal>
+              <div className="md:col-start-4 md:col-span-6 text-center space-y-4">
                 <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/30 uppercase block">
-                  01 / COLLABORATION
-                </span>
-                <span className="font-syne font-semibold text-[22px] md:text-[28px] text-white block mt-2 select-all">
-                  {lang === "fr" ? "DM POUR COLLABORER" : "DM FOR COLLAB"}
-                </span>
-              </div>
-
-              {/* Column 2: Instagram Only */}
-              <div className="md:col-span-5 space-y-4 md:col-start-8">
-                <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/30 uppercase block">
-                  02 / INSTAGRAM
+                  COLLAB
                 </span>
                 <a
                   href="https://www.instagram.com/sachakarpaviciusss/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-3 font-syne font-semibold text-[22px] md:text-[28px] text-white hover:text-white/60 transition-colors duration-500 mt-2 break-all"
+                  className="group inline-flex items-center gap-3 font-syne font-semibold text-[22px] md:text-[32px] text-white hover:text-white/60 transition-colors duration-500 mt-2 break-all justify-center"
                 >
                   @sachakarpaviciusss
                   <span className="inline-block transform group-hover:translate-x-1.5 group-hover:-translate-y-1.5 transition-transform duration-300 font-mono text-[20px] text-white/40">
