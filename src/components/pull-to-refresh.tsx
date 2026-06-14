@@ -5,6 +5,7 @@ import { useLenis } from "@studio-freight/react-lenis";
 
 export default function PullToRefresh({ children }: { children: React.ReactNode }) {
   const lenis = useLenis();
+  const lenisRef = useRef(lenis);
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPulling, setIsPulling] = useState(false);
@@ -12,6 +13,10 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
   const startY = useRef(0);
   const isScrollingDownRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    lenisRef.current = lenis;
+  }, [lenis]);
 
   useEffect(() => {
     // Preload camera shutter click sound
@@ -24,7 +29,7 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
     if (typeof window === "undefined") return;
 
     const handleTouchStart = (e: TouchEvent) => {
-      const currentScroll = lenis ? lenis.scroll : window.scrollY;
+      const currentScroll = lenisRef.current ? lenisRef.current.scroll : window.scrollY;
       if (currentScroll > 5 || isRefreshing) return;
       startY.current = e.touches[0].clientY;
       isScrollingDownRef.current = false;
@@ -32,7 +37,7 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      const currentScroll = lenis ? lenis.scroll : window.scrollY;
+      const currentScroll = lenisRef.current ? lenisRef.current.scroll : window.scrollY;
       // If we are already determined to be scrolling down the page, ignore
       if (isRefreshing || currentScroll > 5 || isScrollingDownRef.current) return;
       
@@ -96,7 +101,7 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
       window.removeEventListener("touchend", handleTouchEnd);
       window.removeEventListener("touchcancel", handleTouchEnd);
     };
-  }, [isPulling, pullDistance, isRefreshing, lenis]);
+  }, [isPulling, pullDistance, isRefreshing]);
 
   // Map pulling distance to styles
   const translateY = isRefreshing ? 55 : pullDistance;
