@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Syne, Inter } from "next/font/google";
 import "./globals.css";
 import SmoothScrollProvider from "@/components/smooth-scroll-provider";
+import PullToRefresh from "@/components/pull-to-refresh";
 
 const syne = Syne({
   variable: "--font-syne",
@@ -34,8 +35,35 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-[#0a0a0a] text-white">
         <SmoothScrollProvider>
-          <main className="flex-1 flex flex-col">{children}</main>
+          <PullToRefresh>
+            <main className="flex-1 flex flex-col">{children}</main>
+          </PullToRefresh>
         </SmoothScrollProvider>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for (let registration of registrations) {
+                      registration.unregister().then(function() {
+                        console.log('Local Service Worker unregistered to prevent HMR issues.');
+                      });
+                    }
+                  });
+                } else {
+                  window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                      console.log('SW registered:', reg.scope);
+                    }).catch(function(err) {
+                      console.log('SW registration failed:', err);
+                    });
+                  });
+                }
+              }
+            `
+          }}
+        />
       </body>
     </html>
   );

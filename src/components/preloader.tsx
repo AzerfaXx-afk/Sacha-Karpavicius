@@ -216,8 +216,8 @@ export default function Preloader({ onComplete, onStart, onHoverChange, lang = "
             setHasStarted(true);
             onStart();
             // Request device orientation permission for iOS devices to enable mobile parallax
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-              (DeviceOrientationEvent as any).requestPermission().catch(console.error);
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<PermissionState> }).requestPermission === 'function') {
+              (DeviceOrientationEvent as unknown as { requestPermission: () => Promise<PermissionState> }).requestPermission().catch(console.error);
             }
           }
         }}

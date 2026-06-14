@@ -261,7 +261,7 @@ class GaplessPlayer {
 
   async load() {
     if (typeof window === "undefined") return;
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    const AudioContextClass = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextClass) return;
     
     try {
@@ -270,15 +270,15 @@ class GaplessPlayer {
       const arrayBuffer = await response.arrayBuffer();
       this.buffer = await this.ctx.decodeAudioData(arrayBuffer);
       this.loaded = true;
-    } catch (e) {
-      console.warn("Failed to load/decode audio:", e);
+    } catch (err) {
+      console.warn("Failed to load/decode audio:", err);
     }
   }
 
   /** Resume AudioContext – must be called inside a user-gesture handler */
   async resume() {
     if (this.ctx && this.ctx.state === "suspended") {
-      try { await this.ctx.resume(); } catch (e) { console.warn("AudioContext resume failed:", e); }
+      try { await this.ctx.resume(); } catch { console.warn("AudioContext resume failed"); }
     }
   }
 
@@ -315,7 +315,7 @@ class GaplessPlayer {
 
     try {
       this.source.stop(this.ctx.currentTime + fadeDuration);
-    } catch (e) {
+    } catch {
       // ignore errors if source was already stopped or not started
     }
 
@@ -349,6 +349,7 @@ export default function Home() {
   const touchStartPos = useRef({ x: 0, y: 0 });
 
   const playerRef = useRef<GaplessPlayer | null>(null);
+  const wasPlayingRef = useRef(false);
   const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
   const clickAudioRef = useRef<HTMLAudioElement | null>(null);
   const entranceAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -442,15 +443,17 @@ export default function Home() {
   };
 
   useEffect(() => {
-    setIsMounted(true);
+    const timer = setTimeout(() => {
+      setIsMounted(true);
 
-    // Language detection
-    if (typeof window !== "undefined" && navigator) {
-      const userLang = navigator.language || (navigator as any).userLanguage;
-      if (userLang && !userLang.toLowerCase().startsWith("fr")) {
-        setLang("en");
+      // Language detection
+      if (typeof window !== "undefined" && navigator) {
+        const userLang = navigator.language || (navigator as Navigator & { userLanguage?: string }).userLanguage;
+        if (userLang && !userLang.toLowerCase().startsWith("fr")) {
+          setLang("en");
+        }
       }
-    }
+    }, 0);
 
     // Initialize gapless background music player
     playerRef.current = new GaplessPlayer("/musique.mp3");
@@ -470,6 +473,7 @@ export default function Home() {
     entranceAudioRef.current.preload = "auto";
 
     return () => {
+      clearTimeout(timer);
       if (playerRef.current) {
         playerRef.current.pause(0);
       }
@@ -509,6 +513,29 @@ export default function Home() {
       playerRef.current.play(0.5, 1.5);
     }
   };
+
+  // Handle visibility change (pause music when backgrounded, resume when foregrounded)
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        wasPlayingRef.current = isPlaying;
+        if (isPlaying && playerRef.current) {
+          playerRef.current.pause(0.5);
+        }
+      } else {
+        if (wasPlayingRef.current && playerRef.current) {
+          playerRef.current.play(0.5, 0.5);
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isPlaying]);
 
   // Gyroscope guide icon idle detection
   useEffect(() => {
@@ -576,7 +603,6 @@ export default function Home() {
   const heroImgRef = useRef<HTMLDivElement>(null);
   const heroTitleRef = useRef<HTMLDivElement>(null);
   const heroSubRef = useRef<HTMLDivElement>(null);
-  const heroScrollRef = useRef<HTMLDivElement>(null);
   const worksRef = useRef<HTMLElement>(null);
   const aboutRef = useRef<HTMLElement>(null);
   const contactRef = useRef<HTMLElement>(null);
