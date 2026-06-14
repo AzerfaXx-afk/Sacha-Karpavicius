@@ -392,6 +392,7 @@ export default function Home() {
   const contactTouchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const [isInstaTouchHovered, setIsInstaTouchHovered] = useState(false);
+  const isInstaTouchHoveredRef = useRef(false);
   const instaTouchTimeout = useRef<NodeJS.Timeout | null>(null);
   const instaTouchStartPos = useRef({ x: 0, y: 0 });
   const instaLongPressed = useRef(false);
@@ -697,6 +698,7 @@ export default function Home() {
       instaTouchStartTime.current = Date.now();
       instaLongPressed.current = false;
       setIsInstaTouchHovered(true);
+      isInstaTouchHoveredRef.current = true;
 
       // Store the static bounding rect of the button at the moment touch starts
       const rect = btn.getBoundingClientRect();
@@ -797,6 +799,7 @@ export default function Home() {
 
       setTimeout(() => {
         setIsInstaTouchHovered(false);
+        isInstaTouchHoveredRef.current = false;
       }, 400);
 
       if (!instaLongPressed.current) {
@@ -989,6 +992,27 @@ export default function Home() {
             ease: "power2.out",
             overwrite: "auto"
           });
+        }
+
+        // Apply same gyroscope movement to Instagram button if not touched
+        if (instaBtnRef.current && !isInstaTouchHoveredRef.current) {
+          gsap.to(instaBtnRef.current, {
+            x: xPos * 0.35,
+            y: yPos * 0.35,
+            duration: 2.0,
+            ease: "power2.out",
+            overwrite: "auto"
+          });
+          const content = instaBtnRef.current.querySelector(".btn-content");
+          if (content) {
+            gsap.to(content, {
+              x: xPos * 0.15,
+              y: yPos * 0.15,
+              duration: 2.0,
+              ease: "power2.out",
+              overwrite: "auto"
+            });
+          }
         }
       };
 
