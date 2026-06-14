@@ -47,6 +47,29 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
+  // Network-First for page navigation requests (ensure HTML updates instantly)
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(e.request, responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(e.request).then((cached) => {
+            return cached || caches.match('/');
+          });
+        })
+    );
+    return;
+  }
+
+  // Cache-First for static assets (images, fonts, sounds)
   e.respondWith(
     caches.match(e.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -62,11 +85,6 @@ self.addEventListener('fetch', (e) => {
           });
         }
         return response;
-      }).catch(() => {
-        // Fallback for document request when offline
-        if (e.request.mode === 'navigate') {
-          return caches.match('/');
-        }
       });
     })
   );

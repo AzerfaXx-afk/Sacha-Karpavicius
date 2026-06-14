@@ -80,10 +80,10 @@ h1, h2, h3, h4, h5, h6, p, span, a {
 
 /* ---- Wiggle (mobile touch-hold feedback) ---- */
 @keyframes wiggle {
-  0%, 100% { transform: rotate(0deg) scale(1); }
-  25% { transform: rotate(-2.5deg) scale(1.04); }
-  75% { transform: rotate(2.5deg) scale(1.04); }
+  0%, 100% { transform: rotate(0deg) scale(1.02); }
+  25% { transform: rotate(-1.5deg) scale(1.04); }
+  75% { transform: rotate(1.5deg) scale(1.04); }
 }
 .animate-wiggle {
-  animation: wiggle 0.16s ease-in-out infinite;
+  animation: wiggle 0.22s ease-in-out infinite;
 }

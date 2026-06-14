@@ -20,7 +20,7 @@ const AnimatedLink = ({
   number: string;
   onClick: () => void; 
   isDimmed: boolean; 
-  onMouseEnter: () => void; 
+  onMouseEnter: (pos?: { x: number, y: number }) => void; 
   onMouseLeave: () => void;
   isOpen: boolean;
   index: number;
@@ -63,12 +63,14 @@ const AnimatedLink = ({
       data-touch-hover={isTouchHovered}
       onTouchStart={(e) => {
         const touch = e.touches[0];
-        touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+        const clientX = touch.clientX;
+        const clientY = touch.clientY;
+        touchStartPos.current = { x: clientX, y: clientY };
         if (touchTimeout.current) clearTimeout(touchTimeout.current);
         
         touchTimeout.current = setTimeout(() => {
           setIsTouchHovered(true);
-          onMouseEnter();
+          onMouseEnter({ x: clientX, y: clientY });
         }, 80);
       }}
       onTouchMove={(e) => {
@@ -219,12 +221,20 @@ export default function Navbar({
     };
   }, []);
 
-  const handleMouseEnter = (index: number) => {
+  const handleMouseEnter = (index: number, pos?: { x: number, y: number }) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
     setHoveredIndex(index);
+
+    if (pos && floatingRef.current) {
+      gsap.set(floatingRef.current, {
+        x: pos.x,
+        y: pos.y,
+        rotation: 0,
+      });
+    }
   };
 
   const handleMouseLeave = () => {
@@ -232,6 +242,22 @@ export default function Navbar({
     timeoutRef.current = setTimeout(() => {
       setHoveredIndex(null);
     }, 120);
+  };
+
+  const handleOverlayTouchMove = (e: React.TouchEvent) => {
+    if (!floatingRef.current || e.touches.length === 0) return;
+    const touch = e.touches[0];
+    const x = touch.clientX;
+    const y = touch.clientY;
+
+    gsap.to(floatingRef.current, {
+      x: x,
+      y: y,
+      rotation: 0,
+      duration: 0.6,
+      ease: "power3.out",
+      overwrite: "auto",
+    });
   };
 
   const handleLinkClick = () => {
@@ -307,6 +333,7 @@ export default function Navbar({
         className="fixed inset-0 z-[100] bg-[#050505] flex flex-col justify-center px-6 md:px-12 transition-transform duration-[1s] ease-[cubic-bezier(0.76,0,0.24,1)] overflow-hidden"
         style={{ transform: isOpen ? 'translateY(0)' : 'translateY(-100%)' }}
         onMouseMove={handleOverlayMouseMove}
+        onTouchMove={handleOverlayTouchMove}
       >
         {/* Background Image Layer (Mobile and Desktop) */}
         <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
@@ -342,9 +369,9 @@ export default function Navbar({
             number="01" 
             onClick={handleLinkClick} 
             isDimmed={hoveredIndex !== null && hoveredIndex !== 0}
-            onMouseEnter={() => {
+            onMouseEnter={(pos) => {
               onPlayHoverSfx?.();
-              handleMouseEnter(0);
+              handleMouseEnter(0, pos);
             }}
             onMouseLeave={handleMouseLeave}
             isOpen={isOpen}
@@ -356,9 +383,9 @@ export default function Navbar({
             number="02" 
             onClick={handleLinkClick} 
             isDimmed={hoveredIndex !== null && hoveredIndex !== 1}
-            onMouseEnter={() => {
+            onMouseEnter={(pos) => {
               onPlayHoverSfx?.();
-              handleMouseEnter(1);
+              handleMouseEnter(1, pos);
             }}
             onMouseLeave={handleMouseLeave}
             isOpen={isOpen}
@@ -370,9 +397,9 @@ export default function Navbar({
             number="03" 
             onClick={handleLinkClick} 
             isDimmed={hoveredIndex !== null && hoveredIndex !== 2}
-            onMouseEnter={() => {
+            onMouseEnter={(pos) => {
               onPlayHoverSfx?.();
-              handleMouseEnter(2);
+              handleMouseEnter(2, pos);
             }}
             onMouseLeave={handleMouseLeave}
             isOpen={isOpen}
@@ -380,16 +407,16 @@ export default function Navbar({
           />
         </div>
 
-        {/* Floating Image Cursor Follower (Desktop Only) */}
+        {/* Floating Image Cursor Follower (Mobile and Desktop) */}
         <div 
           ref={floatingRef}
-          className="fixed top-0 left-0 pointer-events-none z-[5] will-change-transform hidden md:block"
+          className="fixed top-0 left-0 pointer-events-none z-[5] will-change-transform"
         >
           <div 
-            className="relative w-[260px] h-[340px] rounded-lg overflow-hidden border border-white/10 shadow-2xl transition-all duration-[600ms] ease-[cubic-bezier(0.25,1,0.5,1)] origin-center"
+            className="relative w-[160px] h-[210px] md:w-[260px] md:h-[340px] rounded-lg overflow-hidden border border-white/10 shadow-2xl transition-all duration-[600ms] ease-[cubic-bezier(0.25,1,0.5,1)] origin-center -translate-x-1/2 -translate-y-[115%] md:-translate-y-1/2"
             style={{
               opacity: hoveredIndex !== null ? 1 : 0,
-              transform: `translate(-50%, -50%) scale(${hoveredIndex !== null ? 1 : 0.75}) rotate(${hoveredIndex !== null ? 0 : -5}deg)`,
+              transform: `scale(${hoveredIndex !== null ? 1 : 0.75}) rotate(${hoveredIndex !== null ? 0 : -5}deg)`,
             }}
           >
             <div className="relative w-full h-full bg-[#111]">

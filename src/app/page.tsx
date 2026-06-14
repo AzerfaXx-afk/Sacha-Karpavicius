@@ -339,6 +339,7 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [siteStarted, setSiteStarted] = useState(false);
   const [isHoveringName, setIsHoveringName] = useState(false);
+  const isHoveringNameRef = useRef(isHoveringName);
   const [isMounted, setIsMounted] = useState(false);
   const [lang, setLang] = useState<"fr" | "en">("fr");
   
@@ -483,6 +484,22 @@ export default function Home() {
       }
     };
   }, []);
+
+  // Keep isHoveringNameRef synced and reset image center on hover
+  useEffect(() => {
+    isHoveringNameRef.current = isHoveringName;
+    if (isHoveringName && heroImgRef.current) {
+      gsap.to(heroImgRef.current, {
+        x: 0,
+        y: 0,
+        rotationY: 0,
+        rotationX: 0,
+        duration: 0.8,
+        ease: "power3.out",
+        overwrite: "auto"
+      });
+    }
+  }, [isHoveringName]);
 
   // Play hover sound when user hovers Sacha's name in the preloader
   useEffect(() => {
@@ -785,7 +802,7 @@ export default function Home() {
 
       // Mobile: Gyroscope / Tilt tracking
       const handleOrientation = (e: DeviceOrientationEvent) => {
-        if (e.gamma == null || e.beta == null) return;
+        if (e.gamma == null || e.beta == null || isHoveringNameRef.current) return;
         
         // Map tilt angles to wider translation limits (-55px to 55px) and center around normal holding angle (45-50deg)
         const xPos = gsap.utils.clamp(-55, 55, e.gamma * 1.5); // increased from 20
@@ -1127,59 +1144,61 @@ export default function Home() {
                 <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/30 uppercase block">
                   COLLAB
                 </span>
-                <a
-                  href="https://www.instagram.com/sachakarpaviciusss/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onMouseMove={handleMagnetMove}
-                  onMouseLeave={handleMagnetLeave}
-                  onClick={playClickSfx}
-                  data-touch-hover={isInstaTouchHovered}
-                  onTouchStart={(e) => {
-                    const touch = e.touches[0];
-                    instaTouchStartPos.current = { x: touch.clientX, y: touch.clientY };
-                    
-                    if (instaTouchTimeout.current) clearTimeout(instaTouchTimeout.current);
-                    
-                    instaTouchTimeout.current = setTimeout(() => {
-                      setIsInstaTouchHovered(true);
-                    }, 100);
-                  }}
-                  onTouchMove={(e) => {
-                    const touch = e.touches[0];
-                    const dx = Math.abs(touch.clientX - instaTouchStartPos.current.x);
-                    const dy = Math.abs(touch.clientY - instaTouchStartPos.current.y);
-                    
-                    if (dx > 10 || dy > 10) {
+                <div className={`mt-2 w-fit mx-auto hover:animate-wiggle transition-transform duration-500 ${isInstaTouchHovered ? "animate-wiggle" : ""}`}>
+                  <a
+                    href="https://www.instagram.com/sachakarpaviciusss/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onMouseMove={handleMagnetMove}
+                    onMouseLeave={handleMagnetLeave}
+                    onClick={playClickSfx}
+                    data-touch-hover={isInstaTouchHovered}
+                    onTouchStart={(e) => {
+                      const touch = e.touches[0];
+                      instaTouchStartPos.current = { x: touch.clientX, y: touch.clientY };
+                      
+                      if (instaTouchTimeout.current) clearTimeout(instaTouchTimeout.current);
+                      
+                      instaTouchTimeout.current = setTimeout(() => {
+                        setIsInstaTouchHovered(true);
+                      }, 100);
+                    }}
+                    onTouchMove={(e) => {
+                      const touch = e.touches[0];
+                      const dx = Math.abs(touch.clientX - instaTouchStartPos.current.x);
+                      const dy = Math.abs(touch.clientY - instaTouchStartPos.current.y);
+                      
+                      if (dx > 10 || dy > 10) {
+                        if (instaTouchTimeout.current) clearTimeout(instaTouchTimeout.current);
+                        setIsInstaTouchHovered(false);
+                      }
+                    }}
+                    onTouchEnd={() => {
+                      if (instaTouchTimeout.current) clearTimeout(instaTouchTimeout.current);
+                      setTimeout(() => {
+                        setIsInstaTouchHovered(false);
+                      }, 350);
+                    }}
+                    onTouchCancel={() => {
                       if (instaTouchTimeout.current) clearTimeout(instaTouchTimeout.current);
                       setIsInstaTouchHovered(false);
-                    }
-                  }}
-                  onTouchEnd={() => {
-                    if (instaTouchTimeout.current) clearTimeout(instaTouchTimeout.current);
-                    setTimeout(() => {
-                      setIsInstaTouchHovered(false);
-                    }, 350);
-                  }}
-                  onTouchCancel={() => {
-                    if (instaTouchTimeout.current) clearTimeout(instaTouchTimeout.current);
-                    setIsInstaTouchHovered(false);
-                  }}
-                  className={`group relative inline-flex items-center justify-center overflow-hidden px-10 py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-all duration-500 font-syne font-semibold text-[18px] md:text-[22px] text-white cursor-pointer mt-2 w-fit mx-auto hover:shadow-[0_0_30px_rgba(255,255,255,0.06)] ${isInstaTouchHovered ? "animate-wiggle" : ""}`}
-                >
-                  <span className="absolute w-[120%] aspect-square bg-white rounded-full scale-0 group-hover:scale-[2.2] group-data-[touch-hover=true]:scale-[2.2] transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" />
-                  
-                  <span className="btn-content relative z-10 flex items-center justify-center pointer-events-none">
-                    <span className="relative overflow-hidden flex items-center h-[1.2em]">
-                      <span className="inline-block transition-transform duration-500 ease-out group-hover:-translate-y-[120%] group-data-[touch-hover=true]:-translate-y-[120%]">
-                        @sachakarpaviciusss
-                      </span>
-                      <span className="absolute left-0 inline-block translate-y-[120%] transition-transform duration-500 ease-out group-hover:translate-y-0 group-data-[touch-hover=true]:translate-y-0 text-black">
-                        @sachakarpaviciusss
+                    }}
+                    className="group relative inline-flex items-center justify-center overflow-hidden px-10 py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-all duration-500 font-syne font-semibold text-[18px] md:text-[22px] text-white cursor-pointer hover:shadow-[0_0_30px_rgba(255,255,255,0.06)]"
+                  >
+                    <span className="absolute w-[120%] aspect-square bg-white rounded-full scale-0 group-hover:scale-[2.2] group-data-[touch-hover=true]:scale-[2.2] transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" />
+                    
+                    <span className="btn-content relative z-10 flex items-center justify-center pointer-events-none">
+                      <span className="relative overflow-hidden flex items-center h-[1.2em]">
+                        <span className="inline-block transition-transform duration-500 ease-out group-hover:-translate-y-[120%] group-data-[touch-hover=true]:-translate-y-[120%]">
+                          @sachakarpaviciusss
+                        </span>
+                        <span className="absolute left-0 inline-block translate-y-[120%] transition-transform duration-500 ease-out group-hover:translate-y-0 group-data-[touch-hover=true]:translate-y-0 text-black">
+                          @sachakarpaviciusss
+                        </span>
                       </span>
                     </span>
-                  </span>
-                </a>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
