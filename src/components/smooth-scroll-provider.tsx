@@ -4,18 +4,13 @@ import React, { useEffect, useRef } from "react";
 import { ReactLenis } from "@studio-freight/react-lenis";
 import { gsap } from "gsap";
 
-interface LenisRef {
-  lenis?: {
-    raf: (time: number) => void;
-  };
-}
-
 export default function SmoothScrollProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const lenisRef = useRef<LenisRef>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const lenisRef = useRef<any>(null);
 
   useEffect(() => {
     function update(time: number) {
@@ -42,7 +37,8 @@ export default function SmoothScrollProvider({
         wheelMultiplier: 1,
       }}
     >
-      {children as React.ReactElement}
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      {children as any}
     </ReactLenis>
   );
 }

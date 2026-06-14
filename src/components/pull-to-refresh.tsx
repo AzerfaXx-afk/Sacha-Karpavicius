@@ -8,6 +8,7 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
   const [isPulling, setIsPulling] = useState(false);
   
   const startY = useRef(0);
+  const isScrollingDownRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -21,37 +22,42 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
     if (typeof window === "undefined") return;
 
     const handleTouchStart = (e: TouchEvent) => {
-      // Only capture if scrolled at the very top and not currently refreshing
       if (window.scrollY > 5 || isRefreshing) return;
       startY.current = e.touches[0].clientY;
-      setIsPulling(true);
+      isScrollingDownRef.current = false;
+      setIsPulling(false);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!isPulling || isRefreshing || window.scrollY > 5) return;
+      // If we are already determined to be scrolling down the page, ignore
+      if (isRefreshing || window.scrollY > 5 || isScrollingDownRef.current) return;
       
       const currentY = e.touches[0].clientY;
       const diff = currentY - startY.current;
 
       if (diff > 0) {
-        // Apply elastic resistance: diff^0.82
+        // User is swiping down -> activate Pull-to-Refresh
+        setIsPulling(true);
         const distance = Math.min(120, Math.pow(diff, 0.82));
         
-        // Prevent default touch behaviors (like rubber banding/native pull to refresh)
         if (e.cancelable) {
           e.preventDefault();
         }
-        
         setPullDistance(distance);
-      } else {
-        // If they swipe back up, cancel pulling
-        setPullDistance(0);
+      } else if (diff < -5) {
+        // User is swiping up to scroll down -> mark it and let browser handle it natively
+        isScrollingDownRef.current = true;
         setIsPulling(false);
+        setPullDistance(0);
       }
     };
 
     const handleTouchEnd = () => {
-      if (!isPulling || isRefreshing) return;
+      isScrollingDownRef.current = false;
+      if (!isPulling || isRefreshing) {
+        setIsPulling(false);
+        return;
+      }
       setIsPulling(false);
 
       if (pullDistance >= 85) {
