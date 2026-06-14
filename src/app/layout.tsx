@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Syne, Inter } from "next/font/google";
 import "./globals.css";
 import SmoothScrollProvider from "@/components/smooth-scroll-provider";
-import PullToRefresh from "@/components/pull-to-refresh";
 
 const syne = Syne({
   variable: "--font-syne",
@@ -35,9 +34,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-[#0a0a0a] text-white">
         <SmoothScrollProvider>
-          <PullToRefresh>
-            <main className="flex-1 flex flex-col">{children}</main>
-          </PullToRefresh>
+          <main className="flex-1 flex flex-col">{children}</main>
         </SmoothScrollProvider>
         <script
           dangerouslySetInnerHTML={{

@@ -193,21 +193,57 @@ const AboutImageCard = () => {
 
 /* ──── Interactive List Item ──── */
 const InteractiveListItem = ({ text, onMouseEnter, onClick }: { text: string; onMouseEnter?: () => void; onClick?: () => void }) => {
+  const [isTouchHovered, setIsTouchHovered] = useState(false);
+  const touchStartPos = useRef({ x: 0, y: 0 });
+  const touchTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    if (touchTimeout.current) clearTimeout(touchTimeout.current);
+    touchTimeout.current = setTimeout(() => {
+      setIsTouchHovered(true);
+      onMouseEnter?.();
+    }, 100);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - touchStartPos.current.x);
+    const dy = Math.abs(touch.clientY - touchStartPos.current.y);
+    if (dx > 10 || dy > 10) {
+      if (touchTimeout.current) clearTimeout(touchTimeout.current);
+      setIsTouchHovered(false);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchTimeout.current) clearTimeout(touchTimeout.current);
+    setTimeout(() => {
+      setIsTouchHovered(false);
+    }, 250);
+  };
+
   return (
     <li 
       onMouseEnter={onMouseEnter}
       onClick={onClick}
-      className="group flex items-center justify-between py-2.5 border-b border-white/[0.04] transition-colors duration-300 hover:text-white cursor-pointer"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+      data-touch-hover={isTouchHovered}
+      className="group flex items-center justify-between py-2.5 border-b border-white/[0.04] transition-colors duration-300 hover:text-white data-[touch-hover=true]:text-white cursor-pointer select-none"
     >
-      <span className="transition-transform duration-300 group-hover:translate-x-2 flex items-center gap-2">
-        <span className="w-1 h-1 rounded-full bg-white opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300" />
+      <span className="transition-transform duration-300 group-hover:translate-x-2 group-data-[touch-hover=true]:translate-x-2 flex items-center gap-2">
+        <span className="w-1 h-1 rounded-full bg-white opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100 group-data-[touch-hover=true]:opacity-100 group-data-[touch-hover=true]:scale-100 transition-all duration-300" />
         {text}
       </span>
       <div className="relative overflow-hidden w-4 h-4 flex items-center justify-end">
-        <span className="absolute transform -translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 ease-out font-mono text-[10px]">
+        <span className="absolute transform -translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-data-[touch-hover=true]:translate-x-0 group-data-[touch-hover=true]:opacity-100 transition-all duration-300 ease-out font-mono text-[10px]">
           →
         </span>
-        <span className="absolute transform translate-x-0 opacity-100 group-hover:translate-x-4 group-hover:opacity-0 transition-all duration-300 ease-out font-mono text-[10px] text-white/30">
+        <span className="absolute transform translate-x-0 opacity-100 group-hover:translate-x-4 group-hover:opacity-0 group-data-[touch-hover=true]:translate-x-4 group-data-[touch-hover=true]:opacity-0 transition-all duration-300 ease-out font-mono text-[10px] text-white/30">
           →
         </span>
       </div>
@@ -349,6 +385,10 @@ export default function Home() {
   const touchHoverTimeout = useRef<NodeJS.Timeout | null>(null);
   const touchStartPos = useRef({ x: 0, y: 0 });
   
+  const [isContactTouchHovered, setIsContactTouchHovered] = useState(false);
+  const contactTouchStartPos = useRef({ x: 0, y: 0 });
+  const contactTouchTimeout = useRef<NodeJS.Timeout | null>(null);
+
   const [isInstaTouchHovered, setIsInstaTouchHovered] = useState(false);
   const instaTouchTimeout = useRef<NodeJS.Timeout | null>(null);
   const instaTouchStartPos = useRef({ x: 0, y: 0 });
@@ -871,14 +911,42 @@ export default function Home() {
         <a 
           href="#contact" 
           onClick={playClickSfx}
-          className="inline-flex items-center gap-2 border border-white/20 px-4 py-2.5 rounded-sm hover:bg-white hover:text-black transition-all duration-300 font-inter text-[11px] md:text-[12px] text-white cursor-pointer group"
+          data-touch-hover={isContactTouchHovered}
+          onTouchStart={(e) => {
+            const touch = e.touches[0];
+            contactTouchStartPos.current = { x: touch.clientX, y: touch.clientY };
+            if (contactTouchTimeout.current) clearTimeout(contactTouchTimeout.current);
+            contactTouchTimeout.current = setTimeout(() => {
+              setIsContactTouchHovered(true);
+            }, 100);
+          }}
+          onTouchMove={(e) => {
+            const touch = e.touches[0];
+            const dx = Math.abs(touch.clientX - contactTouchStartPos.current.x);
+            const dy = Math.abs(touch.clientY - contactTouchStartPos.current.y);
+            if (dx > 10 || dy > 10) {
+              if (contactTouchTimeout.current) clearTimeout(contactTouchTimeout.current);
+              setIsContactTouchHovered(false);
+            }
+          }}
+          onTouchEnd={() => {
+            if (contactTouchTimeout.current) clearTimeout(contactTouchTimeout.current);
+            setTimeout(() => {
+              setIsContactTouchHovered(false);
+            }, 250);
+          }}
+          onTouchCancel={() => {
+            if (contactTouchTimeout.current) clearTimeout(contactTouchTimeout.current);
+            setIsContactTouchHovered(false);
+          }}
+          className="inline-flex items-center gap-2 border border-white/20 px-4 py-2.5 rounded-sm hover:bg-white hover:text-black data-[touch-hover=true]:bg-white data-[touch-hover=true]:text-black transition-all duration-300 font-inter text-[11px] md:text-[12px] text-white cursor-pointer group"
         >
           {lang === "fr" ? "Contactez-moi" : "Get in touch"}
           <div className="relative overflow-hidden w-3 h-3 flex items-center justify-center">
-            <span className="absolute transform -translate-x-3 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 ease-out font-mono text-[11px]">
+            <span className="absolute transform -translate-x-3 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-data-[touch-hover=true]:translate-x-0 group-data-[touch-hover=true]:opacity-100 transition-all duration-300 ease-out font-mono text-[11px]">
               →
             </span>
-            <span className="absolute transform translate-x-0 opacity-100 group-hover:translate-x-3 group-hover:opacity-0 transition-all duration-300 ease-out font-mono text-[11px] text-white/50">
+            <span className="absolute transform translate-x-0 opacity-100 group-hover:translate-x-3 group-hover:opacity-0 group-data-[touch-hover=true]:translate-x-3 group-data-[touch-hover=true]:opacity-0 transition-all duration-300 ease-out font-mono text-[11px] text-white/50">
               →
             </span>
           </div>
