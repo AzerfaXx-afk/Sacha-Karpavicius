@@ -22,6 +22,8 @@ const projects = [
 const AboutImageCard = () => {
   const cardRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const isTouching = useRef(false);
+  const touchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current || !imgRef.current) return;
@@ -67,19 +69,123 @@ const AboutImageCard = () => {
     });
   };
 
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!cardRef.current || !imgRef.current) return;
+    isTouching.current = true;
+    if (touchTimeout.current) clearTimeout(touchTimeout.current);
+
+    const touch = e.touches[0];
+    const { left, top, width, height } = cardRef.current.getBoundingClientRect();
+    const x = (touch.clientX - left) / width - 0.5;
+    const y = (touch.clientY - top) / height - 0.5;
+
+    gsap.to(cardRef.current, {
+      rotateY: x * 25,
+      rotateX: -y * 25,
+      transformPerspective: 1000,
+      duration: 0.4,
+      ease: "power2.out",
+      overwrite: "auto",
+    });
+
+    gsap.to(imgRef.current, {
+      x: -x * 15,
+      y: -y * 15,
+      scale: 1.1,
+      duration: 0.4,
+      ease: "power2.out",
+      overwrite: "auto",
+    });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!cardRef.current || !imgRef.current) return;
+    const touch = e.touches[0];
+    const { left, top, width, height } = cardRef.current.getBoundingClientRect();
+    const x = (touch.clientX - left) / width - 0.5;
+    const y = (touch.clientY - top) / height - 0.5;
+
+    gsap.to(cardRef.current, {
+      rotateY: x * 25,
+      rotateX: -y * 25,
+      transformPerspective: 1000,
+      duration: 0.4,
+      ease: "power2.out",
+      overwrite: "auto",
+    });
+
+    gsap.to(imgRef.current, {
+      x: -x * 15,
+      y: -y * 15,
+      scale: 1.1,
+      duration: 0.4,
+      ease: "power2.out",
+      overwrite: "auto",
+    });
+  };
+
+  const handleTouchEnd = () => {
+    handleMouseLeave();
+    if (touchTimeout.current) clearTimeout(touchTimeout.current);
+    touchTimeout.current = setTimeout(() => {
+      isTouching.current = false;
+    }, 500); // Wait for the spring back animation to finish before letting gyro take over
+  };
+
+  // Mobile Gyroscope tilt interaction
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      if (isTouching.current || e.gamma == null || e.beta == null || !cardRef.current || !imgRef.current) return;
+      
+      // Map tilt angles to rotation limits (-15 to 15 deg)
+      // Normal reading/holding beta is around 45 to 60 deg
+      const xRot = gsap.utils.clamp(-15, 15, e.gamma * 0.4);
+      const yRot = gsap.utils.clamp(-15, 15, (e.beta - 50) * 0.4);
+
+      gsap.to(cardRef.current, {
+        rotateY: xRot,
+        rotateX: -yRot,
+        transformPerspective: 1000,
+        duration: 1.0,
+        ease: "power2.out",
+        overwrite: "auto",
+      });
+
+      gsap.to(imgRef.current, {
+        x: -xRot * 0.5,
+        y: -yRot * 0.5,
+        scale: 1.05,
+        duration: 1.0,
+        ease: "power2.out",
+        overwrite: "auto",
+      });
+    };
+
+    window.addEventListener("deviceorientation", handleOrientation);
+    return () => {
+      window.removeEventListener("deviceorientation", handleOrientation);
+      if (touchTimeout.current) clearTimeout(touchTimeout.current);
+    };
+  }, []);
+
   return (
     <div
       ref={cardRef}
-      className="relative w-full max-w-[300px] aspect-[3/4] rounded-lg overflow-hidden border border-white/10 shadow-2xl cursor-pointer group will-change-transform"
+      className="relative w-full max-w-[300px] aspect-[3/4] rounded-lg overflow-hidden border border-white/10 shadow-2xl cursor-pointer group will-change-transform select-none touch-none"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       data-about-img
     >
       <img
         ref={imgRef}
         src="/1.jpg"
         alt="Sacha Karpavicius Portrait"
-        className="w-full h-full object-cover transition-transform duration-700 ease-out"
+        className="w-full h-full object-cover transition-transform duration-700 ease-out pointer-events-none"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
     </div>
@@ -478,6 +584,24 @@ export default function Home() {
         },
       });
 
+      /* ── Works image parallax ── */
+      document.querySelectorAll("[data-parallax-img]").forEach((img) => {
+        gsap.fromTo(
+          img,
+          { yPercent: -8 },
+          {
+            yPercent: 8,
+            ease: "none",
+            scrollTrigger: {
+              trigger: img.parentElement,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: true,
+            },
+          }
+        );
+      });
+
       /* ── Works cards scroll reveal ── */
       const workCards = document.querySelectorAll("[data-work-card]");
       workCards.forEach((card) => {
@@ -734,14 +858,19 @@ export default function Home() {
                 className={`relative w-full overflow-hidden bg-[#111] ${idx === 0 ? "aspect-[16/9]" : "aspect-[4/5] md:aspect-[3/4]"
                   }`}
               >
-                <Image
-                  src={project.src}
-                  alt={project.title}
-                  fill
-                  className="object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(.25,.46,.45,.94)] group-hover:scale-105"
-                  quality={90}
-                  sizes={idx === 0 ? "100vw" : "(max-width: 768px) 100vw, 50vw"}
-                />
+                <div
+                  data-parallax-img
+                  className="absolute -top-[10%] left-0 w-full h-[120%] will-change-transform"
+                >
+                  <Image
+                    src={project.src}
+                    alt={project.title}
+                    fill
+                    className="object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(.25,.46,.45,.94)] group-hover:scale-105"
+                    quality={90}
+                    sizes={idx === 0 ? "100vw" : "(max-width: 768px) 100vw, 50vw"}
+                  />
+                </div>
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-700" />
               </div>

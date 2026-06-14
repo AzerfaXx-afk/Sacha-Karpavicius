@@ -160,6 +160,57 @@ export default function Preloader({ onComplete, onStart, onHoverChange, lang = "
             if (lensRef.current) gsap.to(lensRef.current, { width: 0, height: 0, rotation: 45, duration: 0.8, ease: 'power3.out', overwrite: true });
           }
         }}
+        onTouchStart={(e) => {
+          if (hasStarted) return;
+          setIsHoveringLocal(true);
+          onHoverChange?.(true);
+          const touch = e.touches[0];
+          const rect = nameRef.current?.getBoundingClientRect();
+          if (rect) {
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            setMousePos({ x: touch.clientX, y: touch.clientY });
+            nameRef.current?.style.setProperty("--mouse-x", `${x}px`);
+            nameRef.current?.style.setProperty("--mouse-y", `${y}px`);
+          }
+          if (lensRef.current) {
+            gsap.to(lensRef.current, {
+              width: '55vw',
+              height: '55vw',
+              rotation: 0,
+              duration: 0.8,
+              ease: 'power3.out',
+              overwrite: true
+            });
+          }
+        }}
+        onTouchMove={(e) => {
+          if (hasStarted) return;
+          const touch = e.touches[0];
+          const rect = nameRef.current?.getBoundingClientRect();
+          if (rect) {
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            setMousePos({ x: touch.clientX, y: touch.clientY });
+            nameRef.current?.style.setProperty("--mouse-x", `${x}px`);
+            nameRef.current?.style.setProperty("--mouse-y", `${y}px`);
+          }
+        }}
+        onTouchEnd={() => {
+          if (hasStarted) return;
+          setIsHoveringLocal(false);
+          onHoverChange?.(false);
+          if (lensRef.current) {
+            gsap.to(lensRef.current, {
+              width: 0,
+              height: 0,
+              rotation: 45,
+              duration: 0.8,
+              ease: 'power3.out',
+              overwrite: true
+            });
+          }
+        }}
         onClick={() => {
           if (!hasStarted) {
             setHasStarted(true);
