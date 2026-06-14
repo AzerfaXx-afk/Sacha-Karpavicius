@@ -394,6 +394,7 @@ export default function Home() {
   const [isInstaTouchHovered, setIsInstaTouchHovered] = useState(false);
   const instaTouchTimeout = useRef<NodeJS.Timeout | null>(null);
   const instaTouchStartPos = useRef({ x: 0, y: 0 });
+  const instaLongPressed = useRef(false);
 
   const playerRef = useRef<GaplessPlayer | null>(null);
   const wasPlayingRef = useRef(false);
@@ -553,6 +554,9 @@ export default function Home() {
   const handleStartSite = useCallback(() => {
     // ★ This runs inside a user click – the ONLY reliable place to unlock audio
     unlockAllAudio();
+
+    // ★ Reset hover state so the gyroscope parallax isn't permanently blocked
+    setIsHoveringName(false);
 
     setSiteStarted(true);
 
@@ -1221,17 +1225,28 @@ export default function Home() {
                     rel="noopener noreferrer"
                     onMouseMove={handleMagnetMove}
                     onMouseLeave={handleMagnetLeave}
-                    onClick={playClickSfx}
+                    onClick={(e) => {
+                      // If it was a long press, block navigation and reset
+                      if (instaLongPressed.current) {
+                        e.preventDefault();
+                        instaLongPressed.current = false;
+                        return;
+                      }
+                      playClickSfx();
+                    }}
                     data-touch-hover={isInstaTouchHovered}
                     onTouchStart={(e) => {
                       const touch = e.touches[0];
                       instaTouchStartPos.current = { x: touch.clientX, y: touch.clientY };
+                      instaLongPressed.current = false;
                       
                       if (instaTouchTimeout.current) clearTimeout(instaTouchTimeout.current);
                       
+                      // Long press: 400ms before activating wiggle + hover animation
                       instaTouchTimeout.current = setTimeout(() => {
+                        instaLongPressed.current = true;
                         setIsInstaTouchHovered(true);
-                      }, 100);
+                      }, 400);
                     }}
                     onTouchMove={(e) => {
                       const touch = e.touches[0];
@@ -1241,17 +1256,19 @@ export default function Home() {
                       if (dx > 10 || dy > 10) {
                         if (instaTouchTimeout.current) clearTimeout(instaTouchTimeout.current);
                         setIsInstaTouchHovered(false);
+                        instaLongPressed.current = false;
                       }
                     }}
                     onTouchEnd={() => {
                       if (instaTouchTimeout.current) clearTimeout(instaTouchTimeout.current);
                       setTimeout(() => {
                         setIsInstaTouchHovered(false);
-                      }, 350);
+                      }, 400);
                     }}
                     onTouchCancel={() => {
                       if (instaTouchTimeout.current) clearTimeout(instaTouchTimeout.current);
                       setIsInstaTouchHovered(false);
+                      instaLongPressed.current = false;
                     }}
                     className="group relative inline-flex items-center justify-center overflow-hidden px-10 py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-all duration-500 font-syne font-semibold text-[18px] md:text-[22px] text-white cursor-pointer hover:shadow-[0_0_30px_rgba(255,255,255,0.06)]"
                   >
