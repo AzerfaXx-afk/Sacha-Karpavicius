@@ -139,10 +139,9 @@ const AboutImageCard = () => {
     const handleOrientation = (e: DeviceOrientationEvent) => {
       if (isTouching.current || e.gamma == null || e.beta == null || !cardRef.current || !imgRef.current) return;
       
-      // Map tilt angles to rotation limits (-15 to 15 deg)
-      // Normal reading/holding beta is around 45 to 60 deg
-      const xRot = gsap.utils.clamp(-15, 15, e.gamma * 0.4);
-      const yRot = gsap.utils.clamp(-15, 15, (e.beta - 50) * 0.4);
+      // Increased sensitivity (clamp limit -28 to 28, factor 0.9)
+      const xRot = gsap.utils.clamp(-28, 28, e.gamma * 0.9);
+      const yRot = gsap.utils.clamp(-28, 28, (e.beta - 50) * 0.9);
 
       gsap.to(cardRef.current, {
         rotateY: xRot,
@@ -173,7 +172,7 @@ const AboutImageCard = () => {
   return (
     <div
       ref={cardRef}
-      className="relative w-full max-w-[300px] aspect-[3/4] rounded-lg overflow-hidden border border-white/10 shadow-2xl cursor-pointer group will-change-transform select-none touch-none"
+      className="relative w-full max-w-[300px] aspect-[3/4] rounded-lg overflow-hidden border border-white/10 shadow-2xl cursor-pointer group will-change-transform select-none touch-pan-y"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onTouchStart={handleTouchStart}
@@ -342,6 +341,13 @@ export default function Home() {
   const [isHoveringName, setIsHoveringName] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [lang, setLang] = useState<"fr" | "en">("fr");
+  
+  // Mobile responsive enhancements: Touch-hover and Gyroscope Guide
+  const [touchHoveredIndex, setTouchHoveredIndex] = useState<number | null>(null);
+  const [showGyroIndicator, setShowGyroIndicator] = useState(false);
+  const touchHoverTimeout = useRef<NodeJS.Timeout | null>(null);
+  const touchStartPos = useRef({ x: 0, y: 0 });
+
   const playerRef = useRef<GaplessPlayer | null>(null);
   const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
   const clickAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -503,6 +509,67 @@ export default function Home() {
       playerRef.current.play(0.5, 1.5);
     }
   };
+
+  // Gyroscope guide icon idle detection
+  useEffect(() => {
+    if (!siteStarted) return;
+    
+    let timer: NodeJS.Timeout;
+    let hasInteracted = false;
+    let initialGamma: number | null = null;
+    let initialBeta: number | null = null;
+
+    const startTimer = () => {
+      timer = setTimeout(() => {
+        if (!hasInteracted) {
+          setShowGyroIndicator(true);
+        }
+      }, 3000);
+    };
+
+    const handleInteraction = () => {
+      hasInteracted = true;
+      setShowGyroIndicator(false);
+      clearTimeout(timer);
+    };
+
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      if (e.gamma == null || e.beta == null) return;
+      if (initialGamma === null || initialBeta === null) {
+        initialGamma = e.gamma;
+        initialBeta = e.beta;
+        return;
+      }
+      
+      const deltaGamma = Math.abs(e.gamma - initialGamma);
+      const deltaBeta = Math.abs(e.beta - initialBeta);
+      // If phone tilts by more than 3 degrees, consider it active and hide guide
+      if (deltaGamma > 3 || deltaBeta > 3) {
+        handleInteraction();
+      }
+    };
+
+    const handleScroll = () => {
+      handleInteraction();
+    };
+
+    const handleTouch = () => {
+      handleInteraction();
+    };
+
+    startTimer();
+
+    window.addEventListener("deviceorientation", handleOrientation);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("touchstart", handleTouch, { passive: true });
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("deviceorientation", handleOrientation);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("touchstart", handleTouch);
+    };
+  }, [siteStarted]);
 
   /* Refs */
   const heroRef = useRef<HTMLElement>(null);
@@ -689,16 +756,18 @@ export default function Home() {
       // Mobile: Gyroscope / Tilt tracking
       const handleOrientation = (e: DeviceOrientationEvent) => {
         if (e.gamma == null || e.beta == null) return;
-        const xPos = (e.gamma / 90) * 20; // gamma: left-to-right tilt
-        const yPos = (e.beta / 90) * 20;  // beta: front-to-back tilt
+        
+        // Map tilt angles to wider translation limits (-55px to 55px) and center around normal holding angle (45-50deg)
+        const xPos = gsap.utils.clamp(-55, 55, e.gamma * 1.5); // increased from 20
+        const yPos = gsap.utils.clamp(-55, 55, (e.beta - 50) * 1.5);  // increased from 20
 
         if (heroImgRef.current) {
           gsap.to(heroImgRef.current, {
             x: xPos,
             y: yPos,
-            rotationY: xPos * 0.1,
-            rotationX: -yPos * 0.1,
-            duration: 2.5,
+            rotationY: xPos * 0.15,
+            rotationX: -yPos * 0.15,
+            duration: 2.0,
             ease: "power2.out",
             overwrite: "auto"
           });
@@ -819,6 +888,23 @@ export default function Home() {
             <span>{lang === "fr" ? "2026 — Futur" : "2026 — Future"}</span>
             <span className="w-1.5 h-1.5 bg-white/50 block rounded-sm"></span>
           </div>
+          
+          {/* Gyroscope Idle Guide Prompt */}
+          <div 
+            className={`absolute top-full mt-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30 transition-all duration-1000 ease-in-out md:hidden ${
+              showGyroIndicator ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-90 pointer-events-none'
+            }`}
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="7" y="3" width="10" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+              <line x1="11" y1="19" x2="13" y2="19" strokeLinecap="round" />
+              <path d="M4 14C3.2 12.8 3.2 11.2 4 10" strokeLinecap="round" />
+              <path d="M20 10C20.8 11.2 20.8 12.8 20 14" strokeLinecap="round" />
+            </svg>
+            <span className="font-inter text-[7px] tracking-[0.25em] uppercase whitespace-nowrap">
+              {lang === "fr" ? "Inclinez pour explorer" : "Tilt to explore"}
+            </span>
+          </div>
         </div>
 
 
@@ -851,6 +937,40 @@ export default function Home() {
             <div
               key={idx}
               data-work-card
+              data-touch-hover={touchHoveredIndex === idx}
+              onTouchStart={(e) => {
+                const touch = e.touches[0];
+                touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+                
+                if (touchHoverTimeout.current) clearTimeout(touchHoverTimeout.current);
+                
+                // Trigger touch-hover if they hold for 100ms
+                touchHoverTimeout.current = setTimeout(() => {
+                  setTouchHoveredIndex(idx);
+                }, 100);
+              }}
+              onTouchMove={(e) => {
+                const touch = e.touches[0];
+                const dx = Math.abs(touch.clientX - touchStartPos.current.x);
+                const dy = Math.abs(touch.clientY - touchStartPos.current.y);
+                
+                // If finger moves more than 10px, assume they are scrolling -> cancel hover
+                if (dx > 10 || dy > 10) {
+                  if (touchHoverTimeout.current) clearTimeout(touchHoverTimeout.current);
+                  setTouchHoveredIndex(null);
+                }
+              }}
+              onTouchEnd={() => {
+                if (touchHoverTimeout.current) clearTimeout(touchHoverTimeout.current);
+                // Clear state after a short delay so the visual highlights react nicely
+                setTimeout(() => {
+                  setTouchHoveredIndex(null);
+                }, 250);
+              }}
+              onTouchCancel={() => {
+                if (touchHoverTimeout.current) clearTimeout(touchHoverTimeout.current);
+                setTouchHoveredIndex(null);
+              }}
               className={`group relative overflow-hidden cursor-pointer ${idx === 0 ? "md:col-span-2" : ""
                 }`}
             >
@@ -866,18 +986,18 @@ export default function Home() {
                     src={project.src}
                     alt={project.title}
                     fill
-                    className="object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(.25,.46,.45,.94)] group-hover:scale-105"
+                    className="object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(.25,.46,.45,.94)] group-hover:scale-105 group-data-[touch-hover=true]:scale-105"
                     quality={90}
                     sizes={idx === 0 ? "100vw" : "(max-width: 768px) 100vw, 50vw"}
                   />
                 </div>
                 {/* Hover overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-700" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 group-data-[touch-hover=true]:bg-black/30 transition-colors duration-700" />
               </div>
 
               {/* Project info */}
               <div className="mt-4 flex items-baseline justify-between">
-                <h3 className="font-syne font-semibold text-[14px] md:text-[16px] tracking-tight text-white group-hover:translate-x-2 transition-transform duration-500">
+                <h3 className="font-syne font-semibold text-[14px] md:text-[16px] tracking-tight text-white group-hover:translate-x-2 group-data-[touch-hover=true]:translate-x-2 transition-transform duration-500">
                   {project.title}
                 </h3>
                 <span className="font-inter text-[9px] md:text-[10px] tracking-[0.2em] text-white/40 uppercase">
