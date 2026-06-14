@@ -664,6 +664,7 @@ export default function Home() {
   const contactRef = useRef<HTMLElement>(null);
   const audioIconRef = useRef<HTMLDivElement>(null);
   const getInTouchRef = useRef<HTMLDivElement>(null);
+  const instaBtnRef = useRef<HTMLAnchorElement>(null);
 
   /* Preloader done callback */
   const onPreloaderComplete = useCallback(() => {
@@ -681,6 +682,136 @@ export default function Home() {
       gsap.to(uiElements, { y: 20, opacity: 0, duration: 0.5, ease: "power3.in", overwrite: true });
     }
   }, [siteStarted, isHoveringName]);
+
+  // Mobile contact button non-passive touch listeners
+  useEffect(() => {
+    const btn = instaBtnRef.current;
+    if (!btn) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      // Prevent browser from scrolling the page
+      e.preventDefault();
+      const touch = e.touches[0];
+      instaTouchStartPos.current = { x: touch.clientX, y: touch.clientY };
+      instaTouchStartTime.current = Date.now();
+      instaLongPressed.current = false;
+      setIsInstaTouchHovered(true);
+
+      const rect = btn.getBoundingClientRect();
+      const x = touch.clientX - rect.left - rect.width / 2;
+      const y = touch.clientY - rect.top - rect.height / 2;
+
+      // Clamp target offset so content doesn't clip
+      const maxDistX = rect.width * 0.45;
+      const maxDistY = rect.height * 0.45;
+      const clampedX = Math.max(-maxDistX, Math.min(maxDistX, x));
+      const clampedY = Math.max(-maxDistY, Math.min(maxDistY, y));
+
+      gsap.to(btn, {
+        x: clampedX * 0.35,
+        y: clampedY * 0.35,
+        scale: 1.02,
+        duration: 0.3,
+        overwrite: "auto",
+      });
+
+      const content = btn.querySelector(".btn-content");
+      if (content) {
+        gsap.to(content, {
+          x: clampedX * 0.15,
+          y: clampedY * 0.15,
+          duration: 0.3,
+          overwrite: "auto",
+        });
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault(); // Blocks scrolling
+      const touch = e.touches[0];
+      const dx = Math.abs(touch.clientX - instaTouchStartPos.current.x);
+      const dy = Math.abs(touch.clientY - instaTouchStartPos.current.y);
+
+      const rect = btn.getBoundingClientRect();
+      const x = touch.clientX - rect.left - rect.width / 2;
+      const y = touch.clientY - rect.top - rect.height / 2;
+
+      const maxDistX = rect.width * 0.45;
+      const maxDistY = rect.height * 0.45;
+      const clampedX = Math.max(-maxDistX, Math.min(maxDistX, x));
+      const clampedY = Math.max(-maxDistY, Math.min(maxDistY, y));
+
+      gsap.to(btn, {
+        x: clampedX * 0.35,
+        y: clampedY * 0.35,
+        scale: 1.02,
+        duration: 0.3,
+        overwrite: "auto",
+      });
+
+      const content = btn.querySelector(".btn-content");
+      if (content) {
+        gsap.to(content, {
+          x: clampedX * 0.15,
+          y: clampedY * 0.15,
+          duration: 0.3,
+          overwrite: "auto",
+        });
+      }
+
+      if (dx > 10 || dy > 10) {
+        instaLongPressed.current = true;
+      }
+    };
+
+    const handleTouchEnd = () => {
+      const duration = Date.now() - instaTouchStartTime.current;
+      if (duration > 250) {
+        instaLongPressed.current = true;
+      }
+
+      gsap.to(btn, {
+        x: 0,
+        y: 0,
+        scale: 1,
+        duration: 0.6,
+        ease: "elastic.out(1.2, 0.4)",
+        overwrite: "auto",
+      });
+
+      const content = btn.querySelector(".btn-content");
+      if (content) {
+        gsap.to(content, {
+          x: 0,
+          y: 0,
+          duration: 0.6,
+          ease: "elastic.out(1.2, 0.4)",
+          overwrite: "auto",
+        });
+      }
+
+      setTimeout(() => {
+        setIsInstaTouchHovered(false);
+      }, 400);
+
+      if (!instaLongPressed.current) {
+        playClickSfx();
+        window.open("https://www.instagram.com/sachakarpaviciusss/", "_blank", "noopener,noreferrer");
+      }
+    };
+
+    btn.addEventListener("touchstart", handleTouchStart, { passive: false });
+    btn.addEventListener("touchmove", handleTouchMove, { passive: false });
+    btn.addEventListener("touchend", handleTouchEnd, { passive: false });
+    btn.addEventListener("touchcancel", handleTouchEnd, { passive: false });
+
+    return () => {
+      btn.removeEventListener("touchstart", handleTouchStart);
+      btn.removeEventListener("touchmove", handleTouchMove);
+      btn.removeEventListener("touchend", handleTouchEnd);
+      btn.removeEventListener("touchcancel", handleTouchEnd);
+    };
+  }, [playClickSfx]);
 
   /* Page entry animations */
   useEffect(() => {
@@ -1219,144 +1350,18 @@ export default function Home() {
                 </span>
                 <div className={`mt-2 w-fit mx-auto hover:animate-wiggle transition-transform duration-500 ${isInstaTouchHovered ? "animate-wiggle" : ""}`}>
                   <a
+                    ref={instaBtnRef}
                     href="https://www.instagram.com/sachakarpaviciusss/"
                     target="_blank"
                     rel="noopener noreferrer"
                     onMouseMove={handleMagnetMove}
                     onMouseLeave={handleMagnetLeave}
                     onClick={(e) => {
-                      // If it was a long press, block navigation and reset
-                      if (instaLongPressed.current) {
-                        e.preventDefault();
-                        instaLongPressed.current = false;
-                        return;
-                      }
+                      // Handled by touch events on mobile, but keep default click working on desktop
+                      if (e.detail === 0) return; // Ignore simulated click events
                       playClickSfx();
                     }}
                     data-touch-hover={isInstaTouchHovered}
-                    onTouchStart={(e) => {
-                      const touch = e.touches[0];
-                      instaTouchStartPos.current = { x: touch.clientX, y: touch.clientY };
-                      instaTouchStartTime.current = Date.now();
-                      instaLongPressed.current = false;
-                      
-                      setIsInstaTouchHovered(true);
-                      
-                      // Trigger magnet calculation at initial touch point
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const x = touch.clientX - rect.left - rect.width / 2;
-                      const y = touch.clientY - rect.top - rect.height / 2;
-                      
-                      gsap.to(e.currentTarget, {
-                        x: x * 0.35,
-                        y: y * 0.35,
-                        scale: 1.02,
-                        duration: 0.3,
-                        ease: "power2.out",
-                        overwrite: "auto",
-                      });
-                      
-                      const content = e.currentTarget.querySelector(".btn-content");
-                      if (content) {
-                        gsap.to(content, {
-                          x: x * 0.15,
-                          y: y * 0.15,
-                          duration: 0.3,
-                          ease: "power2.out",
-                          overwrite: "auto",
-                        });
-                      }
-                    }}
-                    onTouchMove={(e) => {
-                      const touch = e.touches[0];
-                      const dx = Math.abs(touch.clientX - instaTouchStartPos.current.x);
-                      const dy = Math.abs(touch.clientY - instaTouchStartPos.current.y);
-                      
-                      // Update the magnet position following the finger!
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const x = touch.clientX - rect.left - rect.width / 2;
-                      const y = touch.clientY - rect.top - rect.height / 2;
-                      
-                      gsap.to(e.currentTarget, {
-                        x: x * 0.35,
-                        y: y * 0.35,
-                        scale: 1.02,
-                        duration: 0.3,
-                        ease: "power2.out",
-                        overwrite: "auto",
-                      });
-                      
-                      const content = e.currentTarget.querySelector(".btn-content");
-                      if (content) {
-                        gsap.to(content, {
-                          x: x * 0.15,
-                          y: y * 0.15,
-                          duration: 0.3,
-                          ease: "power2.out",
-                          overwrite: "auto",
-                        });
-                      }
-                      
-                      // If they dragged significantly, mark as long press/drag to prevent click
-                      if (dx > 15 || dy > 15) {
-                        instaLongPressed.current = true;
-                      }
-                    }}
-                    onTouchEnd={(e) => {
-                      const duration = Date.now() - instaTouchStartTime.current;
-                      if (duration > 300) {
-                        instaLongPressed.current = true;
-                      }
-                      
-                      // Snap back to normal with elastic bounce
-                      gsap.to(e.currentTarget, {
-                        x: 0,
-                        y: 0,
-                        scale: 1,
-                        duration: 0.6,
-                        ease: "elastic.out(1.2, 0.4)",
-                        overwrite: "auto",
-                      });
-                      
-                      const content = e.currentTarget.querySelector(".btn-content");
-                      if (content) {
-                        gsap.to(content, {
-                          x: 0,
-                          y: 0,
-                          duration: 0.6,
-                          ease: "elastic.out(1.2, 0.4)",
-                          overwrite: "auto",
-                        });
-                      }
-                      
-                      // Keep the hover visual state (bg expansion, text slide) active slightly
-                      // so the snap-back has time to visually end before the hover class is removed
-                      setTimeout(() => {
-                        setIsInstaTouchHovered(false);
-                      }, 400);
-                    }}
-                    onTouchCancel={(e) => {
-                      instaLongPressed.current = true;
-                      gsap.to(e.currentTarget, {
-                        x: 0,
-                        y: 0,
-                        scale: 1,
-                        duration: 0.6,
-                        ease: "elastic.out(1.2, 0.4)",
-                        overwrite: "auto",
-                      });
-                      const content = e.currentTarget.querySelector(".btn-content");
-                      if (content) {
-                        gsap.to(content, {
-                          x: 0,
-                          y: 0,
-                          duration: 0.6,
-                          ease: "elastic.out(1.2, 0.4)",
-                          overwrite: "auto",
-                        });
-                      }
-                      setIsInstaTouchHovered(false);
-                    }}
                     className="group relative inline-flex items-center justify-center overflow-hidden px-10 py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-all duration-500 font-syne font-semibold text-[18px] md:text-[22px] text-white cursor-pointer hover:shadow-[0_0_30px_rgba(255,255,255,0.06)]"
                   >
                     <span className="absolute w-[120%] aspect-square bg-white rounded-full scale-0 group-hover:scale-[2.2] group-data-[touch-hover=true]:scale-[2.2] transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" />
