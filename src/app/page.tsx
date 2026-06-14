@@ -395,6 +395,7 @@ export default function Home() {
   const instaTouchTimeout = useRef<NodeJS.Timeout | null>(null);
   const instaTouchStartPos = useRef({ x: 0, y: 0 });
   const instaLongPressed = useRef(false);
+  const instaTouchStartTime = useRef<number>(0);
 
   const playerRef = useRef<GaplessPlayer | null>(null);
   const wasPlayingRef = useRef(false);
@@ -609,22 +610,19 @@ export default function Home() {
     if (!siteStarted) return;
     
     let timer: NodeJS.Timeout;
-    let hasInteracted = false;
     let initialGamma: number | null = null;
     let initialBeta: number | null = null;
 
     const startTimer = () => {
       timer = setTimeout(() => {
-        if (!hasInteracted) {
-          setShowGyroIndicator(true);
-        }
+        setShowGyroIndicator(true);
       }, 3000);
     };
 
-    const handleInteraction = () => {
-      hasInteracted = true;
-      setShowGyroIndicator(false);
+    const resetTimer = () => {
       clearTimeout(timer);
+      setShowGyroIndicator(false);
+      startTimer();
     };
 
     const handleOrientation = (e: DeviceOrientationEvent) => {
@@ -637,31 +635,22 @@ export default function Home() {
       
       const deltaGamma = Math.abs(e.gamma - initialGamma);
       const deltaBeta = Math.abs(e.beta - initialBeta);
-      // If phone tilts by more than 3 degrees, consider it active and hide guide
-      if (deltaGamma > 3 || deltaBeta > 3) {
-        handleInteraction();
+      
+      // If phone tilts by more than 2 degrees, consider it active explorer (hide indicator and reset timer)
+      if (deltaGamma > 2 || deltaBeta > 2) {
+        initialGamma = e.gamma;
+        initialBeta = e.beta;
+        resetTimer();
       }
-    };
-
-    const handleScroll = () => {
-      handleInteraction();
-    };
-
-    const handleTouch = () => {
-      handleInteraction();
     };
 
     startTimer();
 
     window.addEventListener("deviceorientation", handleOrientation);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("touchstart", handleTouch, { passive: true });
 
     return () => {
       clearTimeout(timer);
       window.removeEventListener("deviceorientation", handleOrientation);
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("touchstart", handleTouch);
     };
   }, [siteStarted]);
 
@@ -898,6 +887,17 @@ export default function Home() {
           100% { transform: scaleY(0.2); }
         }
         .music-bar { transform-origin: center; }
+        @keyframes phone-tilt {
+          0% { transform: rotate(0deg); }
+          25% { transform: rotate(-12deg); }
+          50% { transform: rotate(0deg); }
+          75% { transform: rotate(12deg); }
+          100% { transform: rotate(0deg); }
+        }
+        .animate-phone-tilt {
+          animation: phone-tilt 2.5s ease-in-out infinite;
+          transform-origin: center;
+        }
       `}</style>
 
       {/* Persistent Audio Icon (Bottom Right) */}
@@ -1010,21 +1010,20 @@ export default function Home() {
             <span className="w-1.5 h-1.5 bg-white/50 block rounded-sm"></span>
           </div>
           
-          {/* Gyroscope Idle Guide Prompt */}
+          {/* Gyroscope Idle Guide Prompt (Discrete Styled Icon, No Text) */}
           <div 
-            className={`absolute top-full mt-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30 transition-all duration-1000 ease-in-out md:hidden ${
+            className={`absolute top-full mt-5 left-1/2 -translate-x-1/2 flex flex-col items-center transition-all duration-1000 ease-in-out md:hidden ${
               showGyroIndicator ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-90 pointer-events-none'
             }`}
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="7" y="3" width="10" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-              <line x1="11" y1="19" x2="13" y2="19" strokeLinecap="round" />
-              <path d="M4 14C3.2 12.8 3.2 11.2 4 10" strokeLinecap="round" />
-              <path d="M20 10C20.8 11.2 20.8 12.8 20 14" strokeLinecap="round" />
-            </svg>
-            <span className="font-inter text-[7px] tracking-[0.25em] uppercase whitespace-nowrap">
-              {lang === "fr" ? "Inclinez pour explorer" : "Tilt to explore"}
-            </span>
+            <div className="w-10 h-10 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-md flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.03)] text-white/45 animate-phone-tilt">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <rect x="7" y="3" width="10" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                <line x1="11" y1="19" x2="13" y2="19" strokeLinecap="round" />
+                <path d="M4 14C3.2 12.8 3.2 11.2 4 10" strokeLinecap="round" />
+                <path d="M20 10C20.8 11.2 20.8 12.8 20 14" strokeLinecap="round" />
+              </svg>
+            </div>
           </div>
         </div>
 
@@ -1238,37 +1237,125 @@ export default function Home() {
                     onTouchStart={(e) => {
                       const touch = e.touches[0];
                       instaTouchStartPos.current = { x: touch.clientX, y: touch.clientY };
+                      instaTouchStartTime.current = Date.now();
                       instaLongPressed.current = false;
                       
-                      if (instaTouchTimeout.current) clearTimeout(instaTouchTimeout.current);
+                      setIsInstaTouchHovered(true);
                       
-                      // Long press: 400ms before activating wiggle + hover animation
-                      instaTouchTimeout.current = setTimeout(() => {
-                        instaLongPressed.current = true;
-                        setIsInstaTouchHovered(true);
-                      }, 400);
+                      // Trigger magnet calculation at initial touch point
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const x = touch.clientX - rect.left - rect.width / 2;
+                      const y = touch.clientY - rect.top - rect.height / 2;
+                      
+                      gsap.to(e.currentTarget, {
+                        x: x * 0.35,
+                        y: y * 0.35,
+                        scale: 1.02,
+                        duration: 0.3,
+                        ease: "power2.out",
+                        overwrite: "auto",
+                      });
+                      
+                      const content = e.currentTarget.querySelector(".btn-content");
+                      if (content) {
+                        gsap.to(content, {
+                          x: x * 0.15,
+                          y: y * 0.15,
+                          duration: 0.3,
+                          ease: "power2.out",
+                          overwrite: "auto",
+                        });
+                      }
                     }}
                     onTouchMove={(e) => {
                       const touch = e.touches[0];
                       const dx = Math.abs(touch.clientX - instaTouchStartPos.current.x);
                       const dy = Math.abs(touch.clientY - instaTouchStartPos.current.y);
                       
-                      if (dx > 10 || dy > 10) {
-                        if (instaTouchTimeout.current) clearTimeout(instaTouchTimeout.current);
-                        setIsInstaTouchHovered(false);
-                        instaLongPressed.current = false;
+                      // Update the magnet position following the finger!
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const x = touch.clientX - rect.left - rect.width / 2;
+                      const y = touch.clientY - rect.top - rect.height / 2;
+                      
+                      gsap.to(e.currentTarget, {
+                        x: x * 0.35,
+                        y: y * 0.35,
+                        scale: 1.02,
+                        duration: 0.3,
+                        ease: "power2.out",
+                        overwrite: "auto",
+                      });
+                      
+                      const content = e.currentTarget.querySelector(".btn-content");
+                      if (content) {
+                        gsap.to(content, {
+                          x: x * 0.15,
+                          y: y * 0.15,
+                          duration: 0.3,
+                          ease: "power2.out",
+                          overwrite: "auto",
+                        });
+                      }
+                      
+                      // If they dragged significantly, mark as long press/drag to prevent click
+                      if (dx > 15 || dy > 15) {
+                        instaLongPressed.current = true;
                       }
                     }}
-                    onTouchEnd={() => {
-                      if (instaTouchTimeout.current) clearTimeout(instaTouchTimeout.current);
+                    onTouchEnd={(e) => {
+                      const duration = Date.now() - instaTouchStartTime.current;
+                      if (duration > 300) {
+                        instaLongPressed.current = true;
+                      }
+                      
+                      // Snap back to normal with elastic bounce
+                      gsap.to(e.currentTarget, {
+                        x: 0,
+                        y: 0,
+                        scale: 1,
+                        duration: 0.6,
+                        ease: "elastic.out(1.2, 0.4)",
+                        overwrite: "auto",
+                      });
+                      
+                      const content = e.currentTarget.querySelector(".btn-content");
+                      if (content) {
+                        gsap.to(content, {
+                          x: 0,
+                          y: 0,
+                          duration: 0.6,
+                          ease: "elastic.out(1.2, 0.4)",
+                          overwrite: "auto",
+                        });
+                      }
+                      
+                      // Keep the hover visual state (bg expansion, text slide) active slightly
+                      // so the snap-back has time to visually end before the hover class is removed
                       setTimeout(() => {
                         setIsInstaTouchHovered(false);
                       }, 400);
                     }}
-                    onTouchCancel={() => {
-                      if (instaTouchTimeout.current) clearTimeout(instaTouchTimeout.current);
+                    onTouchCancel={(e) => {
+                      instaLongPressed.current = true;
+                      gsap.to(e.currentTarget, {
+                        x: 0,
+                        y: 0,
+                        scale: 1,
+                        duration: 0.6,
+                        ease: "elastic.out(1.2, 0.4)",
+                        overwrite: "auto",
+                      });
+                      const content = e.currentTarget.querySelector(".btn-content");
+                      if (content) {
+                        gsap.to(content, {
+                          x: 0,
+                          y: 0,
+                          duration: 0.6,
+                          ease: "elastic.out(1.2, 0.4)",
+                          overwrite: "auto",
+                        });
+                      }
                       setIsInstaTouchHovered(false);
-                      instaLongPressed.current = false;
                     }}
                     className="group relative inline-flex items-center justify-center overflow-hidden px-10 py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-all duration-500 font-syne font-semibold text-[18px] md:text-[22px] text-white cursor-pointer hover:shadow-[0_0_30px_rgba(255,255,255,0.06)]"
                   >
