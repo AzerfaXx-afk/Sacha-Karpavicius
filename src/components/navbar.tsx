@@ -26,6 +26,15 @@ const AnimatedLink = ({
   index: number;
 }) => {
   const lenis = useLenis();
+  const [isTouchHovered, setIsTouchHovered] = useState(false);
+  const touchStartPos = useRef({ x: 0, y: 0 });
+  const touchTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (touchTimeout.current) clearTimeout(touchTimeout.current);
+    };
+  }, []);
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -37,7 +46,8 @@ const AnimatedLink = ({
           duration: 1.5,
         });
       } else {
-        document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
+        const target = document.querySelector(href);
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
       }
     }, 1000); // Wait for the menu to close
   };
@@ -50,13 +60,44 @@ const AnimatedLink = ({
       style={{ 
         transitionDelay: isOpen ? `${0.25 + index * 0.08}s` : '0s' 
       }}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      data-touch-hover={isTouchHovered}
+      onTouchStart={(e) => {
+        const touch = e.touches[0];
+        touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+        if (touchTimeout.current) clearTimeout(touchTimeout.current);
+        
+        touchTimeout.current = setTimeout(() => {
+          setIsTouchHovered(true);
+          onMouseEnter();
+        }, 80);
+      }}
+      onTouchMove={(e) => {
+        const touch = e.touches[0];
+        const dx = Math.abs(touch.clientX - touchStartPos.current.x);
+        const dy = Math.abs(touch.clientY - touchStartPos.current.y);
+        if (dx > 10 || dy > 10) {
+          if (touchTimeout.current) clearTimeout(touchTimeout.current);
+          setIsTouchHovered(false);
+          onMouseLeave();
+        }
+      }}
+      onTouchEnd={() => {
+        if (touchTimeout.current) clearTimeout(touchTimeout.current);
+        setTimeout(() => {
+          setIsTouchHovered(false);
+          onMouseLeave();
+        }, 300);
+      }}
+      onTouchCancel={() => {
+        if (touchTimeout.current) clearTimeout(touchTimeout.current);
+        setIsTouchHovered(false);
+        onMouseLeave();
+      }}
       onClick={handleClick}
     >
       {/* Sliding Number prefix */}
       <div className="relative shrink-0 overflow-hidden font-mono text-[2.5vw] md:text-[1vw] text-white/20 mr-4 md:mr-8 self-start mt-2 md:mt-4 h-[1.2em] pointer-events-none">
-        <div className={`transition-transform duration-[600ms] ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${isDimmed ? '' : 'group-hover:-translate-y-1/2'}`}>
+        <div className={`transition-transform duration-[600ms] ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${isDimmed ? '' : 'group-hover:-translate-y-1/2 group-data-[touch-hover=true]:-translate-y-1/2'}`}>
           <span className="h-[1.2em] flex items-center">{number}</span>
           <span className="h-[1.2em] flex items-center text-white">{number}</span>
         </div>
@@ -75,7 +116,7 @@ const AnimatedLink = ({
           {text.split("").map((c, i) => (
             <span 
               key={i} 
-              className="inline-block transition-transform duration-[750ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:-translate-y-[120%] group-hover:skew-y-[6deg]"
+              className="inline-block transition-transform duration-[750ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:-translate-y-[120%] group-hover:skew-y-[6deg] group-data-[touch-hover=true]:-translate-y-[120%] group-data-[touch-hover=true]:skew-y-[6deg]"
               style={{ transitionDelay: `${i * 0.015}s` }}
             >
               {c === " " ? "\u00A0" : c}
@@ -86,7 +127,7 @@ const AnimatedLink = ({
           {text.split("").map((c, i) => (
             <span 
               key={i} 
-              className="inline-block translate-y-[120%] skew-y-[6deg] transition-transform duration-[750ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:translate-y-0 group-hover:skew-y-0"
+              className="inline-block translate-y-[120%] skew-y-[6deg] transition-transform duration-[750ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:translate-y-0 group-hover:skew-y-0 group-data-[touch-hover=true]:translate-y-0 group-data-[touch-hover=true]:skew-y-0"
               style={{ transitionDelay: `${i * 0.015}s` }}
             >
               {c === " " ? "\u00A0" : c}
@@ -144,10 +185,10 @@ export default function Navbar({
   useEffect(() => {
     if (showUI) {
       if (navRef.current) gsap.to(navRef.current, { y: 0, opacity: 1, duration: 1.5, ease: "power4.out", overwrite: true });
-      if (timeRef.current) gsap.to(timeRef.current, { opacity: 1, duration: 1.5, ease: "power4.out", overwrite: true });
+      if (timeRef.current) gsap.to(timeRef.current, { y: 0, opacity: 1, duration: 1.5, ease: "power4.out", overwrite: true });
     } else {
       if (navRef.current) gsap.to(navRef.current, { y: -32, opacity: 0, duration: 1.0, ease: "power3.inOut", overwrite: true });
-      if (timeRef.current) gsap.to(timeRef.current, { opacity: 0, duration: 1.0, ease: "power3.inOut", overwrite: true });
+      if (timeRef.current) gsap.to(timeRef.current, { y: -32, opacity: 0, duration: 1.0, ease: "power3.inOut", overwrite: true });
     }
   }, [showUI]);
 
@@ -403,7 +444,7 @@ export default function Navbar({
       {/* Time at top right */}
       <div 
         ref={timeRef} 
-        className="fixed top-6 right-6 md:top-8 md:right-12 z-[110] flex flex-col items-end gap-1 mix-blend-difference pointer-events-none opacity-0"
+        className="fixed top-6 right-6 md:top-8 md:right-12 z-[110] flex flex-col items-end gap-1 mix-blend-difference pointer-events-none -translate-y-8 opacity-0"
       >
         <div className="border border-white/20 px-2 py-0.5 rounded-sm text-[10px] text-white">
           {time || "00:00:00"}

@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useLenis } from "@studio-freight/react-lenis";
 
 export default function PullToRefresh({ children }: { children: React.ReactNode }) {
+  const lenis = useLenis();
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPulling, setIsPulling] = useState(false);
@@ -22,15 +24,17 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
     if (typeof window === "undefined") return;
 
     const handleTouchStart = (e: TouchEvent) => {
-      if (window.scrollY > 5 || isRefreshing) return;
+      const currentScroll = lenis ? lenis.scroll : window.scrollY;
+      if (currentScroll > 5 || isRefreshing) return;
       startY.current = e.touches[0].clientY;
       isScrollingDownRef.current = false;
       setIsPulling(false);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      const currentScroll = lenis ? lenis.scroll : window.scrollY;
       // If we are already determined to be scrolling down the page, ignore
-      if (isRefreshing || window.scrollY > 5 || isScrollingDownRef.current) return;
+      if (isRefreshing || currentScroll > 5 || isScrollingDownRef.current) return;
       
       const currentY = e.touches[0].clientY;
       const diff = currentY - startY.current;
@@ -92,7 +96,7 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
       window.removeEventListener("touchend", handleTouchEnd);
       window.removeEventListener("touchcancel", handleTouchEnd);
     };
-  }, [isPulling, pullDistance, isRefreshing]);
+  }, [isPulling, pullDistance, isRefreshing, lenis]);
 
   // Map pulling distance to styles
   const translateY = isRefreshing ? 55 : pullDistance;
