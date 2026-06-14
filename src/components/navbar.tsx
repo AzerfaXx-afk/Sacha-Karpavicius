@@ -26,15 +26,72 @@ const AnimatedLink = ({
   index: number;
 }) => {
   const lenis = useLenis();
+  const linkRef = useRef<HTMLDivElement>(null);
   const [isTouchHovered, setIsTouchHovered] = useState(false);
   const touchStartPos = useRef({ x: 0, y: 0 });
   const touchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isLongPress = useRef(false);
 
   useEffect(() => {
+    const el = linkRef.current;
+    if (!el) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      const clientX = touch.clientX;
+      const clientY = touch.clientY;
+      touchStartPos.current = { x: clientX, y: clientY };
+      isLongPress.current = false;
+
+      if (touchTimeout.current) clearTimeout(touchTimeout.current);
+      touchTimeout.current = setTimeout(() => {
+        isLongPress.current = true;
+        setIsTouchHovered(true);
+        onMouseEnter({ x: clientX, y: clientY });
+      }, 200); // Trigger preview after 200ms hold
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      const dx = Math.abs(touch.clientX - touchStartPos.current.x);
+      const dy = Math.abs(touch.clientY - touchStartPos.current.y);
+
+      // Cancel preview hold if they drag far (scrolling)
+      if (dx > 20 || dy > 20) {
+        if (touchTimeout.current) clearTimeout(touchTimeout.current);
+        setIsTouchHovered(false);
+        onMouseLeave();
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (touchTimeout.current) clearTimeout(touchTimeout.current);
+
+      if (isLongPress.current) {
+        // Long press holds preview. Prevent click/navigation and fade out slowly
+        e.preventDefault();
+        setTimeout(() => {
+          setIsTouchHovered(false);
+          onMouseLeave();
+        }, 1200);
+      } else {
+        // Short press triggers default click (navigates)
+      }
+    };
+
+    el.addEventListener("touchstart", handleTouchStart, { passive: false });
+    el.addEventListener("touchmove", handleTouchMove, { passive: true });
+    el.addEventListener("touchend", handleTouchEnd, { passive: false });
+    el.addEventListener("touchcancel", handleTouchEnd, { passive: false });
+
     return () => {
+      el.removeEventListener("touchstart", handleTouchStart);
+      el.removeEventListener("touchmove", handleTouchMove);
+      el.removeEventListener("touchend", handleTouchEnd);
+      el.removeEventListener("touchcancel", handleTouchEnd);
       if (touchTimeout.current) clearTimeout(touchTimeout.current);
     };
-  }, []);
+  }, [onMouseEnter, onMouseLeave]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -54,52 +111,18 @@ const AnimatedLink = ({
 
   return (
     <div 
-      className={`group flex items-start cursor-pointer transition-all duration-[1200ms] ease-[cubic-bezier(0.25,1,0.5,1)] ${
-        isOpen ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0'
-      }`}
-      style={{ 
-        transitionDelay: isOpen ? `${0.25 + index * 0.08}s` : '0s' 
+      ref={linkRef}
+      className="menu-link-item group flex items-start cursor-pointer opacity-0 translate-y-24 transform-gpu"
+      onMouseEnter={(e) => {
+        onMouseEnter({ x: e.clientX, y: e.clientY });
       }}
+      onMouseLeave={onMouseLeave}
       data-touch-hover={isTouchHovered}
-      onTouchStart={(e) => {
-        const touch = e.touches[0];
-        const clientX = touch.clientX;
-        const clientY = touch.clientY;
-        touchStartPos.current = { x: clientX, y: clientY };
-        if (touchTimeout.current) clearTimeout(touchTimeout.current);
-        
-        touchTimeout.current = setTimeout(() => {
-          setIsTouchHovered(true);
-          onMouseEnter({ x: clientX, y: clientY });
-        }, 80);
-      }}
-      onTouchMove={(e) => {
-        const touch = e.touches[0];
-        const dx = Math.abs(touch.clientX - touchStartPos.current.x);
-        const dy = Math.abs(touch.clientY - touchStartPos.current.y);
-        if (dx > 10 || dy > 10) {
-          if (touchTimeout.current) clearTimeout(touchTimeout.current);
-          setIsTouchHovered(false);
-          onMouseLeave();
-        }
-      }}
-      onTouchEnd={() => {
-        if (touchTimeout.current) clearTimeout(touchTimeout.current);
-        setTimeout(() => {
-          setIsTouchHovered(false);
-          onMouseLeave();
-        }, 300);
-      }}
-      onTouchCancel={() => {
-        if (touchTimeout.current) clearTimeout(touchTimeout.current);
-        setIsTouchHovered(false);
-        onMouseLeave();
-      }}
       onClick={handleClick}
     >
       {/* Sliding Number prefix */}
       <div className="relative shrink-0 overflow-hidden font-mono text-[2.5vw] md:text-[1vw] text-white/20 mr-4 md:mr-8 self-start mt-2 md:mt-4 h-[1.2em] pointer-events-none">
-        <div className={`transition-transform duration-[600ms] ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${isDimmed ? '' : 'group-hover:-translate-y-1/2 group-data-[touch-hover=true]:-translate-y-1/2'}`}>
+        <div className="transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] flex flex-col group-hover:-translate-y-1/2 group-data-[touch-hover=true]:-translate-y-1/2">
           <span className="h-[1.2em] flex items-center">{number}</span>
           <span className="h-[1.2em] flex items-center text-white">{number}</span>
         </div>
@@ -108,7 +131,7 @@ const AnimatedLink = ({
       <a 
         href={href} 
         onClick={(e) => e.preventDefault()} // Handled by parent container click
-        className={`relative flex shrink-0 whitespace-nowrap overflow-hidden px-6 md:px-16 leading-none text-[7vw] md:text-[4.5vw] font-syne font-bold uppercase tracking-tight transition-all duration-[750ms] ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none ${
+        className={`relative flex shrink-0 whitespace-nowrap overflow-hidden px-6 md:px-16 leading-none text-[7vw] md:text-[4.5vw] font-syne font-bold uppercase tracking-tight transition-all duration-[750ms] ease-[cubic-bezier(0.76,0,0.24,1)] pointer-events-none ${
           isDimmed 
             ? 'opacity-15 blur-[1px] scale-[0.98]' 
             : 'text-white scale-100'
@@ -118,7 +141,7 @@ const AnimatedLink = ({
           {text.split("").map((c, i) => (
             <span 
               key={i} 
-              className="inline-block transition-transform duration-[750ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:-translate-y-[120%] group-hover:skew-y-[6deg] group-data-[touch-hover=true]:-translate-y-[120%] group-data-[touch-hover=true]:skew-y-[6deg]"
+              className="inline-block transition-transform duration-[750ms] ease-[cubic-bezier(0.76,0,0.24,1)] group-hover:-translate-y-[120%] group-hover:skew-y-[6deg] group-data-[touch-hover=true]:-translate-y-[120%] group-data-[touch-hover=true]:skew-y-[6deg]"
               style={{ transitionDelay: `${i * 0.015}s` }}
             >
               {c === " " ? "\u00A0" : c}
@@ -129,7 +152,7 @@ const AnimatedLink = ({
           {text.split("").map((c, i) => (
             <span 
               key={i} 
-              className="inline-block translate-y-[120%] skew-y-[6deg] transition-transform duration-[750ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:translate-y-0 group-hover:skew-y-0 group-data-[touch-hover=true]:translate-y-0 group-data-[touch-hover=true]:skew-y-0"
+              className="inline-block translate-y-[120%] skew-y-[6deg] transition-transform duration-[750ms] ease-[cubic-bezier(0.76,0,0.24,1)] group-hover:translate-y-0 group-hover:skew-y-0 group-data-[touch-hover=true]:translate-y-0 group-data-[touch-hover=true]:skew-y-0"
               style={{ transitionDelay: `${i * 0.015}s` }}
             >
               {c === " " ? "\u00A0" : c}
@@ -156,11 +179,16 @@ export default function Navbar({
 }) {
   const lenis = useLenis();
   const [isOpen, setIsOpen] = useState(false);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [time, setTime] = useState("");
   const navRef = useRef<HTMLElement>(null);
   const timeRef = useRef<HTMLDivElement>(null);
   const floatingRef = useRef<HTMLDivElement>(null);
+  const floatingCardRef = useRef<HTMLDivElement>(null);
+  const pathRef = useRef<SVGPathElement>(null);
+  const linksContainerRef = useRef<HTMLDivElement>(null);
+  const lastTouchPos = useRef({ x: 0, y: 0, time: 0 });
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Mobile background crossfade state
@@ -221,6 +249,117 @@ export default function Navbar({
     };
   }, []);
 
+  // Morphing clipPath menu reveal & staggered links entrance/exit
+  useEffect(() => {
+    const path = pathRef.current;
+    if (!path) return;
+
+    const links = linksContainerRef.current?.querySelectorAll(".menu-link-item");
+
+    if (isOpen) {
+      setIsMenuVisible(true);
+      // Kill any active tweens on the path and links
+      gsap.killTweensOf(path);
+      if (links) gsap.killTweensOf(links);
+
+      // Set initial state of path and links
+      gsap.set(path, { attr: { d: "M 0,0 L 1,0 L 1,0 Q 0.5,0 0,0 Z" } });
+      if (links && links.length > 0) {
+        gsap.set(links, { y: 80, opacity: 0 });
+      }
+
+      // Animate morphing menu opening
+      const tl = gsap.timeline();
+      tl.to(path, {
+        attr: { d: "M 0,0 L 1,0 L 1,1 Q 0.5,1.15 0,1 Z" },
+        duration: 0.65,
+        ease: "power3.in",
+      }).to(path, {
+        attr: { d: "M 0,0 L 1,0 L 1,1 Q 0.5,1 0,1 Z" },
+        duration: 0.45,
+        ease: "power2.out",
+      });
+
+      // Animate links in
+      if (links && links.length > 0) {
+        gsap.to(links, {
+          y: 0,
+          opacity: 1,
+          duration: 0.85,
+          ease: "power4.out",
+          stagger: 0.08,
+          delay: 0.35,
+        });
+      }
+    } else {
+      // Closing
+      gsap.killTweensOf(path);
+      if (links) gsap.killTweensOf(links);
+
+      // Animate morphing menu closing
+      const tl = gsap.timeline({
+        onComplete: () => {
+          setIsMenuVisible(false);
+        }
+      });
+      tl.to(path, {
+        attr: { d: "M 0,0 L 1,0 L 1,0 Q 0.5,0.15 0,0 Z" },
+        duration: 0.45,
+        ease: "power3.in",
+      }).to(path, {
+        attr: { d: "M 0,0 L 1,0 L 1,0 Q 0.5,0 0,0 Z" },
+        duration: 0.35,
+        ease: "power2.out",
+      });
+
+      // Animate links out
+      if (links && links.length > 0) {
+        gsap.to(links, {
+          y: -50,
+          opacity: 0,
+          duration: 0.4,
+          ease: "power3.in",
+          stagger: 0.05,
+        });
+      }
+    }
+  }, [isOpen]);
+
+  // Floating cursor preview card GSAP transitions (avoiding CSS transition conflicts)
+  useEffect(() => {
+    const card = floatingCardRef.current;
+    if (!card) return;
+
+    if (hoveredIndex !== null) {
+      gsap.to(card, {
+        opacity: 1,
+        scale: 1,
+        rotation: 0,
+        duration: 0.6,
+        ease: "power4.out",
+        overwrite: "auto",
+      });
+
+      // Zoom active image inside preview card
+      const activeImg = card.querySelector(`[data-index="${hoveredIndex}"] img`);
+      if (activeImg) {
+        gsap.fromTo(activeImg, 
+          { scale: 1.25 },
+          { scale: 1, duration: 1.2, ease: "power3.out", overwrite: "auto" }
+        );
+      }
+    } else {
+      gsap.to(card, {
+        opacity: 0,
+        scale: 0.75,
+        rotation: -5,
+        duration: 0.5,
+        ease: "power3.out",
+        overwrite: "auto",
+      });
+    }
+  }, [hoveredIndex]);
+
   const handleMouseEnter = (index: number, pos?: { x: number, y: number }) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -249,15 +388,32 @@ export default function Navbar({
     const touch = e.touches[0];
     const x = touch.clientX;
     const y = touch.clientY;
-
+    const now = Date.now();
+    
+    const dt = now - lastTouchPos.current.time || 16;
+    const dx = x - lastTouchPos.current.x;
+    const dy = y - lastTouchPos.current.y;
+    
+    // Scale speed to match movementX/Y speed values
+    const speedX = (dx / dt) * 16;
+    const speedY = (dy / dt) * 16;
+    
+    const rotation = gsap.utils.clamp(-8, 8, speedX * 0.35);
+    const skewX = gsap.utils.clamp(-8, 8, speedX * 0.25);
+    const skewY = gsap.utils.clamp(-8, 8, speedY * 0.25);
+    
     gsap.to(floatingRef.current, {
       x: x,
       y: y,
-      rotation: 0,
+      rotation: rotation,
+      skewX: skewX,
+      skewY: skewY,
       duration: 0.6,
       ease: "power3.out",
       overwrite: "auto",
     });
+    
+    lastTouchPos.current = { x, y, time: now };
   };
 
   const handleLinkClick = () => {
@@ -275,12 +431,19 @@ export default function Navbar({
     const x = e.clientX;
     const y = e.clientY;
     const speedX = e.movementX || 0;
-    const rotation = gsap.utils.clamp(-12, 12, speedX * 0.4);
+    const speedY = e.movementY || 0;
+    
+    // Calculate rotation and skews based on mouse speed
+    const rotation = gsap.utils.clamp(-12, 12, speedX * 0.45);
+    const skewX = gsap.utils.clamp(-10, 10, speedX * 0.3);
+    const skewY = gsap.utils.clamp(-10, 10, speedY * 0.3);
     
     gsap.to(floatingRef.current, {
       x: x,
       y: y,
       rotation: rotation,
+      skewX: skewX,
+      skewY: skewY,
       duration: 0.8,
       ease: "power3.out",
       overwrite: "auto",
@@ -330,8 +493,13 @@ export default function Navbar({
 
       {/* Fullscreen Overlay Menu */}
       <div 
-        className="fixed inset-0 z-[100] bg-[#050505] flex flex-col justify-center px-6 md:px-12 transition-transform duration-[1s] ease-[cubic-bezier(0.76,0,0.24,1)] overflow-hidden"
-        style={{ transform: isOpen ? 'translateY(0)' : 'translateY(-100%)' }}
+        ref={linksContainerRef}
+        className="fixed inset-0 z-[100] bg-[#050505] flex flex-col justify-center px-6 md:px-12 overflow-hidden"
+        style={{ 
+          clipPath: "url(#menu-clip)",
+          pointerEvents: isOpen ? "auto" : "none",
+          visibility: isMenuVisible ? "visible" : "hidden"
+        }}
         onMouseMove={handleOverlayMouseMove}
         onTouchMove={handleOverlayTouchMove}
       >
@@ -413,54 +581,48 @@ export default function Navbar({
           className="fixed top-0 left-0 pointer-events-none z-[5] will-change-transform"
         >
           <div 
-            className="relative w-[160px] h-[210px] md:w-[260px] md:h-[340px] rounded-lg overflow-hidden border border-white/10 shadow-2xl transition-all duration-[600ms] ease-[cubic-bezier(0.25,1,0.5,1)] origin-center -translate-x-1/2 -translate-y-[115%] md:-translate-y-1/2"
-            style={{
-              opacity: hoveredIndex !== null ? 1 : 0,
-              transform: `scale(${hoveredIndex !== null ? 1 : 0.75}) rotate(${hoveredIndex !== null ? 0 : -5}deg)`,
-            }}
+            ref={floatingCardRef}
+            className="relative w-[160px] h-[210px] md:w-[260px] md:h-[340px] rounded-lg overflow-hidden border border-white/10 shadow-2xl origin-center -translate-x-1/2 -translate-y-[115%] md:-translate-y-1/2 opacity-0 scale-[0.75] -rotate-5 pointer-events-none transform-gpu"
           >
             <div className="relative w-full h-full bg-[#111]">
               <div className="absolute inset-0 bg-black/15 z-10 pointer-events-none" />
 
               {/* Image 01: Selected Works */}
               <div 
+                data-index={0}
                 className="absolute inset-0 transition-opacity duration-700 ease-in-out overflow-hidden"
                 style={{ opacity: hoveredIndex === 0 ? 1 : 0 }}
               >
                 <img 
                   src="/2.jpg" 
                   alt="Selected Works Preview" 
-                  className={`w-full h-full object-cover transition-transform duration-1000 ease-out ${
-                    hoveredIndex === 0 ? "scale-100" : "scale-110"
-                  }`} 
+                  className="w-full h-full object-cover transform-gpu" 
                 />
               </div>
               
               {/* Image 02: About */}
               <div 
+                data-index={1}
                 className="absolute inset-0 transition-opacity duration-700 ease-in-out overflow-hidden"
                 style={{ opacity: hoveredIndex === 1 ? 1 : 0 }}
               >
                 <img 
                   src="/5.jpg" 
                   alt="About & Vision Preview" 
-                  className={`w-full h-full object-cover transition-transform duration-1000 ease-out ${
-                    hoveredIndex === 1 ? "scale-100" : "scale-110"
-                  }`} 
+                  className="w-full h-full object-cover transform-gpu" 
                 />
               </div>
               
               {/* Image 03: Connect */}
               <div 
+                data-index={2}
                 className="absolute inset-0 transition-opacity duration-700 ease-in-out overflow-hidden"
                 style={{ opacity: hoveredIndex === 2 ? 1 : 0 }}
               >
                 <img 
                   src="/6.jpg" 
                   alt="Connect Preview" 
-                  className={`w-full h-full object-cover transition-transform duration-1000 ease-out ${
-                    hoveredIndex === 2 ? "scale-100" : "scale-110"
-                  }`} 
+                  className="w-full h-full object-cover transform-gpu" 
                 />
               </div>
             </div>
@@ -480,6 +642,15 @@ export default function Navbar({
           Paris<br/>CET
         </div>
       </div>
+
+      {/* Inline SVG definitions for clip-path morphing */}
+      <svg className="absolute w-0 h-0" aria-hidden="true">
+        <defs>
+          <clipPath id="menu-clip" clipPathUnits="objectBoundingBox">
+            <path ref={pathRef} d="M 0,0 L 1,0 L 1,0 Q 0.5,0 0,0 Z" />
+          </clipPath>
+        </defs>
+      </svg>
     </>
   );
 }

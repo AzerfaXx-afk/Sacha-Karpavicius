@@ -1038,6 +1038,7 @@ export default function Home() {
         clickable={siteStarted} 
         lang={lang} 
         onPlayClickSfx={playClickSfx}
+        onPlayHoverSfx={playHoverSfx}
       />
 
       <style>{`
