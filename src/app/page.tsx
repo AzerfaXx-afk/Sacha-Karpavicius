@@ -133,30 +133,32 @@ const AboutImageCard = () => {
   };
 
   // Mobile Gyroscope tilt interaction
+  // The frame barely moves — it's the person inside who shifts, like looking through a window
   useEffect(() => {
     if (typeof window === "undefined") return;
     
     const handleOrientation = (e: DeviceOrientationEvent) => {
       if (isTouching.current || e.gamma == null || e.beta == null || !cardRef.current || !imgRef.current) return;
       
-      // Increased sensitivity (clamp limit -28 to 28, factor 0.9)
-      const xRot = gsap.utils.clamp(-28, 28, e.gamma * 0.9);
-      const yRot = gsap.utils.clamp(-28, 28, (e.beta - 50) * 0.9);
+      const rawX = gsap.utils.clamp(-30, 30, e.gamma * 0.9);
+      const rawY = gsap.utils.clamp(-30, 30, (e.beta - 50) * 0.9);
 
+      // Card frame: very subtle tilt (nearly static)
       gsap.to(cardRef.current, {
-        rotateY: xRot,
-        rotateX: -yRot,
-        transformPerspective: 1000,
-        duration: 1.0,
+        rotateY: rawX * 0.15,
+        rotateX: -rawY * 0.15,
+        transformPerspective: 1200,
+        duration: 1.2,
         ease: "power2.out",
         overwrite: "auto",
       });
 
+      // Inner image: large translation for parallax-window effect
       gsap.to(imgRef.current, {
-        x: -xRot * 0.5,
-        y: -yRot * 0.5,
-        scale: 1.05,
-        duration: 1.0,
+        x: -rawX * 1.2,
+        y: -rawY * 1.2,
+        scale: 1.12,
+        duration: 1.2,
         ease: "power2.out",
         overwrite: "auto",
       });
@@ -1189,7 +1191,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ CONTACT / FOOTER ═══════════════════ */}
-      <footer ref={contactRef} id="contact" className="relative bg-[#0a0a0a] pt-20 md:pt-28 pb-8 md:pb-12 min-h-screen flex flex-col justify-between overflow-hidden">
+      <footer ref={contactRef} id="contact" className="relative bg-[#0a0a0a] pt-20 md:pt-28 pb-4 md:pb-12 min-h-screen flex flex-col justify-between overflow-hidden">
         <div className="px-5 md:px-16 flex-1 flex flex-col justify-between">
           <div>
             <div data-text-reveal className="flex items-center gap-6 mb-16 md:mb-24">
@@ -1272,7 +1274,7 @@ export default function Home() {
           </div>
 
           {/* Bottom Copyright Bar with 12-column grid layout to clear floating buttons */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-8 mt-16 border-t border-white/5 text-[9px] md:text-[10px] tracking-[0.2em] uppercase text-white/20">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-8 pb-16 md:pb-0 mt-16 border-t border-white/5 text-[9px] md:text-[10px] tracking-[0.2em] uppercase text-white/20">
             {/* Column 1 & 2: Empty on desktop (covers left Get in Touch floating button) */}
             <div className="hidden md:block md:col-span-2" />
 
