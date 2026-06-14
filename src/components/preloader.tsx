@@ -135,6 +135,7 @@ export default function Preloader({ onComplete, onStart, onHoverChange, lang = "
     <div
       ref={containerRef}
       data-lenis-prevent="true"
+      data-preloader="true"
       className="fixed inset-0 w-full h-full z-[100] flex items-center justify-center select-none overflow-hidden pointer-events-auto"
     >
       {/* Expanding Square Aperture (The "hole" that reveals the site) */}
@@ -275,7 +276,7 @@ export default function Preloader({ onComplete, onStart, onHoverChange, lang = "
       {/* Bottom Left Letter */}
       <h1
         ref={letterSRef}
-        className="absolute bottom-[-2vw] left-4 md:left-12 font-syne font-bold text-[30vw] md:text-[25vw] leading-none text-white/90"
+        className="absolute bottom-[-2vw] left-4 md:left-12 font-syne font-bold text-[30vw] md:text-[25vw] leading-none text-white/90 pointer-events-none"
         style={{ opacity: 0 }}
       >
         S
@@ -284,7 +285,7 @@ export default function Preloader({ onComplete, onStart, onHoverChange, lang = "
       {/* Bottom Right Letter */}
       <h1
         ref={letterKRef}
-        className="absolute bottom-[-2vw] right-4 md:right-12 font-syne font-bold text-[30vw] md:text-[25vw] leading-none text-white/90"
+        className="absolute bottom-[-2vw] right-4 md:right-12 font-syne font-bold text-[30vw] md:text-[25vw] leading-none text-white/90 pointer-events-none"
         style={{ opacity: 0 }}
       >
         K

@@ -29,17 +29,29 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
     if (typeof window === "undefined") return;
 
     const handleTouchStart = (e: TouchEvent) => {
+      // Disable pull-to-refresh if the preloader is still active
+      const isPreloaderActive = typeof document !== "undefined" && !!document.querySelector('[data-preloader="true"]');
+      if (isPreloaderActive) return;
+
       const currentScroll = lenisRef.current ? lenisRef.current.scroll : window.scrollY;
       if (currentScroll > 5 || isRefreshing) return;
-      startY.current = e.touches[0].clientY;
+
+      // Only allow pull-to-refresh if touch starts in the top 150px of the screen
+      const touchY = e.touches[0].clientY;
+      if (touchY > 150) return;
+
+      startY.current = touchY;
       isScrollingDownRef.current = false;
       setIsPulling(false);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      const isPreloaderActive = typeof document !== "undefined" && !!document.querySelector('[data-preloader="true"]');
+      if (isPreloaderActive || isRefreshing) return;
+
       const currentScroll = lenisRef.current ? lenisRef.current.scroll : window.scrollY;
       // If we are already determined to be scrolling down the page, ignore
-      if (isRefreshing || currentScroll > 5 || isScrollingDownRef.current) return;
+      if (currentScroll > 5 || isScrollingDownRef.current) return;
       
       const currentY = e.touches[0].clientY;
       const diff = currentY - startY.current;
