@@ -396,6 +396,7 @@ export default function Home() {
   const instaTouchStartPos = useRef({ x: 0, y: 0 });
   const instaLongPressed = useRef(false);
   const instaTouchStartTime = useRef<number>(0);
+  const instaBtnRect = useRef<DOMRect | null>(null);
 
   const playerRef = useRef<GaplessPlayer | null>(null);
   const wasPlayingRef = useRef(false);
@@ -697,7 +698,10 @@ export default function Home() {
       instaLongPressed.current = false;
       setIsInstaTouchHovered(true);
 
+      // Store the static bounding rect of the button at the moment touch starts
       const rect = btn.getBoundingClientRect();
+      instaBtnRect.current = rect;
+
       const x = touch.clientX - rect.left - rect.width / 2;
       const y = touch.clientY - rect.top - rect.height / 2;
 
@@ -732,7 +736,8 @@ export default function Home() {
       const dx = Math.abs(touch.clientX - instaTouchStartPos.current.x);
       const dy = Math.abs(touch.clientY - instaTouchStartPos.current.y);
 
-      const rect = btn.getBoundingClientRect();
+      // Use the static stored bounding rect to calculate coordinate differences cleanly (avoid feedback loop jitter)
+      const rect = instaBtnRect.current || btn.getBoundingClientRect();
       const x = touch.clientX - rect.left - rect.width / 2;
       const y = touch.clientY - rect.top - rect.height / 2;
 
