@@ -29,9 +29,14 @@ export default function Preloader({ onComplete, onStart, onHoverChange, lang = "
 
     if (!container || !lens || !letterS || !letterK || !nameContainer) return;
 
+    // Force scroll position to top and disable automatic browser scroll restoration on refresh
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+
     // Lock scroll completely during preloader
     document.body.style.overflow = "hidden";
-    window.scrollTo(0, 0);
 
     const preventScroll = (e: Event) => {
       e.preventDefault();
@@ -61,62 +66,63 @@ export default function Preloader({ onComplete, onStart, onHoverChange, lang = "
     };
     window.addEventListener("mousemove", handleMouseMove);
 
-    if (!hasStarted) {
-      // Set initial states
-      gsap.set(lens, { width: 0, height: 0, rotation: 45, xPercent: -50, yPercent: -50 });
-      gsap.set([letterS, letterK], { yPercent: 120, opacity: 0 });
-      gsap.set(nameContainer.querySelectorAll(".name-char"), { opacity: 1, y: 0 });
-      return;
+    // Set initial states
+    gsap.set(lens, { width: 0, height: 0, rotation: 45, xPercent: -50, yPercent: -50 });
+    gsap.set([letterS, letterK], { yPercent: 120, opacity: 0 });
+    gsap.set(nameContainer.querySelectorAll(".name-char"), { opacity: 1, y: 0 });
+
+    let tl: gsap.core.Timeline | null = null;
+
+    if (hasStarted) {
+      tl = gsap.timeline({
+        onComplete: () => {
+          document.body.style.overflow = "";
+          onComplete();
+        },
+      });
+
+      // 2. Letters slide up
+      tl.to(
+        [letterS, letterK],
+        {
+          yPercent: 0,
+          opacity: 1,
+          duration: 1.2,
+          ease: "expo.out",
+          stagger: 0.1,
+        },
+        0
+      );
+
+      // 3. Expand the aperture to reveal the entire site
+      tl.to(
+        lens,
+        {
+          width: "300vmax",
+          height: "300vmax",
+          rotation: 45,
+          duration: 1.5,
+          ease: "power4.inOut",
+          overwrite: true,
+        },
+        "-=0.5"
+      );
+
+      // 4. Letters and center name fade out as the aperture opens
+      tl.to(
+        [letterS, letterK, nameContainer],
+        {
+          opacity: 0,
+          scale: 1.1,
+          duration: 1.0,
+          ease: "power2.inOut",
+        },
+        "-=1.2"
+      );
     }
 
-    const tl = gsap.timeline({
-      onComplete: () => {
-        document.body.style.overflow = "";
-        onComplete();
-      },
-    });
-
-    // 2. Letters slide up
-    tl.to(
-      [letterS, letterK],
-      {
-        yPercent: 0,
-        opacity: 1,
-        duration: 1.2,
-        ease: "expo.out",
-        stagger: 0.1,
-      },
-      0
-    );
-
-    // 3. Expand the aperture to reveal the entire site
-    tl.to(
-      lens,
-      {
-        width: "300vmax",
-        height: "300vmax",
-        rotation: 45,
-        duration: 1.5,
-        ease: "power4.inOut",
-        overwrite: true,
-      },
-      "-=0.5"
-    );
-
-    // 4. Letters and center name fade out as the aperture opens
-    tl.to(
-      [letterS, letterK, nameContainer],
-      {
-        opacity: 0,
-        scale: 1.1,
-        duration: 1.0,
-        ease: "power2.inOut",
-      },
-      "-=1.2"
-    );
-
     return () => {
-      tl.kill();
+      if (tl) tl.kill();
       document.body.style.overflow = "";
       window.removeEventListener("wheel", preventScroll);
       window.removeEventListener("touchmove", preventScroll);
