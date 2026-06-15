@@ -1196,14 +1196,14 @@ export default function Home() {
               src="/5.jpg"
               alt="Sacha Karpavicius - Visual Storyteller"
               fill
-              className="object-cover object-center"
+              className="object-cover object-[center_28%]"
               priority
               quality={100}
             />
             {/* Extreme dark vignette to blend the image edges completely into the background */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_#050505_80%)] pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-[#050505] opacity-100 pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-transparent to-[#050505] opacity-100 pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_40%,_#050505_85%)] opacity-70 md:opacity-100 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-[#050505] opacity-80 md:opacity-100 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-transparent to-[#050505] opacity-40 md:opacity-100 pointer-events-none" />
             {/* Optional subtle red/warm tint overlay to match the vibe */}
             <div className="absolute inset-0 bg-red-900 mix-blend-overlay opacity-10 pointer-events-none" />
           </div>
@@ -1445,7 +1445,7 @@ export default function Home() {
                     onClick={handleInstaClick}
                     onMouseMove={handleMagnetMove}
                     onMouseLeave={handleMagnetLeave}
-                    className="group relative inline-flex items-center justify-center overflow-hidden px-10 py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-all duration-500 font-syne font-semibold text-[18px] md:text-[22px] text-white cursor-pointer hover:shadow-[0_0_30px_rgba(255,255,255,0.06)]"
+                    className="group relative inline-flex items-center justify-center overflow-hidden px-6 py-3 md:px-10 md:py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-all duration-500 font-syne font-semibold text-[14px] sm:text-[18px] md:text-[22px] text-white cursor-pointer hover:shadow-[0_0_30px_rgba(255,255,255,0.06)]"
                   >
                     <span className="absolute w-[120%] aspect-square bg-white rounded-full scale-0 group-hover:scale-[2.2] transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" />
                     
