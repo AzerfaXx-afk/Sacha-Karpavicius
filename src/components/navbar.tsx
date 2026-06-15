@@ -169,16 +169,22 @@ export default function Navbar({
   clickable = true, 
   lang = "fr",
   onPlayHoverSfx,
-  onPlayClickSfx
+  onPlayClickSfx,
+  onMenuToggle
 }: { 
   showUI?: boolean; 
   clickable?: boolean; 
   lang?: "fr" | "en";
   onPlayHoverSfx?: () => void;
   onPlayClickSfx?: () => void;
+  onMenuToggle?: (isOpen: boolean) => void;
 }) {
   const lenis = useLenis();
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    onMenuToggle?.(isOpen);
+  }, [isOpen, onMenuToggle]);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [time, setTime] = useState("");

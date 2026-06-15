@@ -19,13 +19,20 @@ const projects = [
 ];
 
 /* ──── About Image Card with 3D Tilt Glare Effect ──── */
-const AboutImageCard = () => {
+/* ──── About Image Card with 3D Tilt Glare Effect ──── */
+const AboutImageCard = ({ isMenuOpen }: { isMenuOpen: boolean }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const isTouching = useRef(false);
   const touchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isMobileDevice = useRef(false);
+
+  useEffect(() => {
+    isMobileDevice.current = typeof window !== "undefined" && (window.innerWidth < 768 || ("ontouchstart" in window) || (navigator.maxTouchPoints > 0));
+  }, []);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isMobileDevice.current) return;
     if (!cardRef.current || !imgRef.current) return;
     const { left, top, width, height } = cardRef.current.getBoundingClientRect();
     const x = (e.clientX - left) / width - 0.5;
@@ -70,6 +77,7 @@ const AboutImageCard = () => {
   };
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (isMobileDevice.current) return;
     if (!cardRef.current || !imgRef.current) return;
     isTouching.current = true;
     if (touchTimeout.current) clearTimeout(touchTimeout.current);
@@ -99,6 +107,7 @@ const AboutImageCard = () => {
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (isMobileDevice.current) return;
     if (!cardRef.current || !imgRef.current) return;
     const touch = e.touches[0];
     const { left, top, width, height } = cardRef.current.getBoundingClientRect();
@@ -125,6 +134,7 @@ const AboutImageCard = () => {
   };
 
   const handleTouchEnd = () => {
+    if (isMobileDevice.current) return;
     handleMouseLeave();
     if (touchTimeout.current) clearTimeout(touchTimeout.current);
     touchTimeout.current = setTimeout(() => {
@@ -133,12 +143,11 @@ const AboutImageCard = () => {
   };
 
   // Mobile Gyroscope tilt interaction
-  // The frame barely moves — it's the person inside who shifts, like looking through a window
   useEffect(() => {
     if (typeof window === "undefined") return;
     
     const handleOrientation = (e: DeviceOrientationEvent) => {
-      if (isTouching.current || e.gamma == null || e.beta == null || !cardRef.current || !imgRef.current) return;
+      if (isTouching.current || e.gamma == null || e.beta == null || !cardRef.current || !imgRef.current || isMenuOpen) return;
       
       const rawX = gsap.utils.clamp(-30, 30, e.gamma * 0.9);
       const rawY = gsap.utils.clamp(-30, 30, (e.beta - 50) * 0.9);
@@ -169,7 +178,28 @@ const AboutImageCard = () => {
       window.removeEventListener("deviceorientation", handleOrientation);
       if (touchTimeout.current) clearTimeout(touchTimeout.current);
     };
-  }, []);
+  }, [isMenuOpen]);
+
+  // Center/reset when menu is opened
+  useEffect(() => {
+    if (isMenuOpen && cardRef.current && imgRef.current) {
+      gsap.to(cardRef.current, {
+        rotateY: 0,
+        rotateX: 0,
+        duration: 0.8,
+        ease: "power3.out",
+        overwrite: "auto",
+      });
+      gsap.to(imgRef.current, {
+        x: 0,
+        y: 0,
+        scale: 1.0,
+        duration: 0.8,
+        ease: "power3.out",
+        overwrite: "auto",
+      });
+    }
+  }, [isMenuOpen]);
 
   return (
     <div
@@ -192,6 +222,7 @@ const AboutImageCard = () => {
     </div>
   );
 };
+
 
 /* ──── Interactive List Item ──── */
 const InteractiveListItem = ({ text, onMouseEnter, onClick }: { text: string; onMouseEnter?: () => void; onClick?: () => void }) => {
@@ -398,6 +429,16 @@ export default function Home() {
   const instaLongPressed = useRef(false);
   const instaTouchStartTime = useRef<number>(0);
   const instaBtnRect = useRef<DOMRect | null>(null);
+
+  // New mobile menu sync & redirect transition states
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isMenuOpenRef = useRef(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Refs for curtain redirection transition
+  const redirectCurtainRef = useRef<HTMLDivElement>(null);
+  const redirectTextRef = useRef<HTMLDivElement>(null);
+  const instaFooterBtnRef = useRef<HTMLAnchorElement>(null);
 
   const playerRef = useRef<GaplessPlayer | null>(null);
   const wasPlayingRef = useRef(false);
@@ -673,9 +714,9 @@ export default function Home() {
     setLoading(false);
   }, []);
 
-  /* ── UI animations (audio, get in touch) ── */
+  /* ── UI animations (audio, get in touch, instagram) ── */
   useEffect(() => {
-    const uiElements = [getInTouchRef.current, audioIconRef.current].filter(Boolean);
+    const uiElements = [getInTouchRef.current, audioIconRef.current, instaBtnRef.current].filter(Boolean);
     if (uiElements.length === 0) return;
 
     if (siteStarted || isHoveringName) {
@@ -685,141 +726,66 @@ export default function Home() {
     }
   }, [siteStarted, isHoveringName]);
 
-  // Mobile contact button non-passive touch listeners
+  // Mobile menu open / close sync and centering
   useEffect(() => {
-    const btn = instaBtnRef.current;
-    if (!btn) return;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      // Prevent browser from scrolling the page
-      e.preventDefault();
-      const touch = e.touches[0];
-      instaTouchStartPos.current = { x: touch.clientX, y: touch.clientY };
-      instaTouchStartTime.current = Date.now();
-      instaLongPressed.current = false;
-      setIsInstaTouchHovered(true);
-      isInstaTouchHoveredRef.current = true;
-
-      // Store the static bounding rect of the button at the moment touch starts
-      const rect = btn.getBoundingClientRect();
-      instaBtnRect.current = rect;
-
-      const x = touch.clientX - rect.left - rect.width / 2;
-      const y = touch.clientY - rect.top - rect.height / 2;
-
-      // Clamp target offset so content doesn't clip
-      const maxDistX = rect.width * 0.45;
-      const maxDistY = rect.height * 0.45;
-      const clampedX = Math.max(-maxDistX, Math.min(maxDistX, x));
-      const clampedY = Math.max(-maxDistY, Math.min(maxDistY, y));
-
-      gsap.to(btn, {
-        x: clampedX * 0.35,
-        y: clampedY * 0.35,
-        scale: 1.02,
-        duration: 0.3,
-        overwrite: "auto",
-      });
-
-      const content = btn.querySelector(".btn-content");
-      if (content) {
-        gsap.to(content, {
-          x: clampedX * 0.15,
-          y: clampedY * 0.15,
-          duration: 0.3,
-          overwrite: "auto",
-        });
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault(); // Blocks scrolling
-      const touch = e.touches[0];
-      const dx = Math.abs(touch.clientX - instaTouchStartPos.current.x);
-      const dy = Math.abs(touch.clientY - instaTouchStartPos.current.y);
-
-      // Use the static stored bounding rect to calculate coordinate differences cleanly (avoid feedback loop jitter)
-      const rect = instaBtnRect.current || btn.getBoundingClientRect();
-      const x = touch.clientX - rect.left - rect.width / 2;
-      const y = touch.clientY - rect.top - rect.height / 2;
-
-      const maxDistX = rect.width * 0.45;
-      const maxDistY = rect.height * 0.45;
-      const clampedX = Math.max(-maxDistX, Math.min(maxDistX, x));
-      const clampedY = Math.max(-maxDistY, Math.min(maxDistY, y));
-
-      gsap.to(btn, {
-        x: clampedX * 0.35,
-        y: clampedY * 0.35,
-        scale: 1.02,
-        duration: 0.3,
-        overwrite: "auto",
-      });
-
-      const content = btn.querySelector(".btn-content");
-      if (content) {
-        gsap.to(content, {
-          x: clampedX * 0.15,
-          y: clampedY * 0.15,
-          duration: 0.3,
-          overwrite: "auto",
-        });
-      }
-
-      if (dx > 10 || dy > 10) {
-        instaLongPressed.current = true;
-      }
-    };
-
-    const handleTouchEnd = () => {
-      const duration = Date.now() - instaTouchStartTime.current;
-      if (duration > 250) {
-        instaLongPressed.current = true;
-      }
-
-      gsap.to(btn, {
+    isMenuOpenRef.current = isMenuOpen;
+    if (isMenuOpen && heroImgRef.current) {
+      gsap.to(heroImgRef.current, {
         x: 0,
         y: 0,
-        scale: 1,
-        duration: 0.6,
-        ease: "elastic.out(1.2, 0.4)",
-        overwrite: "auto",
+        rotationY: 0,
+        rotationX: 0,
+        duration: 0.8,
+        ease: "power3.out",
+        overwrite: "auto"
       });
+    }
+  }, [isMenuOpen]);
 
-      const content = btn.querySelector(".btn-content");
-      if (content) {
-        gsap.to(content, {
-          x: 0,
-          y: 0,
-          duration: 0.6,
-          ease: "elastic.out(1.2, 0.4)",
-          overwrite: "auto",
+  // Premium Awwwards-style click redirection animation
+  const handleInstaClick = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    if (isRedirecting) return;
+    setIsRedirecting(true);
+    playClickSfx();
+
+    // GSAP Timeline for the curtain redirect
+    const tl = gsap.timeline({
+      onComplete: () => {
+        // Safe navigation on same window to bypass mobile popup blockers and launch app directly
+        window.location.href = "https://www.instagram.com/sachakarpaviciusss/";
+        
+        // Safety fallback: slide curtain out after redirection starts
+        gsap.to(redirectCurtainRef.current, {
+          yPercent: -100,
+          duration: 0.8,
+          ease: "power4.inOut",
+          delay: 1.0,
+          onComplete: () => {
+            setIsRedirecting(false);
+            gsap.set(redirectCurtainRef.current, { yPercent: 100 });
+          }
         });
       }
+    });
 
-      setTimeout(() => {
-        setIsInstaTouchHovered(false);
-        isInstaTouchHoveredRef.current = false;
-      }, 400);
+    // Slide curtain up
+    tl.to(redirectCurtainRef.current, {
+      yPercent: 0,
+      duration: 0.85,
+      ease: "power4.inOut",
+    });
 
-      if (!instaLongPressed.current) {
-        playClickSfx();
-        window.open("https://www.instagram.com/sachakarpaviciusss/", "_blank", "noopener,noreferrer");
-      }
-    };
-
-    btn.addEventListener("touchstart", handleTouchStart, { passive: false });
-    btn.addEventListener("touchmove", handleTouchMove, { passive: false });
-    btn.addEventListener("touchend", handleTouchEnd, { passive: false });
-    btn.addEventListener("touchcancel", handleTouchEnd, { passive: false });
-
-    return () => {
-      btn.removeEventListener("touchstart", handleTouchStart);
-      btn.removeEventListener("touchmove", handleTouchMove);
-      btn.removeEventListener("touchend", handleTouchEnd);
-      btn.removeEventListener("touchcancel", handleTouchEnd);
-    };
-  }, [playClickSfx]);
+    // Stagger character animations for "INSTAGRAM"
+    if (redirectTextRef.current) {
+      const chars = redirectTextRef.current.querySelectorAll(".reveal-char");
+      tl.fromTo(chars, 
+        { y: 60, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.6, ease: "power3.out", stagger: 0.03 },
+        "-=0.45"
+      );
+    }
+  };
 
   /* Page entry animations */
   useEffect(() => {
@@ -954,6 +920,8 @@ export default function Home() {
 
   /* Mouse Parallax (always active) */
   useEffect(() => {
+    const isMobileDevice = typeof window !== "undefined" && (window.innerWidth < 768 || ("ontouchstart" in window) || (navigator.maxTouchPoints > 0));
+
     const ctx = gsap.context(() => {
       // Desktop: Smooth, subtle mouse tracking using gsap.to directly to avoid StrictMode issues
       const handleMouseMove = (e: MouseEvent) => {
@@ -976,11 +944,11 @@ export default function Home() {
 
       // Mobile: Gyroscope / Tilt tracking
       const handleOrientation = (e: DeviceOrientationEvent) => {
-        if (e.gamma == null || e.beta == null || isHoveringNameRef.current) return;
+        if (e.gamma == null || e.beta == null || isHoveringNameRef.current || isMenuOpenRef.current) return;
         
         // Map tilt angles to wider translation limits (-55px to 55px) and center around normal holding angle (45-50deg)
-        const xPos = gsap.utils.clamp(-55, 55, e.gamma * 1.5); // increased from 20
-        const yPos = gsap.utils.clamp(-55, 55, (e.beta - 50) * 1.5);  // increased from 20
+        const xPos = gsap.utils.clamp(-55, 55, e.gamma * 1.5);
+        const yPos = gsap.utils.clamp(-55, 55, (e.beta - 50) * 1.5);
 
         if (heroImgRef.current) {
           gsap.to(heroImgRef.current, {
@@ -994,8 +962,8 @@ export default function Home() {
           });
         }
 
-        // Apply same gyroscope movement to Instagram button if not touched
-        if (instaBtnRef.current && !isInstaTouchHoveredRef.current) {
+        // Apply same gyroscope movement to Instagram button
+        if (instaBtnRef.current) {
           gsap.to(instaBtnRef.current, {
             x: xPos * 0.35,
             y: yPos * 0.35,
@@ -1016,10 +984,14 @@ export default function Home() {
         }
       };
 
-      window.addEventListener("mousemove", handleMouseMove);
+      if (!isMobileDevice) {
+        window.addEventListener("mousemove", handleMouseMove);
+      }
       window.addEventListener("deviceorientation", handleOrientation);
       return () => {
-        window.removeEventListener("mousemove", handleMouseMove);
+        if (!isMobileDevice) {
+          window.removeEventListener("mousemove", handleMouseMove);
+        }
         window.removeEventListener("deviceorientation", handleOrientation);
       };
     });
@@ -1039,6 +1011,7 @@ export default function Home() {
         lang={lang} 
         onPlayClickSfx={playClickSfx}
         onPlayHoverSfx={playHoverSfx}
+        onMenuToggle={setIsMenuOpen}
       />
 
       <style>{`
@@ -1106,7 +1079,7 @@ export default function Home() {
             if (contactTouchTimeout.current) clearTimeout(contactTouchTimeout.current);
             setIsContactTouchHovered(false);
           }}
-          className="inline-flex items-center gap-2 border border-white/20 px-4 py-2.5 rounded-sm hover:bg-white hover:text-black data-[touch-hover=true]:bg-white data-[touch-hover=true]:text-black transition-all duration-300 font-inter text-[11px] md:text-[12px] text-white cursor-pointer group"
+          className="inline-flex items-center gap-1.5 border border-white/20 px-3 py-2 md:px-4 md:py-2.5 rounded-sm hover:bg-white hover:text-black data-[touch-hover=true]:bg-white data-[touch-hover=true]:text-black transition-all duration-300 font-inter text-[10px] md:text-[12px] text-white cursor-pointer group"
         >
           {lang === "fr" ? "Contactez-moi" : "Get in touch"}
           <div className="relative overflow-hidden w-3 h-3 flex items-center justify-center">
@@ -1118,6 +1091,59 @@ export default function Home() {
             </span>
           </div>
         </a>
+      </div>
+
+      {/* Persistent Instagram Button (Bottom Center) */}
+      <div 
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] mix-blend-difference opacity-0 ${siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}
+      >
+        <a 
+          ref={instaBtnRef}
+          href="https://www.instagram.com/sachakarpaviciusss/"
+          onClick={handleInstaClick}
+          onMouseMove={handleMagnetMove}
+          onMouseLeave={handleMagnetLeave}
+          className="group relative inline-flex items-center justify-center overflow-hidden px-3.5 py-2 md:px-5 md:py-2.5 rounded-full border border-white/20 hover:border-white bg-black/40 backdrop-blur-md transition-all duration-300 font-inter text-[10px] md:text-[12px] text-white cursor-pointer"
+        >
+          <span className="btn-content relative z-10 flex items-center gap-1.5 pointer-events-none">
+            <svg className="w-3 h-3 md:w-3.5 md:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+            </svg>
+            <span className="relative overflow-hidden flex items-center h-[1.2em]">
+              <span className="inline-block transition-transform duration-350 ease-out group-hover:-translate-y-[120%]">
+                Instagram
+              </span>
+              <span className="absolute left-0 inline-block translate-y-[120%] transition-transform duration-350 ease-out group-hover:translate-y-0 text-white">
+                @sachakarpaviciusss
+              </span>
+            </span>
+          </span>
+        </a>
+      </div>
+
+      {/* Awwwards Curtain Redirect Overlay */}
+      <div 
+        ref={redirectCurtainRef}
+        className="fixed inset-0 z-[9999] bg-[#050505] flex flex-col items-center justify-center pointer-events-none transform-gpu"
+        style={{ transform: "translateY(100%)" }}
+      >
+        <div className="text-center space-y-6">
+          <div ref={redirectTextRef} className="overflow-hidden py-2">
+            <h2 className="font-syne font-bold text-[6vw] md:text-[3vw] tracking-tight uppercase text-white flex justify-center gap-1">
+              {"INSTAGRAM".split("").map((char, i) => (
+                <span key={i} className="reveal-char inline-block">{char}</span>
+              ))}
+            </h2>
+          </div>
+          <p className="font-mono text-[10px] md:text-[12px] tracking-[0.4em] text-white/40 uppercase animate-pulse">
+            {lang === "fr" ? "Ouverture du profil..." : "Opening profile..."}
+          </p>
+        </div>
+        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 font-inter text-[9px] tracking-[0.2em] text-white/20 uppercase">
+          Sacha Karpavicius — Editorial Photographer
+        </div>
       </div>
 
       {/* ═══════════════════ HERO SECTION ═══════════════════ */}
@@ -1323,7 +1349,7 @@ export default function Home() {
 
             {/* Center: Interactive Portrait Card */}
             <div className="md:col-span-4 flex justify-center py-6 md:py-0 md:mt-[20px]" data-text-reveal>
-              <AboutImageCard />
+              <AboutImageCard isMenuOpen={isMenuOpen} />
             </div>
 
             {/* Right: Interactive Lists */}
@@ -1378,30 +1404,23 @@ export default function Home() {
                 <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/30 uppercase block">
                   COLLAB
                 </span>
-                <div className={`mt-2 w-fit mx-auto hover:animate-wiggle transition-transform duration-500 ${isInstaTouchHovered ? "animate-wiggle" : ""}`}>
+                <div className="mt-2 w-fit mx-auto transition-transform duration-500">
                   <a
-                    ref={instaBtnRef}
+                    ref={instaFooterBtnRef}
                     href="https://www.instagram.com/sachakarpaviciusss/"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    onClick={handleInstaClick}
                     onMouseMove={handleMagnetMove}
                     onMouseLeave={handleMagnetLeave}
-                    onClick={(e) => {
-                      // Handled by touch events on mobile, but keep default click working on desktop
-                      if (e.detail === 0) return; // Ignore simulated click events
-                      playClickSfx();
-                    }}
-                    data-touch-hover={isInstaTouchHovered}
                     className="group relative inline-flex items-center justify-center overflow-hidden px-10 py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-all duration-500 font-syne font-semibold text-[18px] md:text-[22px] text-white cursor-pointer hover:shadow-[0_0_30px_rgba(255,255,255,0.06)]"
                   >
-                    <span className="absolute w-[120%] aspect-square bg-white rounded-full scale-0 group-hover:scale-[2.2] group-data-[touch-hover=true]:scale-[2.2] transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" />
+                    <span className="absolute w-[120%] aspect-square bg-white rounded-full scale-0 group-hover:scale-[2.2] transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" />
                     
                     <span className="btn-content relative z-10 flex items-center justify-center pointer-events-none">
                       <span className="relative overflow-hidden flex items-center h-[1.2em]">
-                        <span className="inline-block transition-transform duration-500 ease-out group-hover:-translate-y-[120%] group-data-[touch-hover=true]:-translate-y-[120%]">
+                        <span className="inline-block transition-transform duration-500 ease-out group-hover:-translate-y-[120%]">
                           @sachakarpaviciusss
                         </span>
-                        <span className="absolute left-0 inline-block translate-y-[120%] transition-transform duration-500 ease-out group-hover:translate-y-0 group-data-[touch-hover=true]:translate-y-0 text-black">
+                        <span className="absolute left-0 inline-block translate-y-[120%] transition-transform duration-500 ease-out group-hover:translate-y-0 text-black">
                           @sachakarpaviciusss
                         </span>
                       </span>
