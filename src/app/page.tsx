@@ -485,6 +485,7 @@ export default function Home() {
   }, []);
 
   const handleMagnetMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isRedirecting) return;
     const btn = e.currentTarget;
     const rect = btn.getBoundingClientRect();
     const x = e.clientX - rect.left - rect.width / 2;
@@ -512,6 +513,7 @@ export default function Home() {
   };
 
   const handleMagnetLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isRedirecting) return;
     const btn = e.currentTarget;
     gsap.to(btn, {
       x: 0,
@@ -743,13 +745,15 @@ export default function Home() {
   }, [isMenuOpen]);
 
   // Premium Awwwards-style click redirection animation
-  const handleInstaClick = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleInstaClick = (e: React.MouseEvent<HTMLAnchorElement> | React.TouchEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     if (isRedirecting) return;
     setIsRedirecting(true);
     playClickSfx();
 
-    // GSAP Timeline for the curtain redirect
+    const clickedBtn = e.currentTarget;
+
+    // GSAP Timeline for the button pop and curtain redirect
     const tl = gsap.timeline({
       onComplete: () => {
         // Safe navigation on same window to bypass mobile popup blockers and launch app directly
@@ -764,17 +768,30 @@ export default function Home() {
           onComplete: () => {
             setIsRedirecting(false);
             gsap.set(redirectCurtainRef.current, { yPercent: 100 });
+            // Reset clicked button scale back to default
+            gsap.set(clickedBtn, { scale: 1 });
           }
         });
       }
     });
 
-    // Slide curtain up
+    // 1. Button Pop Animation (tactile feedback bounce)
+    tl.to(clickedBtn, {
+      scale: 0.82,
+      duration: 0.12,
+      ease: "power2.out"
+    }).to(clickedBtn, {
+      scale: 1.15,
+      duration: 0.45,
+      ease: "elastic.out(1.2, 0.4)"
+    });
+
+    // 2. Slide curtain up (delayed slightly so the pop registers visually first)
     tl.to(redirectCurtainRef.current, {
       yPercent: 0,
       duration: 0.85,
       ease: "power4.inOut",
-    });
+    }, 0.15);
 
     // Stagger character animations for "INSTAGRAM"
     if (redirectTextRef.current) {
@@ -782,7 +799,7 @@ export default function Home() {
       tl.fromTo(chars, 
         { y: 60, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.6, ease: "power3.out", stagger: 0.03 },
-        "-=0.45"
+        0.5 // trigger when curtain has covered the viewport
       );
     }
   };
