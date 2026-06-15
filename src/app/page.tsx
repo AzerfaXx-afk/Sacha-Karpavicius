@@ -216,7 +216,7 @@ const AboutImageCard = ({ isMenuOpen }: { isMenuOpen: boolean }) => {
         ref={imgRef}
         src="/1.jpg"
         alt="Sacha Karpavicius Portrait"
-        className="w-full h-full object-cover transition-transform duration-700 ease-out pointer-events-none"
+        className="w-full h-full object-cover pointer-events-none"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
     </div>
@@ -1137,7 +1137,7 @@ export default function Home() {
           onClick={handleInstaClick}
           onMouseMove={handleMagnetMove}
           onMouseLeave={handleMagnetLeave}
-          className="group relative inline-flex items-center justify-center overflow-hidden px-3.5 py-2 md:px-5 md:py-2.5 rounded-full border border-white/20 hover:border-white bg-black/40 backdrop-blur-md transition-all duration-300 font-inter text-[10px] md:text-[12px] text-white cursor-pointer"
+          className="group relative inline-flex items-center justify-center overflow-hidden px-3.5 py-2 md:px-5 md:py-2.5 rounded-full border border-white/20 hover:border-white bg-black/40 backdrop-blur-md transition-[border-color,box-shadow,opacity] duration-300 font-inter text-[10px] md:text-[12px] text-white cursor-pointer"
         >
           <span className="btn-content relative z-10 flex items-center gap-1.5 pointer-events-none">
             <svg className="w-3 h-3 md:w-3.5 md:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1445,7 +1445,7 @@ export default function Home() {
                     onClick={handleInstaClick}
                     onMouseMove={handleMagnetMove}
                     onMouseLeave={handleMagnetLeave}
-                    className="group relative inline-flex items-center justify-center overflow-hidden px-6 py-3 md:px-10 md:py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-all duration-500 font-syne font-semibold text-[14px] sm:text-[18px] md:text-[22px] text-white cursor-pointer hover:shadow-[0_0_30px_rgba(255,255,255,0.06)]"
+                    className="group relative inline-flex items-center justify-center overflow-hidden px-6 py-3 md:px-10 md:py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-[border-color,box-shadow,opacity] duration-500 font-syne font-semibold text-[14px] sm:text-[18px] md:text-[22px] text-white cursor-pointer hover:shadow-[0_0_30px_rgba(255,255,255,0.06)]"
                   >
                     <span className="absolute w-[120%] aspect-square bg-white rounded-full scale-0 group-hover:scale-[2.2] transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" />
                     
