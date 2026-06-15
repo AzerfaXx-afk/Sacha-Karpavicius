@@ -66,10 +66,12 @@ export default function Preloader({ onComplete, onStart, onHoverChange, lang = "
     };
     window.addEventListener("mousemove", handleMouseMove);
 
-    // Set initial states
-    gsap.set(lens, { width: 0, height: 0, rotation: 45, xPercent: -50, yPercent: -50 });
-    gsap.set([letterS, letterK], { yPercent: 120, opacity: 0 });
-    gsap.set(nameContainer.querySelectorAll(".name-char"), { opacity: 1, y: 0 });
+    // Set initial states - ONLY on mount
+    if (!hasStarted) {
+      gsap.set(lens, { width: 0, height: 0, rotation: 45, xPercent: -50, yPercent: -50 });
+      gsap.set([letterS, letterK], { yPercent: 120, opacity: 0 });
+      gsap.set(nameContainer.querySelectorAll(".name-char"), { opacity: 1, y: 0 });
+    }
 
     let tl: gsap.core.Timeline | null = null;
 
