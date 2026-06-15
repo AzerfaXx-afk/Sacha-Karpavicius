@@ -1191,6 +1191,10 @@ export default function Home() {
           <div
             ref={heroImgRef}
             className="relative w-[85vw] h-[65vh] md:w-[600px] md:h-[700px] object-cover"
+            style={{
+              WebkitMaskImage: "radial-gradient(ellipse at center, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 80%)",
+              maskImage: "radial-gradient(ellipse at center, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 80%)"
+            }}
           >
             <Image
               src="/5.jpg"
@@ -1201,9 +1205,9 @@ export default function Home() {
               quality={100}
             />
             {/* Extreme dark vignette to blend the image edges completely into the background */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_40%,_#050505_85%)] opacity-70 md:opacity-100 pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-[#050505] opacity-80 md:opacity-100 pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-transparent to-[#050505] opacity-40 md:opacity-100 pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_50%,_#050505_90%)] opacity-100 pointer-events-none" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_top,_#050505_0%,_transparent_18%,_transparent_82%,_#050505_100%)] opacity-100 pointer-events-none" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,_#050505_0%,_transparent_18%,_transparent_82%,_#050505_100%)] opacity-100 pointer-events-none" />
             {/* Optional subtle red/warm tint overlay to match the vibe */}
             <div className="absolute inset-0 bg-red-900 mix-blend-overlay opacity-10 pointer-events-none" />
           </div>
