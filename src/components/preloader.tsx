@@ -20,8 +20,15 @@ export default function Preloader({ onComplete, onStart, onHoverChange, lang = "
   const [isHoveringLocal, setIsHoveringLocal] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // 1. Scroll locking and global listeners (Runs once on mount)
   useEffect(() => {
+    const container = containerRef.current;
+    const lens = lensRef.current;
+    const letterS = letterSRef.current;
+    const letterK = letterKRef.current;
+    const nameContainer = nameRef.current;
+
+    if (!container || !lens || !letterS || !letterK || !nameContainer) return;
+
     // Force scroll position to top and disable automatic browser scroll restoration on refresh
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
@@ -39,7 +46,6 @@ export default function Preloader({ onComplete, onStart, onHoverChange, lang = "
 
     window.addEventListener("wheel", preventScroll, { passive: false });
     window.addEventListener("touchmove", preventScroll, { passive: false });
-    
     const preventKeys = (e: KeyboardEvent) => {
       if (["ArrowUp", "ArrowDown", "Space", "PageUp", "PageDown"].includes(e.code)) {
         preventScroll(e);
@@ -49,7 +55,6 @@ export default function Preloader({ onComplete, onStart, onHoverChange, lang = "
 
     // Spotlight cursor logic
     const handleMouseMove = (e: MouseEvent) => {
-      const nameContainer = nameRef.current;
       if (nameContainer) {
         const rect = nameContainer.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -61,148 +66,70 @@ export default function Preloader({ onComplete, onStart, onHoverChange, lang = "
     };
     window.addEventListener("mousemove", handleMouseMove);
 
+    // Set initial states
+    gsap.set(lens, { width: 0, height: 0, rotation: 45, xPercent: -50, yPercent: -50 });
+    gsap.set([letterS, letterK], { yPercent: 120, opacity: 0 });
+    gsap.set(nameContainer.querySelectorAll(".name-char"), { opacity: 1, y: 0 });
+
+    let tl: gsap.core.Timeline | null = null;
+
+    if (hasStarted) {
+      tl = gsap.timeline({
+        onComplete: () => {
+          document.body.style.overflow = "";
+          onComplete();
+        },
+      });
+
+      // 2. Letters slide up
+      tl.to(
+        [letterS, letterK],
+        {
+          yPercent: 0,
+          opacity: 1,
+          duration: 1.2,
+          ease: "expo.out",
+          stagger: 0.1,
+        },
+        0
+      );
+
+      // 3. Expand the aperture to reveal the entire site
+      tl.to(
+        lens,
+        {
+          width: "300vmax",
+          height: "300vmax",
+          rotation: 45,
+          duration: 1.5,
+          ease: "power4.inOut",
+          overwrite: true,
+        },
+        "-=0.5"
+      );
+
+      // 4. Letters and center name fade out as the aperture opens
+      tl.to(
+        [letterS, letterK, nameContainer],
+        {
+          opacity: 0,
+          scale: 1.1,
+          duration: 1.0,
+          ease: "power2.inOut",
+        },
+        "-=1.2"
+      );
+    }
+
     return () => {
+      if (tl) tl.kill();
       document.body.style.overflow = "";
       window.removeEventListener("wheel", preventScroll);
       window.removeEventListener("touchmove", preventScroll);
       window.removeEventListener("keydown", preventKeys);
       window.removeEventListener("mousemove", handleMouseMove);
     };
-  }, []);
-
-  // 2. Intro Animation (runs on mount)
-  useEffect(() => {
-    if (hasStarted) return;
-    
-    const letterS = letterSRef.current;
-    const letterK = letterKRef.current;
-    const nameContainer = nameRef.current;
-    const lens = lensRef.current;
-
-    if (!letterS || !letterK || !nameContainer || !lens) return;
-
-    const chars = nameContainer.querySelectorAll(".name-char");
-    const clickIndicator = nameContainer.querySelector(".animate-pulse") || nameContainer.lastElementChild;
-
-    // Set initial states
-    gsap.set(lens, { width: 0, height: 0, rotation: 45, xPercent: -50, yPercent: -50 });
-    gsap.set([letterS, letterK], { yPercent: 120, opacity: 0, x: 0 });
-    gsap.set(chars, { y: 25, opacity: 0 });
-    if (clickIndicator) gsap.set(clickIndicator, { opacity: 0, y: 10 });
-
-    const introTl = gsap.timeline({ delay: 0.1 });
-
-    // Name characters slide up and fade in
-    introTl.to(chars, {
-      y: 0,
-      opacity: 1,
-      duration: 1.0,
-      ease: "power3.out",
-      stagger: 0.04,
-    });
-
-    // Giant letters S and K slide up
-    introTl.to(
-      [letterS, letterK],
-      {
-        yPercent: 0,
-        opacity: 0.9,
-        duration: 1.5,
-        ease: "power4.out",
-        stagger: 0.15,
-      },
-      "-=0.6"
-    );
-
-    // Fade in click indicator
-    if (clickIndicator) {
-      introTl.to(
-        clickIndicator,
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          ease: "power2.out",
-        },
-        "-=0.8"
-      );
-    }
-
-    return () => {
-      introTl.kill();
-    };
-  }, [hasStarted]);
-
-  // 3. Exit Animation (runs when hasStarted changes to true)
-  useEffect(() => {
-    if (!hasStarted) return;
-
-    const letterS = letterSRef.current;
-    const letterK = letterKRef.current;
-    const nameContainer = nameRef.current;
-    const lens = lensRef.current;
-
-    if (!letterS || !letterK || !nameContainer || !lens) return;
-
-    const exitTl = gsap.timeline({
-      onComplete: () => {
-        document.body.style.overflow = "";
-        onComplete();
-      },
-    });
-
-    // A. Aperture starts opening instantly and expands completely
-    exitTl.to(
-      lens,
-      {
-        width: "300vmax",
-        height: "300vmax",
-        rotation: 45,
-        duration: 1.6,
-        ease: "power4.inOut",
-        overwrite: true,
-      },
-      0
-    );
-
-    // B. S and K letters slide outward off-screen
-    exitTl.to(
-      letterS,
-      {
-        x: -150,
-        opacity: 0,
-        duration: 1.2,
-        ease: "power3.inOut",
-      },
-      0
-    );
-    exitTl.to(
-      letterK,
-      {
-        x: 150,
-        opacity: 0,
-        duration: 1.2,
-        ease: "power3.inOut",
-      },
-      0
-    );
-
-    // C. Name container slides up and fades out
-    exitTl.to(
-      nameContainer,
-      {
-        y: -100,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power3.inOut",
-      },
-      0
-    );
-
-    return () => {
-      exitTl.kill();
-    };
-  }, [hasStarted, onComplete]);
+  }, [onComplete, hasStarted]);
 
   return (
     <div

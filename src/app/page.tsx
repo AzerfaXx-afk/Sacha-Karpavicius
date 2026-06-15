@@ -828,10 +828,9 @@ export default function Home() {
       /* ── Hero reveal ── */
       const heroTl = gsap.timeline({ defaults: { ease: "power3.out" }, delay: 0.5 });
 
-      heroTl.fromTo(
+      heroTl.to(
         heroImgRef.current,
-        { scale: 1.15 },
-        { scale: 1.0, duration: 3.5, ease: "power3.out" },
+        { scale: 1.05, duration: 4.0, ease: "power3.out" },
         0
       );
 
