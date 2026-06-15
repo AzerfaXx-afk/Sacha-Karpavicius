@@ -762,44 +762,61 @@ export default function Home() {
         // Safety fallback: slide curtain out after redirection starts
         gsap.to(redirectCurtainRef.current, {
           yPercent: -100,
-          duration: 0.8,
-          ease: "power4.inOut",
-          delay: 1.0,
+          duration: 0.5,
+          ease: "power3.inOut",
+          delay: 0.8,
           onComplete: () => {
             setIsRedirecting(false);
             gsap.set(redirectCurtainRef.current, { yPercent: 100 });
-            // Reset clicked button scale back to default
-            gsap.set(clickedBtn, { scale: 1 });
+            // Reset clicked button styles back to default
+            gsap.set(clickedBtn, { scale: 1, backgroundColor: "", color: "", borderColor: "" });
+            const children = clickedBtn.querySelectorAll(".text-white, svg");
+            gsap.set(children, { color: "", stroke: "" });
           }
         });
       }
     });
 
-    // 1. Button Pop Animation (tactile feedback bounce)
+    // 1. Button Pop Animation & Color Wipe (turns solid white, text/icon turns black)
     tl.to(clickedBtn, {
       scale: 0.82,
-      duration: 0.12,
+      backgroundColor: "#ffffff",
+      borderColor: "#ffffff",
+      color: "#000000",
+      duration: 0.08,
       ease: "power2.out"
-    }).to(clickedBtn, {
-      scale: 1.15,
-      duration: 0.45,
-      ease: "elastic.out(1.2, 0.4)"
     });
 
-    // 2. Slide curtain up (delayed slightly so the pop registers visually first)
+    const textElements = clickedBtn.querySelectorAll(".text-white, svg");
+    if (textElements.length > 0) {
+      tl.to(textElements, {
+        color: "#000000",
+        stroke: "#000000",
+        duration: 0.08,
+        ease: "power2.out"
+      }, 0);
+    }
+
+    tl.to(clickedBtn, {
+      scale: 1.1,
+      duration: 0.3,
+      ease: "elastic.out(1.2, 0.45)"
+    });
+
+    // 2. Fast Curtain slide up (starts at 50ms, covers screen in 450ms)
     tl.to(redirectCurtainRef.current, {
       yPercent: 0,
-      duration: 0.85,
-      ease: "power4.inOut",
-    }, 0.15);
+      duration: 0.45,
+      ease: "power3.inOut",
+    }, 0.05);
 
     // Stagger character animations for "INSTAGRAM"
     if (redirectTextRef.current) {
       const chars = redirectTextRef.current.querySelectorAll(".reveal-char");
       tl.fromTo(chars, 
-        { y: 60, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, ease: "power3.out", stagger: 0.03 },
-        0.5 // trigger when curtain has covered the viewport
+        { y: 40, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.35, ease: "power3.out", stagger: 0.02 },
+        0.25 // trigger when curtain covers screen
       );
     }
   };
