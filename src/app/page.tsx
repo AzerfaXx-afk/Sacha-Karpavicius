@@ -8,18 +8,20 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Preloader from "@/components/preloader";
 import Navbar from "@/components/navbar";
 import CustomCursor from "@/components/custom-cursor";
-import { projectsData } from "@/data/projects";
+import { projectsData, videoProjectsData } from "@/data/projects";
 import { useSiteContext } from "@/context/site-context";
 
 gsap.registerPlugin(ScrollTrigger);
 
 /* ──── Project data ──── */
 const projects = [
-  { src: "/2.jpg", title: "EDITORIAL I", category: "Fashion" },
-  { src: "/3.jpg", title: "EDITORIAL II", category: "Portrait" },
-  { src: "/4.jpg", title: "AMBIANCE", category: "Mode" },
-  { src: "/5.jpg", title: "LUMIÈRE", category: "Story" },
-  { src: "/6.jpg", title: "NOCTURNE", category: "Film" },
+  { src: "/img/projet1/extend back.png", title: "AEMONA & FADA", category: "Portrait" },
+  { src: "/img/projet2/DSC02768.jpg", title: "FADA", category: "Portrait" },
+  { src: "/img/projet3/DSC07375-3.jpg", title: "CROSSOVER FESTIVAL AYMCE", category: "Festival" },
+  { src: "/img/projet4/1.jpg", title: "AUTOPORTRAIT", category: "Portrait" },
+  { src: "/img/projet5/FAB09470 copie-2.jpg", title: "Margiela - LA FABRIC", category: "Fashion" },
+  { src: "/img/projet6/Sans titre - 11 mars 2026 15.07.jpg", title: "LA FABRIC", category: "Editorial" },
+  { src: "/img/projet7/IMG_3069-2.jpg", title: "PORTRAIT VII", category: "Portrait" },
 ];
 
 /* ──── About Image Card with 3D Tilt Glare Effect ──── */
@@ -452,7 +454,7 @@ function warmUpAudio(el: HTMLAudioElement | null) {
 
 export default function Home() {
   const router = useRouter();
-  const { hasEnteredSite, setHasEnteredSite, isHoveringName, setIsHoveringName, isPlaying, toggleAudio, playEntrance } = useSiteContext();
+  const { hasEnteredSite, setHasEnteredSite, isHoveringName, setIsHoveringName, isHideUI, setIsHideUI, isPlaying, toggleAudio, playEntrance } = useSiteContext();
   const [loading, setLoading] = useState(true);
   const [siteStarted, setSiteStarted] = useState(false);
   const isHoveringNameRef = useRef(isHoveringName);
@@ -884,6 +886,7 @@ export default function Home() {
     e.preventDefault();
     if (isProjectTransitioning) return;
     setIsProjectTransitioning(true);
+    setIsHideUI(true);
     playClickSfx();
 
     const cardElement = e.currentTarget as HTMLElement;
@@ -910,7 +913,11 @@ export default function Home() {
     img.style.width = "100%";
     img.style.height = "100%";
     img.style.objectFit = "cover";
-    img.style.objectPosition = "center";
+    
+    // Parse objectPosition (e.g. object-[center_28%] -> center 28%)
+    const rawPos = project.objectPosition || "";
+    const cleanPos = rawPos.includes("[") ? rawPos.split("[")[1].split("]")[0].replace("_", " ") : "center 28%";
+    img.style.objectPosition = cleanPos || "center 28%";
     img.style.transition = "none";
 
     clone.appendChild(img);
@@ -929,53 +936,41 @@ export default function Home() {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    // Phase 1 — Image lifts out of card (subtle scale up + shadow) 
     const tl = gsap.timeline();
 
-    // Step 1: Subtle lift (0.2s) — the card "pops out" of the grid
-    tl.to(clone, {
-      scale: 1.03,
-      boxShadow: "0 50px 100px -20px rgba(0,0,0,0.95)",
-      duration: 0.25,
-      ease: "power2.out",
+    // 1. Subtle depth overlay fade (0.4s)
+    tl.to(overlay, {
+      opacity: 0.6,
+      duration: 0.4,
+      ease: "power2.out"
     }, 0);
 
-    // Step 2: Background darkens smoothly (0.8s total)
-    tl.to(overlay, {
-      opacity: 0.85,
-      duration: 0.9,
-      ease: "power2.inOut"
-    }, 0.1);
-
-    // Step 3: Image expands to fullscreen (1.4s luxurious curve)
+    // 2. Expand clicked cover card gracefully from its grid position to 100vw x 100vh fullscreen hero (0.85s Awwwards curve)
     tl.to(clone, {
       top: 0,
       left: 0,
       width: viewportWidth,
       height: viewportHeight,
       borderRadius: "0px",
-      scale: 1,
       boxShadow: "none",
-      duration: 1.4,
-      ease: "power3.inOut",
-    }, 0.2);
-
-    // Step 4: Final fade to full dark + navigate
-    tl.to(overlay, {
-      opacity: 1,
-      duration: 0.4,
-      ease: "power2.in",
+      duration: 0.85,
+      ease: "cubic-bezier(0.76, 0, 0.24, 1)",
       onComplete: () => {
-        window.scrollTo(0, 0);
+        if (typeof window !== "undefined") {
+          window.scrollTo(0, 0);
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+        }
         router.push(`/project/${project.slug || "editorial-1"}`);
 
-        // Clean up after navigation settles
+        // Luxurious hand-off: smooth cross-fade clone over newly mounted project page hero image
         setTimeout(() => {
-          window.scrollTo(0, 0);
-          // Smooth fade-out of clone and overlay
+          if (typeof window !== "undefined") {
+            window.scrollTo(0, 0);
+          }
           gsap.to([clone, overlay], {
             opacity: 0,
-            duration: 0.6,
+            duration: 0.5,
             ease: "power2.out",
             onComplete: () => {
               clone.remove();
@@ -983,9 +978,9 @@ export default function Home() {
               setIsProjectTransitioning(false);
             }
           });
-        }, 200);
+        }, 150);
       }
-    }, 1.4);
+    }, 0);
   };
 
 
@@ -1009,12 +1004,14 @@ export default function Home() {
         0.2
       );
 
-      heroTl.fromTo(
-        heroSubRef.current,
-        { y: 20, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8 },
-        0.4
-      );
+      if (heroSubRef.current) {
+        heroTl.fromTo(
+          heroSubRef.current,
+          { y: 20, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.8 },
+          0.4
+        );
+      }
 
       /* ── Hero parallax on scroll ── */
       gsap.to(heroRef.current, {
@@ -1317,59 +1314,51 @@ export default function Home() {
         id="hero"
         className="relative w-full h-screen overflow-hidden bg-[#050505]"
       >
-        {/* Central Image Container */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-10 md:mt-0" style={{ perspective: "1000px" }}>
+        {/* Central Image Container (Awwwards Profile Portrait) */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-6 md:mt-0" style={{ perspective: "1000px" }}>
           <div
             ref={heroImgRef}
-            className="relative w-[85vw] h-[65vh] md:w-[600px] md:h-[700px] object-cover"
+            className="relative w-[88vw] max-w-[480px] h-[65vh] md:h-[700px] rounded-2xl overflow-hidden shadow-[0_20px_80px_rgba(0,0,0,0.8)]"
             style={{
-              WebkitMaskImage: "radial-gradient(ellipse at center, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 80%)",
-              maskImage: "radial-gradient(ellipse at center, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 80%)"
+              WebkitMaskImage: "radial-gradient(ellipse 92% 92% at 50% 50%, black 75%, transparent 100%)",
+              maskImage: "radial-gradient(ellipse 92% 92% at 50% 50%, black 75%, transparent 100%)"
             }}
           >
             <Image
-              src="/5.jpg"
+              src="/principal.jpg"
               alt="Sacha Karpavicius - Visual Storyteller"
               fill
-              sizes="(max-width: 768px) 85vw, 600px"
-              className="object-cover object-[center_28%]"
+              sizes="(max-width: 768px) 90vw, 600px"
+              className="object-cover object-center scale-100 transform-gpu brightness-[1.03] contrast-[1.05]"
               priority
               quality={100}
             />
-            {/* Extreme dark vignette to blend the image edges completely into the background */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_50%,_#050505_90%)] opacity-100 pointer-events-none" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_top,_#050505_0%,_transparent_18%,_transparent_82%,_#050505_100%)] opacity-100 pointer-events-none" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,_#050505_0%,_transparent_18%,_transparent_82%,_#050505_100%)] opacity-100 pointer-events-none" />
-            {/* Optional subtle red/warm tint overlay to match the vibe */}
-            <div className="absolute inset-0 bg-red-900 mix-blend-overlay opacity-10 pointer-events-none" />
+            {/* Pure, smooth bottom gradient fade into #050505 for flawless title legibility */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/30 to-transparent pointer-events-none" />
           </div>
         </div>
 
-        <div className="absolute bottom-24 md:bottom-20 left-1/2 -translate-x-1/2 text-center z-20 w-full px-4 pointer-events-none">
+        {/* Hero Title Block */}
+        <div className="absolute bottom-20 md:bottom-16 left-1/2 -translate-x-1/2 text-center z-20 w-full px-4 pointer-events-none">
           <div ref={heroTitleRef} style={{ opacity: 0 }}>
-            <h1 className="font-syne font-medium text-[26px] md:text-[34px] leading-[1.25] pb-2 text-white tracking-wide uppercase pointer-events-auto cursor-default flex flex-col items-center">
+            <h1 className="font-syne font-semibold text-[24px] md:text-[32px] leading-[1.25] pb-2 text-white tracking-wide uppercase pointer-events-auto cursor-default flex flex-col items-center drop-shadow-2xl">
               {lang === "fr" ? (
                 <>
                   <RollingText text="Sacha Karpavicius" />
-                  <RollingText text="Arts Visuels" className="text-white/60 font-normal mt-1 text-[20px] md:text-[26px]" />
+                  <RollingText text="Arts Visuels" className="text-white/60 font-normal mt-1 text-[18px] md:text-[24px]" />
                 </>
               ) : (
                 <>
                   <RollingText text="Sacha Karpavicius" />
-                  <RollingText text="Visual Arts" className="text-white/60 font-normal mt-1 text-[20px] md:text-[26px]" />
+                  <RollingText text="Visual Arts" className="text-white/60 font-normal mt-1 text-[18px] md:text-[24px]" />
                 </>
               )}
             </h1>
           </div>
-          <div ref={heroSubRef} style={{ opacity: 0 }} className="mt-8 flex items-center justify-center gap-12 font-inter text-[12px] md:text-[14px] text-white">
-            <span className="w-1.5 h-1.5 bg-white/50 block rounded-sm"></span>
-            <span>{lang === "fr" ? "2026 — Futur" : "2026 — Future"}</span>
-            <span className="w-1.5 h-1.5 bg-white/50 block rounded-sm"></span>
-          </div>
           
           {/* Gyroscope Idle Guide Prompt (Discrete Styled Icon, No Text) */}
           <div 
-            className={`absolute top-full mt-5 left-1/2 -translate-x-1/2 flex flex-col items-center transition-all duration-1000 ease-in-out md:hidden ${
+            className={`absolute top-full mt-4 left-1/2 -translate-x-1/2 flex flex-col items-center transition-all duration-1000 ease-in-out md:hidden ${
               showGyroIndicator ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-90 pointer-events-none'
             }`}
           >
@@ -1404,7 +1393,7 @@ export default function Home() {
             data-text-reveal
             className="font-syne font-bold text-[8vw] md:text-[4vw] leading-none tracking-tight text-white uppercase"
           >
-            {lang === "fr" ? "Projets Sélectionnés" : "Selected Works"}
+            {lang === "fr" ? "Projets Photos" : "Photo Projects"}
           </h2>
         </div>
 
@@ -1450,12 +1439,10 @@ export default function Home() {
                 if (touchHoverTimeout.current) clearTimeout(touchHoverTimeout.current);
                 setTouchHoveredIndex(null);
               }}
-              className={`group relative overflow-hidden cursor-pointer ${idx === 0 ? "md:col-span-2" : ""
-                }`}
+              className="group relative overflow-hidden cursor-pointer"
             >
               <div
-                className={`relative w-full overflow-hidden bg-[#111] ${idx === 0 ? "aspect-[16/9]" : "aspect-[4/5] md:aspect-[3/4]"
-                  }`}
+                className="relative w-full overflow-hidden bg-[#111] aspect-[4/5] md:aspect-[3/4]"
               >
                 <div
                   data-parallax-img
@@ -1465,9 +1452,9 @@ export default function Home() {
                     src={project.coverImage}
                     alt={project.title}
                     fill
-                    className="object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(.25,.46,.45,.94)] group-hover:scale-105 group-data-[touch-hover=true]:scale-105"
-                    quality={90}
-                    sizes={idx === 0 ? "100vw" : "(max-width: 768px) 100vw, 50vw"}
+                    className={`object-cover ${project.objectPosition || "object-[center_35%]"} transition-transform duration-[1.2s] ease-[cubic-bezier(.25,.46,.45,.94)] group-hover:scale-105 group-data-[touch-hover=true]:scale-105`}
+                    quality={96}
+                    sizes="(max-width: 768px) 100vw, 1200px"
                   />
                 </div>
                 {/* Hover overlay */}
@@ -1475,18 +1462,118 @@ export default function Home() {
               </div>
 
               {/* Project info */}
-              <div className="mt-4 flex items-baseline justify-between">
-                <h3 className="font-syne font-semibold text-[14px] md:text-[16px] tracking-tight text-white group-hover:translate-x-2 group-data-[touch-hover=true]:translate-x-2 transition-transform duration-500">
-                  {project.title}
-                </h3>
-                <span className="font-inter text-[9px] md:text-[10px] tracking-[0.2em] text-white/40 uppercase">
-                  {project.category === "Fashion" && lang === "fr" ? "Mode" :
-                    project.category === "Story" && lang === "fr" ? "Histoire" :
-                      project.category}
-                </span>
+              <div className="mt-4 relative overflow-hidden">
+                <div className="flex items-center justify-between py-1">
+                  {/* Title with ultra-smooth left-to-right letter spacing expansion */}
+                  <h3 className="font-syne font-bold text-[15px] md:text-[18px] tracking-tight group-hover:tracking-[0.15em] group-data-[touch-hover=true]:tracking-[0.15em] text-white/90 group-hover:text-white group-data-[touch-hover=true]:text-white uppercase transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)]">
+                    {project.title}
+                  </h3>
+
+                  {/* Silky left-to-right sliding line */}
+                  <div className="flex-1 mx-4 h-[1px] relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/50 to-white/90 scale-x-0 group-hover:scale-x-100 group-data-[touch-hover=true]:scale-x-100 origin-left transition-transform duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)]" />
+                  </div>
+
+                  {/* Number & Arrow sliding smoothly from left to right */}
+                  <span className="text-[12px] font-mono text-white/70 opacity-0 group-hover:opacity-100 group-data-[touch-hover=true]:opacity-100 -translate-x-3 group-hover:translate-x-0 group-data-[touch-hover=true]:translate-x-0 transition-all duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] delay-100 shrink-0">
+                    0{idx + 1} ↗
+                  </span>
+                </div>
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ═══════════════════ PROJETS VIDÉOS SECTION ═══════════════════ */}
+      <section id="videos" className="relative bg-[#050505] pt-20 md:pt-28 pb-12 border-t border-white/10">
+        <div className="px-5 md:px-16 mb-12 md:mb-16">
+          <div data-text-reveal className="flex items-center gap-6 mb-6">
+            <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
+              02
+            </span>
+            <div data-line-reveal className="flex-1 h-[1px] bg-white/10 origin-left" />
+          </div>
+          <h2
+            data-text-reveal
+            className="font-syne font-bold text-[8vw] md:text-[4vw] leading-none tracking-tight text-white uppercase"
+          >
+            {lang === "fr" ? "Projets Vidéos" : "Video Projects"}
+          </h2>
+        </div>
+
+        {/* Video projects - Full-width Widescreen & Cinema Poster Adaptive Cards */}
+        <div className="px-5 md:px-16 space-y-10 md:space-y-14">
+          {videoProjectsData.map((project) => {
+            const isPoster = project.coverImage.toLowerCase().includes("affiche");
+            return (
+              <div
+                key={project.id}
+                data-work-card
+                data-cursor="PLAY"
+                onClick={(e) => handleProjectClick(e, project)}
+                className="group relative overflow-hidden cursor-pointer rounded-xl border border-white/10 bg-[#0d0d0d]"
+              >
+                <div className="relative w-full aspect-[16/9] md:aspect-[21/9] overflow-hidden flex items-center justify-center">
+                  {/* Ambient Blurred Background for Cinema Posters */}
+                  <div className="absolute inset-0 scale-110 blur-3xl opacity-35 pointer-events-none">
+                    <Image
+                      src={project.coverImage}
+                      alt=""
+                      fill
+                      className="object-cover object-center"
+                      quality={30}
+                    />
+                  </div>
+
+                  {/* Main Cover Media */}
+                  <div data-parallax-img className="absolute inset-0 w-full h-full will-change-transform">
+                    <Image
+                      src={project.coverImage}
+                      alt={project.title}
+                      fill
+                      className={`${
+                        isPoster ? "object-contain p-2 md:p-4" : "object-cover"
+                      } object-center transition-transform duration-[1.2s] ease-[cubic-bezier(.25,.46,.45,.94)] group-hover:scale-105`}
+                      quality={96}
+                      sizes="100vw"
+                    />
+                  </div>
+
+                  {/* Dark bottom gradient overlay for crystal clear text readability directly on the image */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
+
+                  {/* Play Button Overlay (Centered) */}
+                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-700 flex items-center justify-center pointer-events-none">
+                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/10 border border-white/30 backdrop-blur-md flex items-center justify-center text-white group-hover:scale-110 group-hover:bg-white group-hover:text-black transition-all duration-500 shadow-2xl">
+                      <svg className="w-6 h-6 md:w-8 md:h-8 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Text Overlay directly OVER the image at the bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8 z-10 flex items-end justify-between gap-4 pointer-events-none">
+                    <div className="space-y-1 max-w-2xl">
+                      <h3 className="font-syne font-bold text-[18px] md:text-[24px] tracking-tight group-hover:tracking-[0.15em] text-white uppercase drop-shadow-lg transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)]">
+                        {project.title}
+                      </h3>
+                      {(project.descriptionFr || project.subtitle) && (
+                        <p className="font-inter text-[12px] md:text-[14px] text-white/90 font-light leading-relaxed drop-shadow-md">
+                          {lang === "fr" ? project.descriptionFr : (project.descriptionEn || project.descriptionFr || project.subtitle)}
+                        </p>
+                      )}
+                    </div>
+                    <div className="shrink-0">
+                      <span className="font-mono text-[11px] md:text-[13px] tracking-[0.2em] text-white/80 uppercase drop-shadow-md">
+                        {project.year}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -1495,7 +1582,7 @@ export default function Home() {
         <div className="px-5 md:px-16">
           <div data-text-reveal className="flex items-center gap-6 mb-16 md:mb-24">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
-              02
+              03
             </span>
             <div data-line-reveal className="flex-1 h-[1px] bg-white/10 origin-left" />
           </div>

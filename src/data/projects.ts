@@ -22,6 +22,9 @@ export interface Project {
   year: string;
   coverImage: string;
   heroImage: string;
+  objectPosition?: string;
+  videoUrl?: string;
+  isVideo?: boolean;
   gallery: string[];
   descriptionFr: string;
   descriptionEn: string;
@@ -30,19 +33,123 @@ export interface Project {
   credits: ProjectCredit[];
 }
 
+export const videoProjectsData: Project[] = [
+  {
+    id: "maladaptive",
+    slug: "maladaptive",
+    title: "MALADAPTIVE",
+    subtitle: "",
+    category: "Vidéo",
+    year: "2026",
+    coverImage: "/Videos/maladaptive-cover.jpg",
+    heroImage: "/Videos/maladaptive-cover.jpg",
+    objectPosition: "object-center",
+    videoUrl: "/Videos/MALADAPTIVE.mp4",
+    isVideo: true,
+    gallery: [],
+    descriptionFr: "Projet visuel expérimental",
+    descriptionEn: "Experimental visual project",
+    client: "Sacha Karpavicius",
+    exif: {
+      camera: "RED V-Raptor 8K",
+      lens: "Cooke Anamorphic /i Full Frame Plus",
+      iso: "ISO 800",
+      aperture: "T2.3",
+      shutterSpeed: "1/48s",
+      location: "Paris, France",
+      date: "2026"
+    },
+    credits: [
+      { role: "Réalisation & Direction Artistique", name: "Sacha Karpavicius" }
+    ]
+  },
+  {
+    id: "festival-in-and-out",
+    slug: "festival-in-and-out",
+    title: "BANDE ANNONCE",
+    subtitle: "",
+    category: "Vidéo",
+    year: "2026",
+    coverImage: "/Videos/in-and-out-cover.jpg",
+    heroImage: "/Videos/in-and-out-cover.jpg",
+    objectPosition: "object-center",
+    videoUrl: "/Videos/Bande annonce de lExposition NICE QUEER  UNE HISTOIRE A ECRIRE.mp4",
+    isVideo: true,
+    gallery: [],
+    descriptionFr: "Bande annonce pour le festival In&Out 2026 à Nice.",
+    descriptionEn: "Trailer for the In&Out 2026 festival in Nice.",
+    client: "Festival In&Out",
+    exif: {
+      camera: "Sony FX6",
+      lens: "35mm T1.5",
+      iso: "ISO 800",
+      aperture: "T1.8",
+      shutterSpeed: "1/50s",
+      location: "Nice, France",
+      date: "2026"
+    },
+    credits: [
+      { role: "Réalisation", name: "Sacha Karpavicius" }
+    ]
+  },
+  {
+    id: "au-grand-jour",
+    slug: "au-grand-jour",
+    title: "AU GRAND JOUR",
+    subtitle: "",
+    category: "Vidéo",
+    year: "2026",
+    coverImage: "/Videos/AFFICHE.png",
+    heroImage: "/Videos/AFFICHE.png",
+    objectPosition: "object-center",
+    videoUrl: "/Videos/AU GRAND JOUR .mp4",
+    isVideo: true,
+    gallery: [],
+    descriptionFr: "Court métrage de fin de première année.",
+    descriptionEn: "Short film from the end of first year.",
+    client: "Sacha Karpavicius",
+    exif: {
+      camera: "Canon EOS R5",
+      lens: "RF 50mm f/1.2 L USM",
+      iso: "ISO 100",
+      aperture: "f/2.8",
+      shutterSpeed: "1/200s",
+      location: "Nice, France",
+      date: "2026"
+    },
+    credits: [
+      { role: "Réalisation & Direction Artistique", name: "Sacha Karpavicius" }
+    ]
+  }
+];
+
 export const projectsData: Project[] = [
   {
     id: "editorial-1",
     slug: "editorial-1",
-    title: "EDITORIAL I",
-    subtitle: "Fashion & Haute Couture Story",
-    category: "Fashion",
+    title: "AEMONA & FADA",
+    subtitle: "",
+    category: "Portrait",
     year: "2026",
-    coverImage: "/2.jpg",
-    heroImage: "/2.jpg",
-    gallery: ["/2.jpg", "/3.jpg", "/5.jpg", "/4.jpg"],
-    descriptionFr: "Une étude poétique sur la silhouette et les matières textiles sous une lumière de studio sculpting. Chaque cliché capture la tension entre l'élégance intemporelle de la haute couture et une modernité radicale.",
-    descriptionEn: "A poetic study on silhouette and textile materials under sculpting studio light. Each shot captures the tension between timeless haute couture elegance and radical modernity.",
+    coverImage: "/Photos/projet1/extend back.png",
+    heroImage: "/Photos/projet1/extend back.png",
+    objectPosition: "object-[center_28%]",
+    gallery: [
+      "/Photos/projet1/DSC02390-2-Edit.jpg",
+      "/Photos/projet1/PHOTO FINAL 1.png",
+      "/Photos/projet1/Doule crash.1-Edit.jpg",
+      "/Photos/projet1/crasd 4X4X4.1.jpg",
+      "/Photos/projet1/DSC02512.jpg",
+      "/Photos/projet1/DSC02606.jpg",
+      "/Photos/projet1/fadaaa en masse.jpg",
+      "/Photos/projet1/AemonaHorloge.png",
+      "/Photos/projet1/DSC02316.jpg",
+      "/Photos/projet1/DSC02345.jpg",
+      "/Photos/projet1/Sans titre-1.png",
+      "/Photos/projet1/Sans legsssssss-1.png"
+    ],
+    descriptionFr: "",
+    descriptionEn: "",
     client: "Vogue Italia / Paris Editorial",
     exif: {
       camera: "Hasselblad H6D-100c",
@@ -63,15 +170,23 @@ export const projectsData: Project[] = [
   {
     id: "editorial-2",
     slug: "editorial-2",
-    title: "EDITORIAL II",
-    subtitle: "Chiaroscuro Portraiture Series",
+    title: "FADA",
+    subtitle: "",
     category: "Portrait",
     year: "2026",
-    coverImage: "/3.jpg",
-    heroImage: "/3.jpg",
-    gallery: ["/3.jpg", "/1.jpg", "/6.jpg", "/2.jpg"],
-    descriptionFr: "Exploration des émotions brutes à travers un clair-obscur dramatique. Inspiré des maîtres de la peinture classique, ce projet cherche à révéler la vulnérabilité derrière l'expression du regard.",
-    descriptionEn: "Exploration of raw emotions through dramatic chiaroscuro. Inspired by classical painting masters, this project seeks to reveal vulnerability behind the gaze.",
+    coverImage: "/Photos/projet2/DSC02768.jpg",
+    heroImage: "/Photos/projet2/DSC02768.jpg",
+    objectPosition: "object-[center_20%]",
+    gallery: [
+      "/Photos/projet2/DSC02793.jpg",
+      "/Photos/projet2/DSC02790.jpg",
+      "/Photos/projet2/DSC02768.jpg",
+      "/Photos/projet2/DSC02854.jpg",
+      "/Photos/projet2/test vintage.png",
+      "/Photos/projet2/DSC02698.jpg"
+    ],
+    descriptionFr: "",
+    descriptionEn: "",
     client: "Numéro Homme / Portrait Series",
     exif: {
       camera: "Leica SL2",
@@ -91,15 +206,24 @@ export const projectsData: Project[] = [
   {
     id: "ambiance",
     slug: "ambiance",
-    title: "AMBIANCE",
-    subtitle: "Atmospheric & Texture Exploration",
-    category: "Mode",
-    year: "2025",
-    coverImage: "/4.jpg",
-    heroImage: "/4.jpg",
-    gallery: ["/4.jpg", "/5.jpg", "/2.jpg", "/3.jpg"],
-    descriptionFr: "Une immersion dans les textures architecturales et les contrastes urbains. Un dialogue silencieux entre l'espace, la lumière naturelle du soir et les lignes de vêtements minimalistes.",
-    descriptionEn: "An immersion into architectural textures and urban contrasts. A silent dialogue between space, evening natural light, and minimalist clothing lines.",
+    title: "CROSSOVER FESTIVAL AYMCE",
+    subtitle: "",
+    category: "Festival",
+    year: "2026",
+    coverImage: "/Photos/projet3/DSC07375-3.jpg",
+    heroImage: "/Photos/projet3/DSC07375-3.jpg",
+    objectPosition: "object-[center_52%]",
+    gallery: [
+      "/Photos/projet3/DSC07419.jpg",
+      "/Photos/projet3/DSC07338.jpg",
+      "/Photos/projet3/DSC07675-2.jpg",
+      "/Photos/projet3/DSC07410-2.jpg",
+      "/Photos/projet3/DSC07574.jpg",
+      "/Photos/projet3/DSC07331.jpg",
+      "/Photos/projet3/DSC07674.jpg"
+    ],
+    descriptionFr: "",
+    descriptionEn: "",
     client: "Saint Laurent / Capsule Campaign",
     exif: {
       camera: "Canon EOS R5",
@@ -119,15 +243,21 @@ export const projectsData: Project[] = [
   {
     id: "lumiere",
     slug: "lumiere",
-    title: "LUMIÈRE",
-    subtitle: "Cinematic Volumetric Storytelling",
-    category: "Story",
-    year: "2025",
-    coverImage: "/5.jpg",
-    heroImage: "/5.jpg",
-    gallery: ["/5.jpg", "/1.jpg", "/4.jpg", "/6.jpg"],
-    descriptionFr: "Un voyage visuel centré sur la réfraction de la lumière à travers la fumée et le verre. Chaque image est conçue comme un arrêt sur image d'un film atmosphérique mystérieux.",
-    descriptionEn: "A visual journey centered on light refraction through smoke and glass. Each image is designed as a freeze-frame from a mysterious atmospheric film.",
+    title: "AUTOPORTRAIT",
+    subtitle: "",
+    category: "Portrait",
+    year: "2026",
+    coverImage: "/Photos/projet4/1.jpg",
+    heroImage: "/Photos/projet4/1.jpg",
+    objectPosition: "object-[center_10%]",
+    gallery: [
+      "/Photos/projet4/2.jpg",
+      "/Photos/projet4/3.jpg",
+      "/Photos/projet4/4.jpg",
+      "/Photos/projet4/5.jpg"
+    ],
+    descriptionFr: "",
+    descriptionEn: "",
     client: "L'Officiel Paris / Special Issue",
     exif: {
       camera: "Hasselblad H6D-100c",
@@ -147,16 +277,24 @@ export const projectsData: Project[] = [
   {
     id: "nocturne",
     slug: "nocturne",
-    title: "NOCTURNE",
-    subtitle: "Night Film & Midnight Aesthetics",
-    category: "Film",
-    year: "2025",
-    coverImage: "/6.jpg",
-    heroImage: "/6.jpg",
-    gallery: ["/6.jpg", "/2.jpg", "/3.jpg", "/5.jpg"],
-    descriptionFr: "Les lueurs artificielles des métropoles la nuit. Une série nocturne brute capturant la mélancolie des rues vides sous les néons et les ombres étirées.",
-    descriptionEn: "Artificial glows of metropolises at night. A raw nocturnal series capturing the melancholy of empty streets under neon lights and elongated shadows.",
-    client: "Dior / Night Editorial Project",
+    title: "Margiela - LA FABRIC",
+    subtitle: "",
+    category: "Fashion",
+    year: "2026",
+    coverImage: "/Photos/projet5/FAB09470 copie-2.jpg",
+    heroImage: "/Photos/projet5/FAB09470 copie-2.jpg",
+    objectPosition: "object-[center_8%]",
+    gallery: [
+      "/Photos/projet5/FAB09501.jpg",
+      "/Photos/projet5/FAB09511.jpg",
+      "/Photos/projet5/FAB09485.jpg",
+      "/Photos/projet5/FAB09782.jpg",
+      "/Photos/projet5/FAB09547.jpg",
+      "/Photos/projet5/FAB09554.jpg"
+    ],
+    descriptionFr: "Série photo réalisée dans le cadre d'un stage avec l'enseigne LA FABRIC - cette série de photo met en avant les vêtements Maison Margiela proposées par le magasin.",
+    descriptionEn: "Photo series created during an internship with LA FABRIC - highlighting Maison Margiela clothing offered by the store.",
+    client: "LA FABRIC / Maison Margiela",
     exif: {
       camera: "Leica M11-P",
       lens: "Summilux-M 35mm f/1.4 ASPH",
@@ -170,9 +308,124 @@ export const projectsData: Project[] = [
       { role: "Photographe", name: "Sacha Karpavicius" },
       { role: "Casting Director", name: "Sophie Laurent" }
     ]
+  },
+  {
+    id: "projet-6",
+    slug: "projet-6",
+    title: "LA FABRIC",
+    subtitle: "",
+    category: "Editorial",
+    year: "2026",
+    coverImage: "/Photos/projet6/Sans titre - 11 mars 2026 15.07.jpg",
+    heroImage: "/Photos/projet6/Sans titre - 11 mars 2026 15.07.jpg",
+    objectPosition: "object-[center_8%]",
+    gallery: [
+      "/Photos/projet6/111111.jpg",
+      "/Photos/projet6/FAB05043.jpg",
+      "/Photos/projet6/FAB05061.jpg",
+      "/Photos/projet6/FAB05634.jpg",
+      "/Photos/projet6/IMG_2771.jpg",
+      "/Photos/projet6/IMG_2783.jpg",
+      "/Photos/projet6/IMG_3025.jpg",
+      "/Photos/projet6/Sans titre - 11 mars 2026 14.45.jpg",
+      "/Photos/projet6/Sans titre - 11 mars 2026 15.17.jpg",
+      "/Photos/projet6/Sans titre-1.jpg",
+      "/Photos/projet6/Sans titre-2.jpg",
+      "/Photos/projet6/V2.jpg",
+      "/Photos/projet6/vv.jpg"
+    ],
+    descriptionFr: "Groupement de photos réalisé dans le cadre d'un stage avec photos mettent en avant les marques proposées par le magasin et comment nous les avons mises en avant sous la forme la plus créative.",
+    descriptionEn: "Selection of photos created during an internship showcasing the brands offered by the store and how we creatively highlighted them.",
+    client: "Editorial Series",
+    exif: {
+      camera: "Canon EOS R5",
+      lens: "RF 50mm f/1.2 L USM",
+      iso: "ISO 100",
+      aperture: "f/2.8",
+      shutterSpeed: "1/200s",
+      location: "Paris, France",
+      date: "Mars 2026"
+    },
+    credits: [
+      { role: "Photographie", name: "Sacha Karpavicius" }
+    ]
+  },
+  {
+    id: "projet-7",
+    slug: "projet-7",
+    title: "RICK OWENS - LA FABRIC",
+    subtitle: "",
+    category: "Fashion",
+    year: "2026",
+    coverImage: "/Photos/projet7/IMG_3069-2.jpg",
+    heroImage: "/Photos/projet7/IMG_3069-2.jpg",
+    objectPosition: "object-[center_42%]",
+    gallery: [
+      "/Photos/projet7/IMG_3061.jpg",
+      "/Photos/projet7/IMG_3064.jpg",
+      "/Photos/projet7/IMG_3074.jpg"
+    ],
+    descriptionFr: "Série photo réalisée dans le cadre d'un stage avec l'enseigne LA FABRIC - cette série de photo met en avant les vêtements Rick OWENS proposés par le magasin.",
+    descriptionEn: "Photo series created during an internship with LA FABRIC - highlighting Rick OWENS clothing offered by the store.",
+    client: "LA FABRIC / Rick Owens",
+    exif: {
+      camera: "Leica SL2",
+      lens: "90mm f/2 ASPH",
+      iso: "ISO 200",
+      aperture: "f/2.0",
+      shutterSpeed: "1/160s",
+      location: "Studio Paris",
+      date: "Février 2026"
+    },
+    credits: [
+      { role: "Photographie", name: "Sacha Karpavicius" }
+    ]
+  },
+  {
+    id: "projet-8",
+    slug: "projet-8",
+    title: "Londres, Avril 2026",
+    subtitle: "",
+    category: "Travel",
+    year: "2026",
+    coverImage: "/Photos/projet8/IMG_0729.jpg",
+    heroImage: "/Photos/projet8/IMG_0729.jpg",
+    objectPosition: "object-center",
+    gallery: [
+      "/Photos/projet8/IMG_0714.jpg",
+      "/Photos/projet8/IMG_0828.jpg",
+      "/Photos/projet8/IMG_0857.jpg",
+      "/Photos/projet8/IMG_0923.jpg",
+      "/Photos/projet8/IMG_0927.jpg",
+      "/Photos/projet8/IMG_0941.JPG",
+      "/Photos/projet8/IMG_0993.JPG",
+      "/Photos/projet8/IMG_1002.jpg",
+      "/Photos/projet8/IMG_1025.JPG",
+      "/Photos/projet8/IMG_1176.JPG",
+      "/Photos/projet8/IMG_1226.jpg",
+      "/Photos/projet8/IMG_1282.jpg",
+      "/Photos/projet8/IMG_1341.JPG",
+      "/Photos/projet8/IMG_1353.JPG"
+    ],
+    descriptionFr: "Série photo réalisé pendant un voyage à Londres",
+    descriptionEn: "Photo series created during a trip to London",
+    client: "Travel / London Series",
+    exif: {
+      camera: "Leica M11-P",
+      lens: "Summilux-M 35mm f/1.4 ASPH",
+      iso: "ISO 100",
+      aperture: "f/1.4",
+      shutterSpeed: "1/250s",
+      location: "London, UK",
+      date: "Avril 2026"
+    },
+    credits: [
+      { role: "Photographie", name: "Sacha Karpavicius" }
+    ]
   }
 ];
 
 export function getProjectBySlug(slug: string): Project | undefined {
-  return projectsData.find((p) => p.slug === slug);
+  const allProjects = [...projectsData, ...videoProjectsData];
+  return allProjects.find((p) => p.slug === slug);
 }

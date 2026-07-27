@@ -254,7 +254,7 @@ export default function Navbar({
   useEffect(() => {
     if (!isOpen) return;
     const interval = setInterval(() => {
-      setMobileBgIndex((prev) => (prev + 1) % 3);
+      setMobileBgIndex((prev) => (prev + 1) % 4);
     }, 3500);
     return () => clearInterval(interval);
   }, [isOpen]);
@@ -496,6 +496,11 @@ export default function Navbar({
               onPlayClickSfx?.();
               handleLinkClick();
               if (pathname !== "/") {
+                if (typeof window !== "undefined") {
+                  window.scrollTo(0, 0);
+                  document.documentElement.scrollTop = 0;
+                  document.body.scrollTop = 0;
+                }
                 router.push("/");
               } else {
                 if (lenis) {
@@ -525,7 +530,7 @@ export default function Navbar({
       >
         {/* Background Image Layer (Mobile and Desktop) */}
         <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-          {[ "/2.jpg", "/5.jpg", "/6.jpg" ].map((imgSrc, idx) => {
+          {[ "/2.jpg", "/Videos/maladaptive-cover.jpg", "/5.jpg", "/6.jpg" ].map((imgSrc, idx) => {
             const isVisible = hoveredIndex !== null 
               ? hoveredIndex === idx 
               : (mobileBgIndex === idx); // Crossfade on slow cycle on mobile
@@ -550,9 +555,9 @@ export default function Navbar({
         </div>
 
         {/* Menu Links Container */}
-        <div className="relative max-w-7xl w-full mx-auto z-10 flex flex-col gap-6 md:gap-10 pl-2 md:pl-16">
+        <div className="relative max-w-7xl w-full mx-auto z-10 flex flex-col gap-5 md:gap-8 pl-2 md:pl-16">
           <AnimatedLink 
-            text={lang === "fr" ? "Projets" : "Selected Works"} 
+            text={lang === "fr" ? "Photos" : "Photos"} 
             href="#works" 
             number="01" 
             onClick={handleLinkClick} 
@@ -566,8 +571,8 @@ export default function Navbar({
             index={0}
           />
           <AnimatedLink 
-            text={lang === "fr" ? "À Propos & Vision" : "About & Vision"} 
-            href="#about" 
+            text={lang === "fr" ? "Vidéos" : "Videos"} 
+            href="#videos" 
             number="02" 
             onClick={handleLinkClick} 
             isDimmed={hoveredIndex !== null && hoveredIndex !== 1}
@@ -580,8 +585,8 @@ export default function Navbar({
             index={1}
           />
           <AnimatedLink 
-            text={lang === "fr" ? "Contact" : "Connect"} 
-            href="#contact" 
+            text={lang === "fr" ? "À Propos" : "About"} 
+            href="#about" 
             number="03" 
             onClick={handleLinkClick} 
             isDimmed={hoveredIndex !== null && hoveredIndex !== 2}
@@ -592,6 +597,20 @@ export default function Navbar({
             onMouseLeave={handleMouseLeave}
             isOpen={isOpen}
             index={2}
+          />
+          <AnimatedLink 
+            text={lang === "fr" ? "Contact" : "Contact"} 
+            href="#contact" 
+            number="04" 
+            onClick={handleLinkClick} 
+            isDimmed={hoveredIndex !== null && hoveredIndex !== 3}
+            onMouseEnter={(pos) => {
+              onPlayHoverSfx?.();
+              handleMouseEnter(3, pos);
+            }}
+            onMouseLeave={handleMouseLeave}
+            isOpen={isOpen}
+            index={3}
           />
         </div>
 
@@ -607,7 +626,7 @@ export default function Navbar({
             <div className="relative w-full h-full bg-[#111]">
               <div className="absolute inset-0 bg-black/15 z-10 pointer-events-none" />
 
-              {/* Image 01: Selected Works */}
+              {/* Image 01: Photos */}
               <div 
                 data-index={0}
                 className="absolute inset-0 transition-opacity duration-700 ease-in-out overflow-hidden"
@@ -615,33 +634,46 @@ export default function Navbar({
               >
                 <img 
                   src="/2.jpg" 
-                  alt="Selected Works Preview" 
+                  alt="Photos Preview" 
                   className="w-full h-full object-cover transform-gpu" 
                 />
               </div>
               
-              {/* Image 02: About */}
+              {/* Image 02: Vidéos */}
               <div 
                 data-index={1}
                 className="absolute inset-0 transition-opacity duration-700 ease-in-out overflow-hidden"
                 style={{ opacity: hoveredIndex === 1 ? 1 : 0 }}
               >
                 <img 
-                  src="/5.jpg" 
-                  alt="About & Vision Preview" 
+                  src="/Videos/maladaptive-cover.jpg" 
+                  alt="Vidéos Preview" 
                   className="w-full h-full object-cover transform-gpu" 
                 />
               </div>
-              
-              {/* Image 03: Connect */}
+
+              {/* Image 03: À Propos */}
               <div 
                 data-index={2}
                 className="absolute inset-0 transition-opacity duration-700 ease-in-out overflow-hidden"
                 style={{ opacity: hoveredIndex === 2 ? 1 : 0 }}
               >
                 <img 
+                  src="/5.jpg" 
+                  alt="À Propos Preview" 
+                  className="w-full h-full object-cover transform-gpu" 
+                />
+              </div>
+              
+              {/* Image 04: Contact */}
+              <div 
+                data-index={3}
+                className="absolute inset-0 transition-opacity duration-700 ease-in-out overflow-hidden"
+                style={{ opacity: hoveredIndex === 3 ? 1 : 0 }}
+              >
+                <img 
                   src="/6.jpg" 
-                  alt="Connect Preview" 
+                  alt="Contact Preview" 
                   className="w-full h-full object-cover transform-gpu" 
                 />
               </div>
@@ -655,11 +687,8 @@ export default function Navbar({
         ref={timeRef} 
         className="fixed top-6 right-6 md:top-8 md:right-12 z-[110] flex flex-col items-end gap-1 mix-blend-difference pointer-events-none -translate-y-8 opacity-0"
       >
-        <div className="border border-white/20 px-2 py-0.5 rounded-sm text-[10px] text-white">
+        <div className="border border-white/20 px-2 py-0.5 rounded-sm text-[10px] text-white font-mono">
           {time || "00:00:00"}
-        </div>
-        <div className="text-[10px] text-white/50 text-right uppercase font-inter tracking-[0.2em]">
-          Paris<br/>CET
         </div>
       </div>
 

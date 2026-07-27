@@ -7,8 +7,11 @@ interface SiteContextType {
   setHasEnteredSite: (val: boolean) => void;
   isHoveringName: boolean;
   setIsHoveringName: (val: boolean) => void;
+  isHideUI: boolean;
+  setIsHideUI: (val: boolean) => void;
   isPlaying: boolean;
   toggleAudio: () => void;
+  pauseAudio: () => void;
   playEntrance: () => void;
   playClickSfx: () => void;
   playHoverSfx: () => void;
@@ -19,8 +22,11 @@ const SiteContext = createContext<SiteContextType>({
   setHasEnteredSite: () => {},
   isHoveringName: false,
   setIsHoveringName: () => {},
+  isHideUI: false,
+  setIsHideUI: () => {},
   isPlaying: false,
   toggleAudio: () => {},
+  pauseAudio: () => {},
   playEntrance: () => {},
   playClickSfx: () => {},
   playHoverSfx: () => {},
@@ -29,6 +35,7 @@ const SiteContext = createContext<SiteContextType>({
 export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   const [hasEnteredSite, setHasEnteredSite] = useState(false);
   const [isHoveringName, setIsHoveringName] = useState(false);
+  const [isHideUI, setIsHideUI] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -56,6 +63,13 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
       setIsPlaying(false);
     } else {
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+    }
+  };
+
+  const pauseAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
     }
   };
 
@@ -91,8 +105,11 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
         setHasEnteredSite,
         isHoveringName,
         setIsHoveringName,
+        isHideUI,
+        setIsHideUI,
         isPlaying,
         toggleAudio,
+        pauseAudio,
         playEntrance,
         playClickSfx,
         playHoverSfx,
