@@ -1389,8 +1389,8 @@ export default function Home() {
 
       </section>
 
-      {/* ═══════════════════ WORKS SECTION ═══════════════════ */}
-      <section ref={worksRef} id="works" className="relative bg-[#0a0a0a] pt-20 md:pt-28 pb-20 md:pb-32">
+      {/* ═══════════════════ WORKS / PHOTOS SECTION ═══════════════════ */}
+      <section ref={worksRef} id="photos" className="relative bg-[#0a0a0a] pt-20 md:pt-28 pb-20 md:pb-32">
         {/* Section header */}
         <div className="px-5 md:px-16 mb-16 md:mb-24">
           <div data-text-reveal className="flex items-center gap-6 mb-6">

@@ -555,7 +555,7 @@ export default function Navbar({
         <div className="relative max-w-7xl w-full mx-auto z-10 flex flex-col gap-5 md:gap-8 pl-2 md:pl-16">
           <AnimatedLink 
             text={lang === "fr" ? "Photos" : "Photos"} 
-            href="#works" 
+            href="#photos" 
             number="01" 
             onClick={handleLinkClick} 
             isDimmed={hoveredIndex !== null && hoveredIndex !== 0}
@@ -630,7 +630,7 @@ export default function Navbar({
                 style={{ opacity: hoveredIndex === 0 ? 1 : 0 }}
               >
                 <img 
-                  src="/2.jpg" 
+                  src="/Photos/projet5/FAB09511.jpg" 
                   alt="Photos Preview" 
                   className="w-full h-full object-cover transform-gpu" 
                 />
@@ -643,7 +643,7 @@ export default function Navbar({
                 style={{ opacity: hoveredIndex === 1 ? 1 : 0 }}
               >
                 <img 
-                  src="/Videos/maladaptive-cover.jpg" 
+                  src="/Videos/AFFICHE.png" 
                   alt="Vidéos Preview" 
                   className="w-full h-full object-cover transform-gpu" 
                 />
@@ -656,7 +656,7 @@ export default function Navbar({
                 style={{ opacity: hoveredIndex === 2 ? 1 : 0 }}
               >
                 <img 
-                  src="/5.jpg" 
+                  src="/Photos/projet5/FAB09470 copie-2.jpg" 
                   alt="À Propos Preview" 
                   className="w-full h-full object-cover transform-gpu" 
                 />
@@ -669,7 +669,7 @@ export default function Navbar({
                 style={{ opacity: hoveredIndex === 3 ? 1 : 0 }}
               >
                 <img 
-                  src="/6.jpg" 
+                  src="/Photos/projet6/Sans titre - 11 mars 2026 15.07.jpg" 
                   alt="Contact Preview" 
                   className="w-full h-full object-cover transform-gpu" 
                 />
