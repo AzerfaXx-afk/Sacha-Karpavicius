@@ -986,6 +986,17 @@ export default function Home() {
 
   /* Page entry animations */
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if ("scrollRestoration" in history) {
+        history.scrollRestoration = "manual";
+      }
+      const scrollToContact = sessionStorage.getItem("scrollToContact");
+      if (!scrollToContact) {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }
+    }
     if (!siteStarted) return;
     const ctx = gsap.context(() => {
       /* ── Hero reveal ── */

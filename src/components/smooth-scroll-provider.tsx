@@ -13,6 +13,10 @@ export default function SmoothScrollProvider({
   const lenisRef = useRef<any>(null);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && "scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+
     function update(time: number) {
       lenisRef.current?.lenis?.raf(time * 1000);
     }
@@ -35,6 +39,8 @@ export default function SmoothScrollProvider({
         lerp: 0.08, 
         duration: 1.2, 
         wheelMultiplier: 1,
+        touchMultiplier: 1.2,
+        syncTouch: false,
       }}
     >
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
