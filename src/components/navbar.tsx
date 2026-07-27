@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import { useLenis } from "@studio-freight/react-lenis";
+import { lockScrollForNavigation } from "@/utils/scroll-lock";
 
 const AnimatedLink = ({ 
   text, 
@@ -495,12 +496,8 @@ export default function Navbar({
             onClick={() => {
               onPlayClickSfx?.();
               handleLinkClick();
+              lockScrollForNavigation(750);
               if (pathname !== "/") {
-                if (typeof window !== "undefined") {
-                  window.scrollTo(0, 0);
-                  document.documentElement.scrollTop = 0;
-                  document.body.scrollTop = 0;
-                }
                 router.push("/");
               } else {
                 if (lenis) {

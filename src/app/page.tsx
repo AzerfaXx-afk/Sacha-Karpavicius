@@ -10,6 +10,7 @@ import Navbar from "@/components/navbar";
 import CustomCursor from "@/components/custom-cursor";
 import { projectsData, videoProjectsData } from "@/data/projects";
 import { useSiteContext } from "@/context/site-context";
+import { lockScrollForNavigation } from "@/utils/scroll-lock";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -885,6 +886,7 @@ export default function Home() {
   const handleProjectClick = (e: React.MouseEvent, project: any) => {
     e.preventDefault();
     if (isProjectTransitioning) return;
+    lockScrollForNavigation(850);
     setIsProjectTransitioning(true);
     setIsHideUI(true);
     playClickSfx();

@@ -7,8 +7,9 @@ import { useParams, useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Navbar from "@/components/navbar";
-import { projectsData, getProjectBySlug } from "@/data/projects";
+import { projectsData, videoProjectsData, getProjectBySlug } from "@/data/projects";
 import { useSiteContext } from "@/context/site-context";
+import { lockScrollForNavigation } from "@/utils/scroll-lock";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -20,8 +21,11 @@ export default function ProjectPage() {
   const { hasEnteredSite, isPlaying, toggleAudio, pauseAudio, playClickSfx, playHoverSfx, setIsHideUI } = useSiteContext();
 
   const project = getProjectBySlug(slug) || projectsData[0];
-  const currentIndex = projectsData.findIndex((p) => p.slug === project.slug);
-  const nextProject = projectsData[(currentIndex + 1) % projectsData.length];
+  const isVideoProject = Boolean(project.isVideo || project.videoUrl);
+  const targetDataset = isVideoProject ? videoProjectsData : projectsData;
+  const currentIndex = targetDataset.findIndex((p) => p.slug === project.slug);
+  const validIndex = currentIndex !== -1 ? currentIndex : 0;
+  const nextProject = targetDataset[(validIndex + 1) % targetDataset.length];
 
   const [lang, setLang] = useState<"fr" | "en">("fr");
   const [isIdle, setIsIdle] = useState(false);
@@ -107,6 +111,7 @@ export default function ProjectPage() {
   }, [hasEnteredSite, router]);
 
   useEffect(() => {
+    lockScrollForNavigation(750);
     if (typeof window !== "undefined") {
       if ('scrollRestoration' in history) {
         history.scrollRestoration = 'manual';
@@ -323,7 +328,10 @@ export default function ProjectPage() {
       <section className="relative z-10 border-t border-white/10 bg-[#080808]">
         <Link
           href={`/project/${nextProject.slug}`}
-          onClick={playClickSfx}
+          onClick={() => {
+            playClickSfx();
+            lockScrollForNavigation(850);
+          }}
           className="group block relative px-5 md:px-16 py-28 md:py-36 overflow-hidden cursor-pointer"
         >
           <div className="absolute inset-0 bg-white/[0.02] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
