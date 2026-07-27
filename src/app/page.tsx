@@ -1442,7 +1442,7 @@ export default function Home() {
               className="group relative overflow-hidden cursor-pointer"
             >
               <div
-                className="relative w-full overflow-hidden bg-[#111] aspect-[4/5] md:aspect-[3/4]"
+                className="relative w-full overflow-hidden bg-[#0d0d0d] rounded-xl border border-white/10 aspect-[16/11] md:aspect-[16/10]"
               >
                 <div
                   data-parallax-img

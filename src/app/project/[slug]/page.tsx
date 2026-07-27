@@ -143,6 +143,29 @@ export default function ProjectPage() {
       );
 
       // Title animation
+      // Horizontal Scrollytelling Carousel
+      const track = horizontalTrackRef.current;
+      const section = scrollySectionRef.current;
+
+      if (track && section) {
+        const getScrollDistance = () => {
+          return track.scrollWidth - window.innerWidth + (window.innerWidth < 768 ? 60 : 160);
+        };
+
+        gsap.to(track, {
+          x: () => -getScrollDistance(),
+          ease: "none",
+          scrollTrigger: {
+            trigger: section,
+            pin: true,
+            scrub: 1.0,
+            start: "top top",
+            end: () => `+=${getScrollDistance()}`,
+            invalidateOnRefresh: true,
+            anticipatePin: 1,
+          },
+        });
+      }
     });
 
     return () => ctx.revert();
@@ -262,24 +285,34 @@ export default function ProjectPage() {
         </div>
       </section>
 
-      {/* ═══════════════════ GALERIE PHOTOS (2 PAR 2 AWWWARDS GRID) ═══════════════════ */}
+      {/* ═══════════════════ PINNED HORIZONTAL SCROLLYTELLING CAROUSEL ═══════════════════ */}
       {project.gallery.length > 0 && (
-        <section className="relative z-10 w-full bg-[#050505] py-16 md:py-24 px-5 md:px-16 border-t border-white/10">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-start">
+        <section
+          ref={scrollySectionRef}
+          className="relative z-10 w-full overflow-hidden bg-[#050505] py-16 md:py-28 border-t border-white/10"
+        >
+          {/* Track Container (Preserves Authentic Aspect Ratio of Horizontal & Vertical Photos) */}
+          <div
+            ref={horizontalTrackRef}
+            className="flex gap-8 md:gap-12 px-5 md:px-16 will-change-transform items-center shrink-0 min-w-max"
+          >
             {project.gallery.map((imgSrc, i) => (
               <div
                 key={i}
-                className="group relative rounded-xl overflow-hidden bg-[#0a0a0a] border border-white/10 p-2 md:p-3 transition-all duration-700 hover:border-white/25 shadow-2xl flex items-center justify-center"
+                className="relative shrink-0 h-[65vh] md:h-[75vh] rounded-xl overflow-hidden bg-black/40 border border-white/10 group shadow-2xl flex items-center justify-center"
               >
-                <div className="relative w-full max-h-[65vh] flex items-center justify-center overflow-hidden rounded-lg">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imgSrc}
-                    alt={`${project.title} Shot ${i + 1}`}
-                    loading="lazy"
-                    className="w-full h-auto max-h-[65vh] object-contain rounded-lg transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.02] transform-gpu"
-                  />
-                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imgSrc}
+                  alt={`${project.title} Shot ${i + 1}`}
+                  loading="lazy"
+                  onLoad={() => {
+                    if (typeof window !== "undefined") {
+                      ScrollTrigger.refresh();
+                    }
+                  }}
+                  className="h-full w-auto max-w-full object-contain rounded-xl transition-transform duration-700 group-hover:scale-[1.02] transform-gpu"
+                />
               </div>
             ))}
           </div>
