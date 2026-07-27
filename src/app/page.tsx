@@ -2,10 +2,14 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Preloader from "@/components/preloader";
 import Navbar from "@/components/navbar";
+import CustomCursor from "@/components/custom-cursor";
+import { projectsData } from "@/data/projects";
+import { useSiteContext } from "@/context/site-context";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -23,6 +27,7 @@ const projects = [
 const AboutImageCard = ({ isMenuOpen }: { isMenuOpen: boolean }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const glareRef = useRef<HTMLDivElement>(null);
   const isTouching = useRef(false);
   const touchTimeout = useRef<NodeJS.Timeout | null>(null);
   const isMobileDevice = useRef(false);
@@ -33,32 +38,46 @@ const AboutImageCard = ({ isMenuOpen }: { isMenuOpen: boolean }) => {
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isMobileDevice.current) return;
-    if (!cardRef.current || !imgRef.current) return;
+    if (!cardRef.current || !imgRef.current || !glareRef.current) return;
     const { left, top, width, height } = cardRef.current.getBoundingClientRect();
     const x = (e.clientX - left) / width - 0.5;
     const y = (e.clientY - top) / height - 0.5;
 
+    // Card frame: 3D tilt
     gsap.to(cardRef.current, {
-      rotateY: x * 20,
-      rotateX: -y * 20,
+      rotateY: x * 30,
+      rotateX: -y * 30,
       transformPerspective: 1000,
-      duration: 0.6,
+      duration: 0.5,
       ease: "power2.out",
       overwrite: "auto",
     });
 
+    // Inner image: translate opposite to tilt for parallax window effect
     gsap.to(imgRef.current, {
-      x: -x * 12,
-      y: -y * 12,
-      scale: 1.08,
-      duration: 0.6,
+      x: -x * 25,
+      y: -y * 25,
+      scale: 1.15,
+      duration: 0.5,
+      ease: "power2.out",
+      overwrite: "auto",
+    });
+
+    // Glare: follow mouse client position inside the card container
+    const glareX = e.clientX - left;
+    const glareY = e.clientY - top;
+    gsap.to(glareRef.current, {
+      x: glareX - width / 2,
+      y: glareY - height / 2,
+      opacity: 0.7,
+      duration: 0.5,
       ease: "power2.out",
       overwrite: "auto",
     });
   };
 
   const handleMouseLeave = () => {
-    if (!cardRef.current || !imgRef.current) return;
+    if (!cardRef.current || !imgRef.current || !glareRef.current) return;
     gsap.to(cardRef.current, {
       rotateY: 0,
       rotateX: 0,
@@ -70,6 +89,14 @@ const AboutImageCard = ({ isMenuOpen }: { isMenuOpen: boolean }) => {
       x: 0,
       y: 0,
       scale: 1.0,
+      duration: 0.8,
+      ease: "power3.out",
+      overwrite: "auto",
+    });
+    gsap.to(glareRef.current, {
+      x: 0,
+      y: 0,
+      opacity: 0,
       duration: 0.8,
       ease: "power3.out",
       overwrite: "auto",
@@ -88,8 +115,8 @@ const AboutImageCard = ({ isMenuOpen }: { isMenuOpen: boolean }) => {
     const y = (touch.clientY - top) / height - 0.5;
 
     gsap.to(cardRef.current, {
-      rotateY: x * 25,
-      rotateX: -y * 25,
+      rotateY: x * 35,
+      rotateX: -y * 35,
       transformPerspective: 1000,
       duration: 0.4,
       ease: "power2.out",
@@ -97,9 +124,9 @@ const AboutImageCard = ({ isMenuOpen }: { isMenuOpen: boolean }) => {
     });
 
     gsap.to(imgRef.current, {
-      x: -x * 15,
-      y: -y * 15,
-      scale: 1.1,
+      x: -x * 20,
+      y: -y * 20,
+      scale: 1.15,
       duration: 0.4,
       ease: "power2.out",
       overwrite: "auto",
@@ -115,8 +142,8 @@ const AboutImageCard = ({ isMenuOpen }: { isMenuOpen: boolean }) => {
     const y = (touch.clientY - top) / height - 0.5;
 
     gsap.to(cardRef.current, {
-      rotateY: x * 25,
-      rotateX: -y * 25,
+      rotateY: x * 35,
+      rotateX: -y * 35,
       transformPerspective: 1000,
       duration: 0.4,
       ease: "power2.out",
@@ -124,9 +151,9 @@ const AboutImageCard = ({ isMenuOpen }: { isMenuOpen: boolean }) => {
     });
 
     gsap.to(imgRef.current, {
-      x: -x * 15,
-      y: -y * 15,
-      scale: 1.1,
+      x: -x * 20,
+      y: -y * 20,
+      scale: 1.15,
       duration: 0.4,
       ease: "power2.out",
       overwrite: "auto",
@@ -182,7 +209,7 @@ const AboutImageCard = ({ isMenuOpen }: { isMenuOpen: boolean }) => {
 
   // Center/reset when menu is opened
   useEffect(() => {
-    if (isMenuOpen && cardRef.current && imgRef.current) {
+    if (isMenuOpen && cardRef.current && imgRef.current && glareRef.current) {
       gsap.to(cardRef.current, {
         rotateY: 0,
         rotateX: 0,
@@ -198,27 +225,47 @@ const AboutImageCard = ({ isMenuOpen }: { isMenuOpen: boolean }) => {
         ease: "power3.out",
         overwrite: "auto",
       });
+      gsap.to(glareRef.current, {
+        x: 0,
+        y: 0,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out",
+        overwrite: "auto",
+      });
     }
   }, [isMenuOpen]);
 
   return (
     <div
-      ref={cardRef}
-      className="relative w-full max-w-[300px] aspect-[3/4] rounded-lg overflow-hidden border border-white/10 shadow-2xl cursor-pointer group will-change-transform select-none touch-pan-y"
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
       data-about-img
+      className="w-full max-w-[300px] aspect-[3/4] rounded-lg will-change-transform"
+      style={{ perspective: "1000px" }}
     >
-      <img
-        ref={imgRef}
-        src="/1.jpg"
-        alt="Sacha Karpavicius Portrait"
-        className="w-full h-full object-cover pointer-events-none"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+      <div
+        ref={cardRef}
+        className="relative w-full h-full rounded-lg overflow-hidden border border-white/10 shadow-2xl cursor-pointer group select-none touch-pan-y"
+        style={{ transformStyle: "preserve-3d" }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <img
+          ref={imgRef}
+          src="/1.jpg"
+          alt="Sacha Karpavicius Portrait"
+          className="w-full h-full object-cover pointer-events-none"
+        />
+        {/* Shine glare overlay layer */}
+        <div
+          ref={glareRef}
+          className="absolute w-[150%] h-[150%] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.18)_0%,rgba(255,255,255,0)_70%)] pointer-events-none -translate-x-1/2 -translate-y-1/2 mix-blend-overlay opacity-0"
+          style={{ left: "50%", top: "50%" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+      </div>
     </div>
   );
 };
@@ -404,13 +451,15 @@ function warmUpAudio(el: HTMLAudioElement | null) {
 }
 
 export default function Home() {
+  const router = useRouter();
+  const { hasEnteredSite, setHasEnteredSite, isPlaying, toggleAudio, playEntrance } = useSiteContext();
   const [loading, setLoading] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [siteStarted, setSiteStarted] = useState(false);
   const [isHoveringName, setIsHoveringName] = useState(false);
   const isHoveringNameRef = useRef(isHoveringName);
   const [isMounted, setIsMounted] = useState(false);
   const [lang, setLang] = useState<"fr" | "en">("fr");
+  const [isProjectTransitioning, setIsProjectTransitioning] = useState(false);
   
   // Mobile responsive enhancements: Touch-hover and Gyroscope Guide
   const [touchHoveredIndex, setTouchHoveredIndex] = useState<number | null>(null);
@@ -540,11 +589,41 @@ export default function Home() {
     const timer = setTimeout(() => {
       setIsMounted(true);
 
+      // In-app navigation: skip preloader if site was already entered in this React session
+      if (hasEnteredSite) {
+        setLoading(false);
+        setSiteStarted(true);
+      } else {
+        // F5 / Fresh Page Reload: ALWAYS force preloader & clear URL hash
+        setLoading(true);
+        setSiteStarted(false);
+        if (typeof window !== "undefined" && window.location.hash) {
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+      }
+
       // Language detection
       if (typeof window !== "undefined" && navigator) {
         const userLang = navigator.language || (navigator as Navigator & { userLanguage?: string }).userLanguage;
         if (userLang && !userLang.toLowerCase().startsWith("fr")) {
           setLang("en");
+        }
+      }
+
+      // Handle smooth scroll to #contact if triggered from project page Contact click
+      if (typeof window !== "undefined") {
+        const shouldScrollToContact = sessionStorage.getItem("scrollToContact");
+        if (shouldScrollToContact === "true") {
+          sessionStorage.removeItem("scrollToContact");
+          setLoading(false);
+          setSiteStarted(true);
+          setHasEnteredSite(true);
+          setTimeout(() => {
+            const contactEl = document.getElementById("contact");
+            if (contactEl) {
+              contactEl.scrollIntoView({ behavior: "smooth" });
+            }
+          }, 350);
         }
       }
     }, 0);
@@ -572,7 +651,7 @@ export default function Home() {
         playerRef.current.pause(0);
       }
     };
-  }, []);
+  }, [hasEnteredSite]);
 
   // Keep isHoveringNameRef synced and reset image center on hover
   useEffect(() => {
@@ -598,34 +677,11 @@ export default function Home() {
   }, [isHoveringName, playHoverSfx]);
 
   const handleStartSite = useCallback(() => {
-    // ★ This runs inside a user click – the ONLY reliable place to unlock audio
-    unlockAllAudio();
-
-    // ★ Reset hover state so the gyroscope parallax isn't permanently blocked
+    setHasEnteredSite(true);
     setIsHoveringName(false);
-
     setSiteStarted(true);
-
-    // Small delay so the browser registers the gesture before we play
-    setTimeout(() => {
-      playEntranceSfx();
-      if (playerRef.current) {
-        playerRef.current.play(0.5, 4);
-        setIsPlaying(true);
-      }
-    }, 50);
-  }, [playEntranceSfx, unlockAllAudio]);
-
-  const toggleAudio = () => {
-    if (!playerRef.current) return;
-    if (isPlaying) {
-      setIsPlaying(false);
-      playerRef.current.pause(1.5);
-    } else {
-      setIsPlaying(true);
-      playerRef.current.play(0.5, 1.5);
-    }
-  };
+    playEntrance();
+  }, [setHasEnteredSite, playEntrance]);
 
   // Handle visibility change (pause music when backgrounded, resume when foregrounded)
   useEffect(() => {
@@ -716,9 +772,9 @@ export default function Home() {
     setLoading(false);
   }, []);
 
-  /* ── UI animations (audio, get in touch, instagram) ── */
+  /* ── UI animations (get in touch, instagram) ── */
   useEffect(() => {
-    const uiElements = [getInTouchRef.current, audioIconRef.current, instaBtnRef.current].filter(Boolean);
+    const uiElements = [getInTouchRef.current, instaBtnRef.current].filter(Boolean);
     if (uiElements.length === 0) return;
 
     if (siteStarted || isHoveringName) {
@@ -820,6 +876,116 @@ export default function Home() {
       );
     }
   };
+
+  // FLIP Zoom Transition to Project Page (Luxurious, Slow & Smooth Awwwards)
+  const handleProjectClick = (e: React.MouseEvent, project: any) => {
+    e.preventDefault();
+    if (isProjectTransitioning) return;
+    setIsProjectTransitioning(true);
+    playClickSfx();
+
+    const cardElement = e.currentTarget as HTMLElement;
+    const imgElement = cardElement.querySelector("img");
+    const rect = (imgElement || cardElement).getBoundingClientRect();
+
+    // Create fixed clone container for smooth FLIP zoom
+    const clone = document.createElement("div");
+    clone.style.position = "fixed";
+    clone.style.top = `${rect.top}px`;
+    clone.style.left = `${rect.left}px`;
+    clone.style.width = `${rect.width}px`;
+    clone.style.height = `${rect.height}px`;
+    clone.style.zIndex = "99998";
+    clone.style.overflow = "hidden";
+    clone.style.borderRadius = "8px";
+    clone.style.boxShadow = "0 35px 70px -15px rgba(0,0,0,0.9)";
+    clone.style.pointerEvents = "none";
+    clone.style.willChange = "transform, width, height, top, left, border-radius, opacity";
+    clone.style.transformOrigin = "center center";
+
+    const img = document.createElement("img");
+    img.src = project.coverImage || project.src || "/2.jpg";
+    img.style.width = "100%";
+    img.style.height = "100%";
+    img.style.objectFit = "cover";
+    img.style.objectPosition = "center";
+    img.style.transition = "none";
+
+    clone.appendChild(img);
+    document.body.appendChild(clone);
+
+    // Background curtain overlay — gradual darken
+    const overlay = document.createElement("div");
+    overlay.style.position = "fixed";
+    overlay.style.inset = "0";
+    overlay.style.backgroundColor = "#050505";
+    overlay.style.opacity = "0";
+    overlay.style.zIndex = "99997";
+    overlay.style.pointerEvents = "none";
+    document.body.appendChild(overlay);
+
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // Phase 1 — Image lifts out of card (subtle scale up + shadow) 
+    const tl = gsap.timeline();
+
+    // Step 1: Subtle lift (0.2s) — the card "pops out" of the grid
+    tl.to(clone, {
+      scale: 1.03,
+      boxShadow: "0 50px 100px -20px rgba(0,0,0,0.95)",
+      duration: 0.25,
+      ease: "power2.out",
+    }, 0);
+
+    // Step 2: Background darkens smoothly (0.8s total)
+    tl.to(overlay, {
+      opacity: 0.85,
+      duration: 0.9,
+      ease: "power2.inOut"
+    }, 0.1);
+
+    // Step 3: Image expands to fullscreen (1.4s luxurious curve)
+    tl.to(clone, {
+      top: 0,
+      left: 0,
+      width: viewportWidth,
+      height: viewportHeight,
+      borderRadius: "0px",
+      scale: 1,
+      boxShadow: "none",
+      duration: 1.4,
+      ease: "power3.inOut",
+    }, 0.2);
+
+    // Step 4: Final fade to full dark + navigate
+    tl.to(overlay, {
+      opacity: 1,
+      duration: 0.4,
+      ease: "power2.in",
+      onComplete: () => {
+        window.scrollTo(0, 0);
+        router.push(`/project/${project.slug || "editorial-1"}`);
+
+        // Clean up after navigation settles
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          // Smooth fade-out of clone and overlay
+          gsap.to([clone, overlay], {
+            opacity: 0,
+            duration: 0.6,
+            ease: "power2.out",
+            onComplete: () => {
+              clone.remove();
+              overlay.remove();
+              setIsProjectTransitioning(false);
+            }
+          });
+        }, 200);
+      }
+    }, 1.4);
+  };
+
 
   /* Page entry animations */
   useEffect(() => {
@@ -1036,6 +1202,7 @@ export default function Home() {
 
   return (
     <>
+      <CustomCursor />
       {/* Preloader */}
       {loading && <Preloader onComplete={onPreloaderComplete} onStart={handleStartSite} onHoverChange={setIsHoveringName} lang={lang} />}
 
@@ -1049,12 +1216,6 @@ export default function Home() {
       />
 
       <style>{`
-        @keyframes sound {
-          0% { transform: scaleY(0.2); }
-          50% { transform: scaleY(1); }
-          100% { transform: scaleY(0.2); }
-        }
-        .music-bar { transform-origin: center; }
         @keyframes phone-tilt {
           0% { transform: rotate(0deg); }
           25% { transform: rotate(-12deg); }
@@ -1068,23 +1229,19 @@ export default function Home() {
         }
       `}</style>
 
-      {/* Persistent Audio Icon (Bottom Right) */}
-      <div
-        ref={audioIconRef}
-        className={`fixed bottom-6 right-6 md:bottom-10 md:right-12 z-[100] cursor-pointer group mix-blend-difference flex items-center justify-center gap-[4px] h-4 w-8 opacity-0 ${siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}
-        onClick={toggleAudio}
-      >
-        <div className={`music-bar w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${isPlaying ? 'bg-white h-full animate-[sound_1.2s_ease-in-out_infinite]' : 'bg-white/40 h-[3px] group-hover:h-[6px] group-hover:bg-white'}`} />
-        <div className={`music-bar w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${isPlaying ? 'bg-white h-full animate-[sound_0.8s_ease-in-out_infinite_0.2s]' : 'bg-white/40 h-[3px] group-hover:h-[10px] group-hover:bg-white'}`} />
-        <div className={`music-bar w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${isPlaying ? 'bg-white h-full animate-[sound_1.5s_ease-in-out_infinite_0.4s]' : 'bg-white/40 h-[3px] group-hover:h-[6px] group-hover:bg-white'}`} />
-        <div className={`music-bar w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${isPlaying ? 'bg-white h-full animate-[sound_1.0s_ease-in-out_infinite_0.1s]' : 'bg-white/40 h-[3px] group-hover:h-[8px] group-hover:bg-white'}`} />
-      </div>
 
       {/* Persistent Get In Touch (Bottom Left) */}
       <div ref={getInTouchRef} className={`fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference opacity-0 ${siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}>
         <a 
           href="#contact" 
-          onClick={playClickSfx}
+          onClick={(e) => {
+            e.preventDefault();
+            playClickSfx();
+            const contactEl = document.getElementById("contact");
+            if (contactEl) {
+              contactEl.scrollIntoView({ behavior: "smooth" });
+            }
+          }}
           data-touch-hover={isContactTouchHovered}
           onTouchStart={(e) => {
             const touch = e.touches[0];
@@ -1127,35 +1284,7 @@ export default function Home() {
         </a>
       </div>
 
-      {/* Persistent Instagram Button (Bottom Center) */}
-      <div 
-        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] mix-blend-difference opacity-0 ${siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}
-      >
-        <a 
-          ref={instaBtnRef}
-          href="https://www.instagram.com/sachakarpaviciusss/"
-          onClick={handleInstaClick}
-          onMouseMove={handleMagnetMove}
-          onMouseLeave={handleMagnetLeave}
-          className="group relative inline-flex items-center justify-center overflow-hidden px-3.5 py-2 md:px-5 md:py-2.5 rounded-full border border-white/20 hover:border-white bg-black/40 backdrop-blur-md transition-[border-color,box-shadow,opacity] duration-300 font-inter text-[10px] md:text-[12px] text-white cursor-pointer"
-        >
-          <span className="btn-content relative z-10 flex items-center gap-1.5 pointer-events-none">
-            <svg className="w-3 h-3 md:w-3.5 md:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-            </svg>
-            <span className="relative overflow-hidden flex items-center h-[1.2em]">
-              <span className="inline-block transition-transform duration-350 ease-out group-hover:-translate-y-[120%]">
-                Instagram
-              </span>
-              <span className="absolute left-0 inline-block translate-y-[120%] transition-transform duration-350 ease-out group-hover:translate-y-0 text-white">
-                @sachakarpaviciusss
-              </span>
-            </span>
-          </span>
-        </a>
-      </div>
+
 
       {/* Awwwards Curtain Redirect Overlay */}
       <div 
@@ -1200,6 +1329,7 @@ export default function Home() {
               src="/5.jpg"
               alt="Sacha Karpavicius - Visual Storyteller"
               fill
+              sizes="(max-width: 768px) 85vw, 600px"
               className="object-cover object-[center_28%]"
               priority
               quality={100}
@@ -1278,10 +1408,12 @@ export default function Home() {
 
         {/* Works grid */}
         <div className="px-5 md:px-16 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-          {projects.map((project, idx) => (
+          {projectsData.map((project, idx) => (
             <div
-              key={idx}
+              key={project.id}
               data-work-card
+              data-cursor="VIEW"
+              onClick={(e) => handleProjectClick(e, project)}
               data-touch-hover={touchHoveredIndex === idx}
               onTouchStart={(e) => {
                 const touch = e.touches[0];
@@ -1328,7 +1460,7 @@ export default function Home() {
                   className="absolute -top-[10%] left-0 w-full h-[120%] will-change-transform"
                 >
                   <Image
-                    src={project.src}
+                    src={project.coverImage}
                     alt={project.title}
                     fill
                     className="object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(.25,.46,.45,.94)] group-hover:scale-105 group-data-[touch-hover=true]:scale-105"

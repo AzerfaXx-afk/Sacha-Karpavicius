@@ -83,40 +83,54 @@ export default function Preloader({ onComplete, onStart, onHoverChange, lang = "
         },
       });
 
-      // 2. Letters slide up
+      // 1. Letters S & K float up into 3D space & fade softly
       tl.to(
         [letterS, letterK],
         {
-          yPercent: 0,
-          opacity: 1,
+          yPercent: -30,
+          scale: 1.1,
+          opacity: 0,
           duration: 1.2,
-          ease: "expo.out",
-          stagger: 0.1,
+          ease: "power3.inOut",
+          stagger: 0.08,
         },
         0
       );
 
-      // 3. Expand the aperture to reveal the entire site
+      // 2. Center name container zooms forward into camera with 3D scale and gentle blur
+      tl.to(
+        nameContainer,
+        {
+          scale: 1.3,
+          y: -20,
+          opacity: 0,
+          filter: "blur(8px)",
+          duration: 1.4,
+          ease: "power2.inOut",
+        },
+        0
+      );
+
+      // 3. Central lens aperture expands smoothly to 400vmax over 2.8s (Luxurious 3D Portal Expansion)
       tl.to(
         lens,
         {
-          width: "300vmax",
-          height: "300vmax",
-          rotation: 45,
-          duration: 1.5,
-          ease: "power4.inOut",
+          width: "400vmax",
+          height: "400vmax",
+          rotation: 0,
+          duration: 2.8,
+          ease: "cubic-bezier(0.76, 0, 0.18, 1)",
           overwrite: true,
         },
-        "-=0.5"
+        0
       );
 
-      // 4. Letters and center name fade out as the aperture opens
+      // 4. Smooth, continuous backdrop fade out during the last 1.2s of the aperture expansion
       tl.to(
-        [letterS, letterK, nameContainer],
+        container,
         {
           opacity: 0,
-          scale: 1.1,
-          duration: 1.0,
+          duration: 1.2,
           ease: "power2.inOut",
         },
         "-=1.2"

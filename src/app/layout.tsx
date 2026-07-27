@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Syne, Inter } from "next/font/google";
 import "./globals.css";
 import SmoothScrollProvider from "@/components/smooth-scroll-provider";
+import { SiteProvider } from "@/context/site-context";
+import GlobalAudioSignal from "@/components/global-audio-signal";
 
 const syne = Syne({
   variable: "--font-syne",
@@ -33,9 +35,12 @@ export default function RootLayout({
       className={`${syne.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#0a0a0a] text-white">
-        <SmoothScrollProvider>
-          <main className="flex-1 flex flex-col">{children}</main>
-        </SmoothScrollProvider>
+        <SiteProvider>
+          <SmoothScrollProvider>
+            <main className="flex-1 flex flex-col">{children}</main>
+          </SmoothScrollProvider>
+          <GlobalAudioSignal />
+        </SiteProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `

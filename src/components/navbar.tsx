@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import { useLenis } from "@studio-freight/react-lenis";
 
@@ -93,20 +94,27 @@ const AnimatedLink = ({
     };
   }, [onMouseEnter, onMouseLeave]);
 
+  const router = useRouter();
+  const pathname = usePathname();
+
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     onClick();
     setTimeout(() => {
-      if (lenis) {
-        lenis.scrollTo(href, { 
-          offset: 0,
-          duration: 1.5,
-        });
+      if (pathname !== "/") {
+        router.push("/" + href);
       } else {
-        const target = document.querySelector(href);
-        if (target) target.scrollIntoView({ behavior: 'smooth' });
+        if (lenis) {
+          lenis.scrollTo(href, { 
+            offset: 0,
+            duration: 1.5,
+          });
+        } else {
+          const target = document.querySelector(href);
+          if (target) target.scrollIntoView({ behavior: 'smooth' });
+        }
       }
-    }, 1000); // Wait for the menu to close
+    }, 600);
   };
 
   return (
@@ -179,6 +187,8 @@ export default function Navbar({
   onPlayClickSfx?: () => void;
   onMenuToggle?: (isOpen: boolean) => void;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const lenis = useLenis();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -485,10 +495,14 @@ export default function Navbar({
             onClick={() => {
               onPlayClickSfx?.();
               handleLinkClick();
-              if (lenis) {
-                lenis.scrollTo(0, { duration: 1.2, immediate: false });
+              if (pathname !== "/") {
+                router.push("/");
               } else {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                if (lenis) {
+                  lenis.scrollTo(0, { duration: 1.2, immediate: false });
+                } else {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
               }
             }}
           >
