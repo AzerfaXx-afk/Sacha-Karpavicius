@@ -527,7 +527,12 @@ export default function Navbar({
       >
         {/* Background Image Layer (Mobile and Desktop) */}
         <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-          {[ "/2.jpg", "/Videos/maladaptive-cover.jpg", "/5.jpg", "/6.jpg" ].map((imgSrc, idx) => {
+          {[ 
+            "/Photos/projet5/FAB09511.jpg", 
+            "/Videos/AFFICHE.png", 
+            "/Photos/projet5/FAB09470 copie-2.jpg", 
+            "/Photos/projet6/Sans titre - 11 mars 2026 15.07.jpg" 
+          ].map((imgSrc, idx) => {
             const isVisible = hoveredIndex !== null 
               ? hoveredIndex === idx 
               : (mobileBgIndex === idx); // Crossfade on slow cycle on mobile
