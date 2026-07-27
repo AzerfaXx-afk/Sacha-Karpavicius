@@ -126,7 +126,7 @@ export const videoProjectsData: Project[] = [
 export const projectsData: Project[] = [
   {
     id: "editorial-1",
-    slug: "editorial-1",
+    slug: "aemona-and-fada",
     title: "AEMONA & FADA",
     subtitle: "",
     category: "Portrait",
@@ -169,7 +169,7 @@ export const projectsData: Project[] = [
   },
   {
     id: "editorial-2",
-    slug: "editorial-2",
+    slug: "fada",
     title: "FADA",
     subtitle: "",
     category: "Portrait",
@@ -205,7 +205,7 @@ export const projectsData: Project[] = [
   },
   {
     id: "ambiance",
-    slug: "ambiance",
+    slug: "crossover-festival-aymce",
     title: "CROSSOVER FESTIVAL AYMCE",
     subtitle: "",
     category: "Festival",
@@ -242,7 +242,7 @@ export const projectsData: Project[] = [
   },
   {
     id: "lumiere",
-    slug: "lumiere",
+    slug: "autoportrait",
     title: "AUTOPORTRAIT",
     subtitle: "",
     category: "Portrait",
@@ -276,7 +276,7 @@ export const projectsData: Project[] = [
   },
   {
     id: "nocturne",
-    slug: "nocturne",
+    slug: "margiela-la-fabric",
     title: "Margiela - LA FABRIC",
     subtitle: "",
     category: "Fashion",
@@ -311,7 +311,7 @@ export const projectsData: Project[] = [
   },
   {
     id: "projet-6",
-    slug: "projet-6",
+    slug: "la-fabric",
     title: "LA FABRIC",
     subtitle: "",
     category: "Editorial",
@@ -352,7 +352,7 @@ export const projectsData: Project[] = [
   },
   {
     id: "projet-7",
-    slug: "projet-7",
+    slug: "rick-owens-la-fabric",
     title: "RICK OWENS - LA FABRIC",
     subtitle: "",
     category: "Fashion",
@@ -383,7 +383,7 @@ export const projectsData: Project[] = [
   },
   {
     id: "projet-8",
-    slug: "projet-8",
+    slug: "londres-avril-2026",
     title: "Londres, Avril 2026",
     subtitle: "",
     category: "Travel",
@@ -427,5 +427,5 @@ export const projectsData: Project[] = [
 
 export function getProjectBySlug(slug: string): Project | undefined {
   const allProjects = [...projectsData, ...videoProjectsData];
-  return allProjects.find((p) => p.slug === slug);
+  return allProjects.find((p) => p.slug === slug || p.id === slug);
 }

@@ -310,7 +310,8 @@ export default function ProjectPage() {
                 <img
                   src={imgSrc}
                   alt={`${project.title} Shot ${i + 1}`}
-                  loading="lazy"
+                  loading={i < 2 ? "eager" : "lazy"}
+                  decoding="async"
                   onLoad={() => {
                     if (typeof window !== "undefined") {
                       ScrollTrigger.refresh();

@@ -1466,8 +1466,9 @@ export default function Home() {
                     alt={project.title}
                     fill
                     className={`object-cover ${project.objectPosition || "object-[center_35%]"} transition-transform duration-[1.2s] ease-[cubic-bezier(.25,.46,.45,.94)] group-hover:scale-105 group-data-[touch-hover=true]:scale-105`}
-                    quality={96}
-                    sizes="(max-width: 768px) 100vw, 1200px"
+                    quality={90}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
+                    loading={idx < 2 ? "eager" : "lazy"}
                   />
                 </div>
                 {/* Hover overlay */}
