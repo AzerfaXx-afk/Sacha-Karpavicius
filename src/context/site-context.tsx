@@ -5,6 +5,8 @@ import React, { createContext, useContext, useState, useRef, useEffect } from "r
 interface SiteContextType {
   hasEnteredSite: boolean;
   setHasEnteredSite: (val: boolean) => void;
+  isHoveringName: boolean;
+  setIsHoveringName: (val: boolean) => void;
   isPlaying: boolean;
   toggleAudio: () => void;
   playEntrance: () => void;
@@ -15,6 +17,8 @@ interface SiteContextType {
 const SiteContext = createContext<SiteContextType>({
   hasEnteredSite: false,
   setHasEnteredSite: () => {},
+  isHoveringName: false,
+  setIsHoveringName: () => {},
   isPlaying: false,
   toggleAudio: () => {},
   playEntrance: () => {},
@@ -24,7 +28,8 @@ const SiteContext = createContext<SiteContextType>({
 
 export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   const [hasEnteredSite, setHasEnteredSite] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [isHoveringName, setIsHoveringName] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -84,6 +89,8 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         hasEnteredSite,
         setHasEnteredSite,
+        isHoveringName,
+        setIsHoveringName,
         isPlaying,
         toggleAudio,
         playEntrance,

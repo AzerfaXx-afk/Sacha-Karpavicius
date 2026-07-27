@@ -452,11 +452,13 @@ function warmUpAudio(el: HTMLAudioElement | null) {
 
 export default function Home() {
   const router = useRouter();
-  const { hasEnteredSite, setHasEnteredSite, isPlaying, toggleAudio, playEntrance } = useSiteContext();
+  const { hasEnteredSite, setHasEnteredSite, isHoveringName, setIsHoveringName, isPlaying, toggleAudio, playEntrance } = useSiteContext();
   const [loading, setLoading] = useState(true);
   const [siteStarted, setSiteStarted] = useState(false);
-  const [isHoveringName, setIsHoveringName] = useState(false);
   const isHoveringNameRef = useRef(isHoveringName);
+  useEffect(() => {
+    isHoveringNameRef.current = isHoveringName;
+  }, [isHoveringName]);
   const [isMounted, setIsMounted] = useState(false);
   const [lang, setLang] = useState<"fr" | "en">("fr");
   const [isProjectTransitioning, setIsProjectTransitioning] = useState(false);
