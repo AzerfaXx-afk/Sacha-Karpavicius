@@ -247,19 +247,43 @@ export default function Preloader({ onComplete, onStart, onHoverChange, lang = "
         className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10 ${hasStarted ? 'pointer-events-none' : 'cursor-pointer group'}`}
       >
         <div
-          className="relative flex font-syne font-bold text-base md:text-2xl tracking-[0.45em] uppercase whitespace-nowrap transition-all duration-700 group-hover:scale-105 mix-blend-difference drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]"
-          style={{ color: "#ffffff" }}
+          className="relative flex font-inter text-sm md:text-xl tracking-[0.4em] uppercase whitespace-nowrap transition-transform duration-700 group-hover:scale-105"
+          style={{ color: "rgba(255, 255, 255, 0.15)" }}
         >
+          {/* Spotlight Effect - only active when hovering */}
+          <div
+            className="pointer-events-none absolute inset-0 mix-blend-soft-light transition-opacity duration-1000"
+            style={{
+              background: `radial-gradient(circle 800px at ${mousePos.x}px ${mousePos.y}px, rgba(255,255,255,0.1), transparent 40%)`,
+              opacity: hasStarted ? 0 : (isHoveringLocal ? 1 : 0)
+            }}
+          />
           {"Sacha Karpavicius".split("").map((char, i) => (
-            <span key={`base-${i}`} className="name-char inline-block text-white">
+            <span key={`base-${i}`} className="name-char inline-block">
               {char === " " ? "\u00A0" : char}
             </span>
           ))}
+
+          {/* Spotlight Overlay */}
+          <div
+            className="absolute inset-0 flex text-white pointer-events-none transition-opacity duration-1000"
+            style={{
+              WebkitMaskImage: `radial-gradient(100px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), black 0%, transparent 100%)`,
+              maskImage: `radial-gradient(100px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), black 0%, transparent 100%)`,
+              opacity: hasStarted ? 0 : (isHoveringLocal ? 1 : 0)
+            }}
+          >
+            {"Sacha Karpavicius".split("").map((char, i) => (
+              <span key={`spotlight-${i}`} className="name-char inline-block">
+                {char === " " ? "\u00A0" : char}
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* Click Indicator */}
-        <div className={`mt-3 transition-opacity duration-500 ${hasStarted ? 'opacity-0' : 'group-hover:opacity-0'}`}>
-          <div className="font-mono text-[9px] md:text-[10px] tracking-[0.4em] uppercase text-white/80 animate-pulse drop-shadow-md">
+        <div className={`mt-2 transition-opacity duration-500 ${hasStarted ? 'opacity-0' : 'group-hover:opacity-0'}`}>
+          <div className="font-inter text-[7px] md:text-[8px] tracking-[0.4em] uppercase text-white/40 animate-pulse">
             {lang === "fr" ? "Cliquer pour entrer" : "Click to enter"}
           </div>
         </div>
