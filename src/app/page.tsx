@@ -876,11 +876,11 @@ export default function Home() {
     }
   };
 
-  // FLIP Zoom Transition to Project Page (Luxurious, Slow & Smooth Awwwards)
+  // FLIP Zoom Transition to Project Page (Luxurious, Smooth & Seamless Awwwards)
   const handleProjectClick = (e: React.MouseEvent, project: any) => {
     e.preventDefault();
     if (isProjectTransitioning) return;
-    lockScrollForNavigation(3200);
+    lockScrollForNavigation(2000);
     setIsProjectTransitioning(true);
     setIsHideUI(true);
     playClickSfx();
@@ -919,7 +919,7 @@ export default function Home() {
     clone.appendChild(img);
     document.body.appendChild(clone);
 
-    // Background curtain overlay — gradual darken
+    // Background curtain overlay — seamless dark backdrop
     const overlay = document.createElement("div");
     overlay.style.position = "fixed";
     overlay.style.inset = "0";
@@ -934,14 +934,14 @@ export default function Home() {
 
     const tl = gsap.timeline();
 
-    // 1. Subtle depth overlay fade (0.4s)
+    // 1. Darken background overlay smoothly (0.4s)
     tl.to(overlay, {
-      opacity: 0.6,
+      opacity: 1,
       duration: 0.4,
       ease: "power2.out"
     }, 0);
 
-    // 2. Expand clicked cover card gracefully from its grid position to 100vw x 100vh fullscreen hero (0.85s Awwwards curve)
+    // 2. Expand clicked cover card gracefully from grid position to 100vw x 100vh fullscreen hero (0.75s)
     tl.to(clone, {
       top: 0,
       left: 0,
@@ -949,7 +949,7 @@ export default function Home() {
       height: viewportHeight,
       borderRadius: "0px",
       boxShadow: "none",
-      duration: 0.85,
+      duration: 0.75,
       ease: "cubic-bezier(0.76, 0, 0.24, 1)",
       onComplete: () => {
         if (typeof window !== "undefined") {
@@ -959,14 +959,14 @@ export default function Home() {
         }
         router.push(`/project/${project.slug || "editorial-1"}`);
 
-        // Luxurious hand-off: smooth cross-fade clone over newly mounted project page hero image
+        // Seamless hand-off: quick clean fade out of clone overlay
         setTimeout(() => {
           if (typeof window !== "undefined") {
             window.scrollTo(0, 0);
           }
           gsap.to([clone, overlay], {
             opacity: 0,
-            duration: 0.5,
+            duration: 0.3,
             ease: "power2.out",
             onComplete: () => {
               clone.remove();
@@ -974,7 +974,7 @@ export default function Home() {
               setIsProjectTransitioning(false);
             }
           });
-        }, 150);
+        }, 120);
       }
     }, 0);
   };

@@ -119,8 +119,8 @@ export default function ProjectPage() {
   }, [router, hasEnteredSite]);
 
   useEffect(() => {
-    // Lock scroll for transition + 2.4s wait after page load
-    lockScrollForNavigation(2400);
+    // Lock scroll for transition + 1.8s wait after page load (perfect Awwwards handoff)
+    lockScrollForNavigation(1800);
     setIsScrollLockedState(true);
 
     const handleLockChange = (e: Event) => {
@@ -149,21 +149,19 @@ export default function ProjectPage() {
     }
 
     const ctx = gsap.context(() => {
-      // Hero & Title silky reveal
+      // Hero & Title silky reveal — perfectly matched to incoming FLIP zoom
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
-      tl.fromTo(
-        heroImgRef.current,
-        { scale: 1.08, filter: "brightness(0.6)" },
-        { scale: 1.0, filter: "brightness(1.0)", duration: 1.4, ease: "cubic-bezier(0.16, 1, 0.3, 1)" }
-      );
+      if (heroImgRef.current) {
+        gsap.set(heroImgRef.current, { scale: 1.0, filter: "brightness(1.0)" });
+      }
 
       if (titleRef.current) {
         tl.fromTo(
           titleRef.current.children,
-          { opacity: 0, y: 35 },
-          { opacity: 1, y: 0, duration: 0.9, stagger: 0.12, ease: "cubic-bezier(0.16, 1, 0.3, 1)" },
-          "-=1.0"
+          { opacity: 0, y: 30 },
+          { opacity: 1, y: 0, duration: 0.8, stagger: 0.08, ease: "cubic-bezier(0.16, 1, 0.3, 1)" },
+          0.1
         );
       }
 
