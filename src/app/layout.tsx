@@ -9,12 +9,14 @@ const syne = Syne({
   variable: "--font-syne",
   subsets: ["latin"],
   display: "swap",
+  preload: false,
 });
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
+  preload: false,
 });
 
 export const viewport: Viewport = {

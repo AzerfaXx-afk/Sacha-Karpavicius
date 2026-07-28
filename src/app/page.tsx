@@ -1407,29 +1407,19 @@ export default function Home() {
                 // Trigger touch-hover if they hold for 100ms
                 touchHoverTimeout.current = setTimeout(() => {
                   setTouchHoveredIndex(idx);
-                }, 100);
-              }}
-              onTouchMove={(e) => {
-                const touch = e.touches[0];
-                const dx = Math.abs(touch.clientX - touchStartPos.current.x);
-                const dy = Math.abs(touch.clientY - touchStartPos.current.y);
-                
-                // If finger moves more than 10px, assume they are scrolling -> cancel hover
-                if (dx > 10 || dy > 10) {
-                  if (touchHoverTimeout.current) clearTimeout(touchHoverTimeout.current);
                   setTouchHoveredIndex(null);
-                }
+                }, 1500);
               }}
               onTouchEnd={() => {
                 if (touchHoverTimeout.current) clearTimeout(touchHoverTimeout.current);
-                // Clear state after a short delay so the visual highlights react nicely
-                setTimeout(() => {
-                  setTouchHoveredIndex(null);
-                }, 250);
+                setTouchHoveredIndex(null);
               }}
               onTouchCancel={() => {
                 if (touchHoverTimeout.current) clearTimeout(touchHoverTimeout.current);
                 setTouchHoveredIndex(null);
+              }}
+              onMouseEnter={() => {
+                if (playHoverSfx) playHoverSfx();
               }}
               className="group relative overflow-hidden cursor-pointer"
             >
@@ -1504,6 +1494,9 @@ export default function Home() {
                 key={project.id}
                 data-work-card
                 data-cursor="PLAY"
+                onMouseEnter={() => {
+                  if (playHoverSfx) playHoverSfx();
+                }}
                 onClick={(e) => handleProjectClick(e, project)}
                 className="group relative cursor-pointer rounded-2xl border border-white/10 bg-[#080808] transition-all duration-700 hover:border-white/25 hover:shadow-[0_20px_70px_rgba(0,0,0,0.95)]"
               >
