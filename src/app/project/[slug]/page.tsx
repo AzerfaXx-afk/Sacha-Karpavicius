@@ -107,15 +107,16 @@ export default function ProjectPage() {
     }
   }, [project?.videoUrl, pauseAudio]);
 
-  // On browser reload / F5 on a project page, return to homepage to show full preloader animation
+  // On browser reload / F5 / direct URL entry on a project page, return to homepage for preloader
   useEffect(() => {
-    if (typeof window !== "undefined" && performance) {
-      const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
-      if (navEntries.length > 0 && navEntries[0].type === "reload") {
-        router.replace("/");
-      }
+    if (typeof window === "undefined") return;
+    const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+    const navType = navEntries.length > 0 ? navEntries[0].type : "";
+    // Only redirect on actual browser reload or fresh page load (not in-app SPA navigation)
+    if (navType === "reload" || (!hasEnteredSite && navType === "navigate")) {
+      router.replace("/");
     }
-  }, [router]);
+  }, [router, hasEnteredSite]);
 
   useEffect(() => {
     // Lock scroll for transition + 2.4s wait after page load
@@ -181,16 +182,18 @@ export default function ProjectPage() {
           return Math.max(0, trackWidth - window.innerWidth + padding);
         };
 
+        gsap.set(track, { force3D: true, willChange: "transform" });
+
         gsap.to(track, {
           x: () => -getScrollDistance(),
-          ease: "power1.out",
-          force3D: true,
+          ease: "none",
           scrollTrigger: {
             trigger: section,
             pin: true,
-            scrub: 1.2,
+            pinSpacing: true,
+            scrub: true,
             start: "top top",
-            end: () => `+=${Math.max(window.innerHeight * 1.5, getScrollDistance())}`,
+            end: () => `+=${getScrollDistance() * 1.2}`,
             invalidateOnRefresh: true,
           },
         });
@@ -337,15 +340,11 @@ export default function ProjectPage() {
                   alt={`${project.title} Shot ${i + 1}`}
                   width={1600}
                   height={1200}
-                  quality={95}
-                  sizes="(max-width: 768px) 100vw, 80vw"
-                  priority={i < 2}
-                  onLoad={() => {
-                    if (typeof window !== "undefined") {
-                      ScrollTrigger.refresh();
-                    }
-                  }}
-                  className="h-full w-auto max-w-full object-contain rounded-xl transition-transform duration-700 group-hover:scale-[1.02] transform-gpu brightness-[1.02] contrast-[1.03] saturate-[1.03]"
+                  quality={85}
+                  sizes="(max-width: 768px) 90vw, 70vw"
+                  priority={i < 3}
+                  loading={i < 3 ? "eager" : "lazy"}
+                  className="h-full w-auto max-w-full object-contain rounded-xl transform-gpu brightness-[1.02] contrast-[1.03] saturate-[1.03]"
                 />
               </div>
             ))}
