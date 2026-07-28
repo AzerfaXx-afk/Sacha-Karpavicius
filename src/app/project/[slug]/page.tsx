@@ -181,15 +181,14 @@ export default function ProjectPage() {
         gsap.to(track, {
           x: () => -getScrollDistance(),
           ease: "none",
+          force3D: true,
           scrollTrigger: {
             trigger: section,
             pin: true,
-            scrub: 0.6,
+            scrub: 0.1,
             start: "top top",
-            end: () => `+=${Math.max(window.innerHeight * 1.4, getScrollDistance())}`,
+            end: () => `+=${Math.max(window.innerHeight * 1.5, getScrollDistance())}`,
             invalidateOnRefresh: true,
-            anticipatePin: 1,
-            fastScrollEnd: true,
           },
         });
       }

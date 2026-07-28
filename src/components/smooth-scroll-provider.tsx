@@ -3,6 +3,9 @@
 import React, { useEffect, useRef } from "react";
 import { ReactLenis } from "@studio-freight/react-lenis";
 import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function SmoothScrollProvider({
   children,
@@ -17,11 +20,14 @@ export default function SmoothScrollProvider({
       history.scrollRestoration = "manual";
     }
 
+    const lenis = lenisRef.current?.lenis;
+    if (lenis) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__lenis = lenis;
+      lenis.on("scroll", ScrollTrigger.update);
+    }
+
     function update(time: number) {
-      if (lenisRef.current?.lenis) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).__lenis = lenisRef.current.lenis;
-      }
       lenisRef.current?.lenis?.raf(time * 1000);
     }
     
