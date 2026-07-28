@@ -177,16 +177,13 @@ export default function ProjectNav({
           onPlayHoverSfx();
         }}
         onClick={() => {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("spa_nav", "true");
+          }
           onPlayClickSfx();
-          lockScrollForNavigation(2800);
+          lockScrollForNavigation(1800);
         }}
-        className="group relative w-full md:w-[51%] h-full flex flex-col justify-between p-8 md:p-16 overflow-hidden cursor-none z-10 shrink-0"
-        style={{
-          clipPath:
-            typeof window !== "undefined" && window.innerWidth >= 768
-              ? "polygon(0% 0%, 98.03% 0%, 100.39% 8.33%, 95.68% 16.66%, 100.39% 25%, 95.68% 33.33%, 100.39% 41.66%, 95.68% 50%, 100.39% 58.33%, 95.68% 66.66%, 100.39% 75%, 95.68% 83.33%, 100.39% 91.66%, 98.03% 100%, 0% 100%)"
-              : undefined,
-        }}
+        className="group relative w-full md:w-[51%] h-full flex flex-col justify-between p-8 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-left"
       >
         {/* Full Vibrant Color Reveal on Hover */}
         {prevProject.coverImage && (
@@ -237,16 +234,13 @@ export default function ProjectNav({
           onPlayHoverSfx();
         }}
         onClick={() => {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("spa_nav", "true");
+          }
           onPlayClickSfx();
-          lockScrollForNavigation(2800);
+          lockScrollForNavigation(1800);
         }}
-        className="group relative w-full md:w-[51%] md:-ml-[2%] h-full flex flex-col justify-between p-8 md:p-16 overflow-hidden cursor-none z-10 shrink-0"
-        style={{
-          clipPath:
-            typeof window !== "undefined" && window.innerWidth >= 768
-              ? "polygon(1.96% 0%, 100% 0%, 100% 100%, 1.96% 100%, 4.31% 91.66%, -0.39% 83.33%, 4.31% 75%, -0.39% 66.66%, 4.31% 58.33%, -0.39% 50%, 4.31% 41.66%, -0.39% 33.33%, 4.31% 25%, -0.39% 16.66%, 4.31% 8.33%)"
-              : undefined,
-        }}
+        className="group relative w-full md:w-[51%] md:-ml-[2%] h-full flex flex-col justify-between p-8 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-right"
       >
         {/* Full Vibrant Color Reveal on Hover */}
         {nextProject.coverImage && (

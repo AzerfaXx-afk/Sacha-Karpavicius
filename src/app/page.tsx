@@ -889,6 +889,9 @@ export default function Home() {
     if (isProjectTransitioning) return;
     const targetSlug = project.slug || "editorial-1";
 
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("spa_nav", "true");
+    }
     setHasEnteredSite(true);
     setIsProjectTransitioning(true);
     setIsHideUI(true);

@@ -107,6 +107,35 @@ export default function ProjectPage() {
     }
   }, [project?.videoUrl, pauseAudio]);
 
+  // On physical browser reload (F5 / Refresh button), return to homepage for preloader
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isSpaNav = sessionStorage.getItem("spa_nav");
+    if (isSpaNav) {
+      sessionStorage.removeItem("spa_nav");
+      return;
+    }
+    const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+    const isReload = navEntries.length > 0 && navEntries[0].type === "reload";
+    if (isReload) {
+      router.replace("/");
+    }
+  }, [router]);
+
+  // Always force scroll to top (Y=0) whenever opening or switching projects
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const lenis = (window as any).__lenis;
+      if (lenis && typeof lenis.scrollTo === "function") {
+        lenis.scrollTo(0, { immediate: true });
+      }
+    }
+  }, [slug]);
+
   useEffect(() => {
     setHasEnteredSite(true);
     // Lock scroll for transition + 1.8s wait after page load (perfect Awwwards handoff)
