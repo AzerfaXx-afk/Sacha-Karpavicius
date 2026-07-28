@@ -170,23 +170,26 @@ export default function ProjectPage() {
         horizontalTrackRef.current
       ) {
         const track = horizontalTrackRef.current;
+        const section = scrollySectionRef.current;
 
-        const getScrollAmount = () => {
+        const getScrollDistance = () => {
           const trackWidth = track.scrollWidth;
-          return -(trackWidth - window.innerWidth + 80);
+          const padding = window.innerWidth < 768 ? 40 : 120;
+          return Math.max(0, trackWidth - window.innerWidth + padding);
         };
 
         gsap.to(track, {
-          x: getScrollAmount,
+          x: () => -getScrollDistance(),
           ease: "none",
           scrollTrigger: {
-            trigger: scrollySectionRef.current,
+            trigger: section,
             pin: true,
-            scrub: 1,
+            scrub: 0.6,
             start: "top top",
-            end: () => `+=${Math.max(window.innerWidth * 1.8, track.scrollWidth - window.innerWidth)}`,
+            end: () => `+=${Math.max(window.innerHeight * 1.4, getScrollDistance())}`,
             invalidateOnRefresh: true,
             anticipatePin: 1,
+            fastScrollEnd: true,
           },
         });
       }

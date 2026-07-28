@@ -8,11 +8,13 @@ import GlobalAudioSignal from "@/components/global-audio-signal";
 const syne = Syne({
   variable: "--font-syne",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const viewport: Viewport = {
