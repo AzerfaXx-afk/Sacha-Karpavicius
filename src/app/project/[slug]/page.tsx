@@ -107,6 +107,16 @@ export default function ProjectPage() {
     }
   }, [project?.videoUrl, pauseAudio]);
 
+  // On browser reload / F5 on a project page, return to homepage to show full preloader animation
+  useEffect(() => {
+    if (typeof window !== "undefined" && performance) {
+      const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+      if (navEntries.length > 0 && navEntries[0].type === "reload") {
+        router.replace("/");
+      }
+    }
+  }, [router]);
+
   useEffect(() => {
     // Lock scroll for transition + 2.4s wait after page load
     lockScrollForNavigation(2400);

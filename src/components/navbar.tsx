@@ -105,17 +105,20 @@ const AnimatedLink = ({
       if (pathname !== "/") {
         router.push("/" + href);
       } else {
-        if (lenis) {
-          lenis.scrollTo(href, { 
-            offset: 0,
-            duration: 1.5,
-          });
-        } else {
-          const target = document.querySelector(href);
-          if (target) target.scrollIntoView({ behavior: 'smooth' });
+        const target = document.querySelector(href);
+        if (target) {
+          if (lenis) {
+            lenis.scrollTo(target as HTMLElement, { 
+              offset: 0,
+              duration: 1.8,
+              easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            });
+          } else {
+            target.scrollIntoView({ behavior: 'smooth' });
+          }
         }
       }
-    }, 600);
+    }, 450);
   };
 
   return (

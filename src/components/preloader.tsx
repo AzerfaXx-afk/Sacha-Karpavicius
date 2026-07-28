@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+import { projectsData, videoProjectsData } from "@/data/projects";
 
 interface PreloaderProps {
   onComplete: () => void;
@@ -19,6 +20,26 @@ export default function Preloader({ onComplete, onStart, onHoverChange, lang = "
   const [hasStarted, setHasStarted] = useState(false);
   const [isHoveringLocal, setIsHoveringLocal] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  // Prefetch all site image assets into browser cache while preloader is active
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const imagesToPreload: string[] = [];
+
+    projectsData.forEach((p) => {
+      if (p.coverImage) imagesToPreload.push(p.coverImage);
+      if (p.gallery) imagesToPreload.push(...p.gallery);
+    });
+
+    videoProjectsData.forEach((vp) => {
+      if (vp.coverImage) imagesToPreload.push(vp.coverImage);
+    });
+
+    imagesToPreload.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;

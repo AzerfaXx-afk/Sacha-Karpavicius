@@ -598,6 +598,21 @@ export default function Home() {
       if (hasEnteredSite) {
         setLoading(false);
         setSiteStarted(true);
+        if (typeof window !== "undefined" && window.location.hash) {
+          const hash = window.location.hash;
+          setTimeout(() => {
+            const target = document.querySelector(hash);
+            if (target) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const lenis = (window as any).__lenis;
+              if (lenis) {
+                lenis.scrollTo(target as HTMLElement, { offset: 0, duration: 1.8 });
+              } else {
+                target.scrollIntoView({ behavior: "smooth" });
+              }
+            }
+          }, 400);
+        }
       } else {
         // F5 / Fresh Page Reload: ALWAYS force preloader & clear URL hash
         setLoading(true);
