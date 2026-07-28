@@ -7,6 +7,8 @@ import { useParams, useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Navbar from "@/components/navbar";
+import ProjectNav from "@/components/project-nav";
+import ScrollIndicator from "@/components/scroll-indicator";
 import { projectsData, videoProjectsData, getProjectBySlug } from "@/data/projects";
 import { useSiteContext } from "@/context/site-context";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
@@ -26,10 +28,12 @@ export default function ProjectPage() {
   const currentIndex = targetDataset.findIndex((p) => p.slug === project.slug);
   const validIndex = currentIndex !== -1 ? currentIndex : 0;
   const nextProject = targetDataset[(validIndex + 1) % targetDataset.length];
+  const prevProject = targetDataset[(validIndex - 1 + targetDataset.length) % targetDataset.length];
 
   const [lang, setLang] = useState<"fr" | "en">("fr");
   const [isIdle, setIsIdle] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+  const [isScrollLockedState, setIsScrollLockedState] = useState(true);
 
   const heroRef = useRef<HTMLDivElement>(null);
   const heroImgRef = useRef<HTMLDivElement>(null);
@@ -111,7 +115,17 @@ export default function ProjectPage() {
   }, [hasEnteredSite, router]);
 
   useEffect(() => {
-    lockScrollForNavigation(750);
+    // Lock scroll for transition + 2.4s wait after page load
+    lockScrollForNavigation(2400);
+    setIsScrollLockedState(true);
+
+    const handleLockChange = (e: Event) => {
+      const customEvt = e as CustomEvent<{ isLocked: boolean }>;
+      setIsScrollLockedState(customEvt.detail.isLocked);
+    };
+
+    window.addEventListener("scroll-lock-changed", handleLockChange);
+
     if (typeof window !== "undefined") {
       if ('scrollRestoration' in history) {
         history.scrollRestoration = 'manual';
@@ -136,36 +150,41 @@ export default function ProjectPage() {
 
       tl.fromTo(
         heroImgRef.current,
-        { scale: 1.04, opacity: 1 },
-        { scale: 1, opacity: 1, duration: 1.4, ease: "power3.out" }
+        { scale: 1.08, filter: "brightness(0.6)" },
+        { scale: 1.0, filter: "brightness(1.0)", duration: 1.4, ease: "cubic-bezier(0.16, 1, 0.3, 1)" }
       );
 
-      tl.fromTo(
-        titleRef.current,
-        { y: 40, opacity: 0 },
-        { y: 0, opacity: 1, duration: 1.0, ease: "power3.out" },
-        0.2
-      );
+      if (titleRef.current) {
+        tl.fromTo(
+          titleRef.current.children,
+          { opacity: 0, y: 35 },
+          { opacity: 1, y: 0, duration: 0.9, stagger: 0.12, ease: "cubic-bezier(0.16, 1, 0.3, 1)" },
+          "-=1.0"
+        );
+      }
 
-      // Title animation
-      // Horizontal Scrollytelling Carousel
-      const track = horizontalTrackRef.current;
-      const section = scrollySectionRef.current;
+      // Horizontal Scrollytelling Setup (Only for Projects with Gallery)
+      if (
+        project.gallery.length > 0 &&
+        scrollySectionRef.current &&
+        horizontalTrackRef.current
+      ) {
+        const track = horizontalTrackRef.current;
 
-      if (track && section) {
-        const getScrollDistance = () => {
-          return track.scrollWidth - window.innerWidth + (window.innerWidth < 768 ? 60 : 160);
+        const getScrollAmount = () => {
+          const trackWidth = track.scrollWidth;
+          return -(trackWidth - window.innerWidth + 80);
         };
 
         gsap.to(track, {
-          x: () => -getScrollDistance(),
+          x: getScrollAmount,
           ease: "none",
           scrollTrigger: {
-            trigger: section,
+            trigger: scrollySectionRef.current,
             pin: true,
-            scrub: 1.0,
+            scrub: 1,
             start: "top top",
-            end: () => `+=${getScrollDistance()}`,
+            end: () => `+=${Math.max(window.innerWidth * 1.8, track.scrollWidth - window.innerWidth)}`,
             invalidateOnRefresh: true,
             anticipatePin: 1,
           },
@@ -173,7 +192,10 @@ export default function ProjectPage() {
       }
     });
 
-    return () => ctx.revert();
+    return () => {
+      ctx.revert();
+      window.removeEventListener("scroll-lock-changed", handleLockChange);
+    };
   }, [slug]);
 
   if (!hasEnteredSite) {
@@ -288,6 +310,9 @@ export default function ProjectPage() {
             )}
           </div>
         </div>
+
+        {/* Awwwards Scroll Indicator (Mouse wheel on Desktop / Touch gesture swipe on Mobile) */}
+        <ScrollIndicator isLocked={isScrollLockedState} />
       </section>
 
       {/* ═══════════════════ PINNED HORIZONTAL SCROLLYTELLING CAROUSEL ═══════════════════ */}
@@ -304,20 +329,22 @@ export default function ProjectPage() {
             {project.gallery.map((imgSrc, i) => (
               <div
                 key={i}
-                className="relative shrink-0 h-[65vh] md:h-[75vh] rounded-xl overflow-hidden bg-black/40 border border-white/10 group shadow-2xl flex items-center justify-center"
+                className="relative shrink-0 h-[65vh] md:h-[75vh] w-auto max-w-[85vw] rounded-xl overflow-hidden bg-black/40 border border-white/10 group shadow-2xl flex items-center justify-center"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={imgSrc}
                   alt={`${project.title} Shot ${i + 1}`}
-                  loading={i < 2 ? "eager" : "lazy"}
-                  decoding="async"
+                  width={1600}
+                  height={1200}
+                  quality={95}
+                  sizes="(max-width: 768px) 100vw, 80vw"
+                  priority={i < 2}
                   onLoad={() => {
                     if (typeof window !== "undefined") {
                       ScrollTrigger.refresh();
                     }
                   }}
-                  className="h-full w-auto max-w-full object-contain rounded-xl transition-transform duration-700 group-hover:scale-[1.02] transform-gpu"
+                  className="h-full w-auto max-w-full object-contain rounded-xl transition-transform duration-700 group-hover:scale-[1.02] transform-gpu brightness-[1.02] contrast-[1.03] saturate-[1.03]"
                 />
               </div>
             ))}
@@ -325,33 +352,14 @@ export default function ProjectPage() {
         </section>
       )}
 
-      {/* ═══════════════════ PROJET SUIVANT ═══════════════════ */}
-      <section className="relative z-10 border-t border-white/10 bg-[#080808]">
-        <Link
-          href={`/project/${nextProject.slug}`}
-          onClick={() => {
-            playClickSfx();
-            lockScrollForNavigation(850);
-          }}
-          className="group block relative px-5 md:px-16 py-28 md:py-36 overflow-hidden cursor-pointer"
-        >
-          <div className="absolute inset-0 bg-white/[0.02] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-
-          <div className="relative z-10 flex flex-col items-center text-center space-y-4">
-            <span className="font-mono text-[11px] tracking-[0.3em] text-white/40 uppercase">
-              {lang === "fr" ? "Projet Suivant" : "Next Project"}
-            </span>
-
-            <h3 className="font-syne font-bold text-[8vw] md:text-[5vw] uppercase tracking-tight text-white group-hover:scale-105 transition-transform duration-700">
-              {nextProject.title}
-            </h3>
-
-            <p className="font-inter text-[12px] md:text-[14px] text-white/50 tracking-widest uppercase">
-              {nextProject.category} — {nextProject.year}
-            </p>
-          </div>
-        </Link>
-      </section>
+      {/* ═══════════════════ NAVIGATION PRÉCÉDENT / SUIVANT ═══════════════════ */}
+      <ProjectNav
+        prevProject={prevProject}
+        nextProject={nextProject}
+        lang={lang}
+        onPlayClickSfx={playClickSfx}
+        onPlayHoverSfx={playHoverSfx}
+      />
     </main>
   );
 }

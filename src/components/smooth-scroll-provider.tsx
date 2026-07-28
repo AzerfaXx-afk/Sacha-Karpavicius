@@ -18,6 +18,10 @@ export default function SmoothScrollProvider({
     }
 
     function update(time: number) {
+      if (lenisRef.current?.lenis) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).__lenis = lenisRef.current.lenis;
+      }
       lenisRef.current?.lenis?.raf(time * 1000);
     }
     

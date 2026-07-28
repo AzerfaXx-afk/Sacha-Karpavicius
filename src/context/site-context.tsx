@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useRef, useEffect } from "react";
+import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from "react";
 
 interface SiteContextType {
   hasEnteredSite: boolean;
@@ -42,6 +42,15 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
   const clickAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Background audio pause/resume tracking refs
+  const wasPlayingBeforeBackgroundRef = useRef(false);
+  const isAutoPausedRef = useRef(false);
+  const isPlayingRef = useRef(isPlaying);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       audioRef.current = new Audio("/musique.mp3");
@@ -56,8 +65,98 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
+  const handleBackground = useCallback(() => {
+    if (isAutoPausedRef.current) return;
+
+    const audio = audioRef.current;
+    const currentlyPlaying = isPlayingRef.current || (audio && !audio.paused && audio.currentTime > 0);
+
+    if (currentlyPlaying) {
+      wasPlayingBeforeBackgroundRef.current = true;
+      isAutoPausedRef.current = true;
+
+      if (audio) {
+        audio.pause();
+      }
+      setIsPlaying(false);
+    }
+  }, []);
+
+  const handleForeground = useCallback(() => {
+    if (!isAutoPausedRef.current) return;
+
+    const audio = audioRef.current;
+    if (wasPlayingBeforeBackgroundRef.current && audio) {
+      audio
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch((err) => {
+          console.warn("Audio resume interrupted by browser policy:", err);
+        });
+    }
+
+    wasPlayingBeforeBackgroundRef.current = false;
+    isAutoPausedRef.current = false;
+  }, []);
+
+  // Listen to tab switching, page hiding, window blur/focus, and app freeze/resume
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    const onVisibilityChange = () => {
+      if (document.hidden || document.visibilityState === "hidden") {
+        handleBackground();
+      } else {
+        handleForeground();
+      }
+    };
+
+    const onPageHide = () => {
+      handleBackground();
+    };
+
+    const onPageShow = () => {
+      handleForeground();
+    };
+
+    const onBlur = () => {
+      if (document.hidden || document.visibilityState === "hidden") {
+        handleBackground();
+      }
+    };
+
+    const onFocus = () => {
+      if (!document.hidden && document.visibilityState === "visible") {
+        handleForeground();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("pageshow", onPageShow);
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("freeze", handleBackground);
+    window.addEventListener("resume", handleForeground);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("freeze", handleBackground);
+      window.removeEventListener("resume", handleForeground);
+    };
+  }, [handleBackground, handleForeground]);
+
   const toggleAudio = () => {
     if (!audioRef.current) return;
+    wasPlayingBeforeBackgroundRef.current = false;
+    isAutoPausedRef.current = false;
+
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
@@ -67,6 +166,9 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const pauseAudio = () => {
+    wasPlayingBeforeBackgroundRef.current = false;
+    isAutoPausedRef.current = false;
+
     if (audioRef.current) {
       audioRef.current.pause();
       setIsPlaying(false);
@@ -74,6 +176,9 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const playEntrance = () => {
+    wasPlayingBeforeBackgroundRef.current = false;
+    isAutoPausedRef.current = false;
+
     if (audioRef.current) {
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     }
@@ -121,3 +226,4 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useSiteContext = () => useContext(SiteContext);
+

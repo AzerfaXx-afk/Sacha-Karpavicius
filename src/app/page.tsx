@@ -688,28 +688,7 @@ export default function Home() {
     playEntrance();
   }, [setHasEnteredSite, playEntrance]);
 
-  // Handle visibility change (pause music when backgrounded, resume when foregrounded)
-  useEffect(() => {
-    if (typeof document === "undefined") return;
 
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        wasPlayingRef.current = isPlaying;
-        if (isPlaying && playerRef.current) {
-          playerRef.current.pause(0.5);
-        }
-      } else {
-        if (wasPlayingRef.current && playerRef.current) {
-          playerRef.current.play(0.5, 0.5);
-        }
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [isPlaying]);
 
   // Gyroscope guide icon idle detection
   useEffect(() => {
@@ -886,7 +865,7 @@ export default function Home() {
   const handleProjectClick = (e: React.MouseEvent, project: any) => {
     e.preventDefault();
     if (isProjectTransitioning) return;
-    lockScrollForNavigation(850);
+    lockScrollForNavigation(3200);
     setIsProjectTransitioning(true);
     setIsHideUI(true);
     playClickSfx();
@@ -1465,10 +1444,10 @@ export default function Home() {
                     src={project.coverImage}
                     alt={project.title}
                     fill
-                    className={`object-cover ${project.objectPosition || "object-[center_35%]"} transition-transform duration-[1.2s] ease-[cubic-bezier(.25,.46,.45,.94)] group-hover:scale-105 group-data-[touch-hover=true]:scale-105`}
-                    quality={90}
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
-                    loading={idx < 2 ? "eager" : "lazy"}
+                    className={`object-cover ${project.objectPosition || "object-[center_35%]"} transition-transform duration-[1.2s] ease-[cubic-bezier(.25,.46,.45,.94)] group-hover:scale-105 group-data-[touch-hover=true]:scale-105 brightness-[1.02] contrast-[1.02] saturate-[1.02] transform-gpu`}
+                    quality={96}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 1200px"
+                    priority={idx < 2}
                   />
                 </div>
                 {/* Hover overlay */}
@@ -1526,15 +1505,19 @@ export default function Home() {
                 data-work-card
                 data-cursor="PLAY"
                 onClick={(e) => handleProjectClick(e, project)}
-                className="group relative overflow-hidden cursor-pointer rounded-xl border border-white/10 bg-[#0d0d0d]"
+                className="group relative cursor-pointer rounded-2xl border border-white/10 bg-[#080808] transition-all duration-700 hover:border-white/25 hover:shadow-[0_20px_70px_rgba(0,0,0,0.95)]"
               >
-                <div className="relative w-full aspect-[16/9] md:aspect-[21/9] overflow-hidden flex items-center justify-center">
+                {/* Cinema Ambient Backlight Bloom */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/20 via-white/15 to-blue-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-1000 pointer-events-none" />
+
+                <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-2xl overflow-hidden flex items-center justify-center">
                   {/* Ambient Blurred Background for Cinema Posters */}
-                  <div className="absolute inset-0 scale-110 blur-3xl opacity-35 pointer-events-none">
+                  <div className="absolute inset-0 scale-110 blur-3xl opacity-40 group-hover:opacity-70 transition-opacity duration-700 pointer-events-none">
                     <Image
                       src={project.coverImage}
                       alt=""
                       fill
+                      sizes="100vw"
                       className="object-cover object-center"
                       quality={30}
                     />
@@ -1547,19 +1530,20 @@ export default function Home() {
                       alt={project.title}
                       fill
                       className={`${
-                        isPoster ? "object-contain p-2 md:p-4" : "object-cover"
-                      } object-center transition-transform duration-[1.2s] ease-[cubic-bezier(.25,.46,.45,.94)] group-hover:scale-105`}
+                        isPoster ? "object-contain p-3 md:p-6 drop-shadow-[0_25px_60px_rgba(0,0,0,0.9)]" : "object-cover"
+                      } object-center transition-all duration-[1200ms] ease-[cubic-bezier(.25,.46,.45,.94)] group-hover:scale-105 brightness-[1.03] contrast-[1.04] saturate-[1.04] transform-gpu`}
                       quality={96}
                       sizes="100vw"
+                      priority
                     />
                   </div>
 
                   {/* Dark bottom gradient overlay for crystal clear text readability directly on the image */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none" />
 
                   {/* Play Button Overlay (Centered) */}
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-700 flex items-center justify-center pointer-events-none">
-                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/10 border border-white/30 backdrop-blur-md flex items-center justify-center text-white group-hover:scale-110 group-hover:bg-white group-hover:text-black transition-all duration-500 shadow-2xl">
+                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/25 transition-colors duration-700 flex items-center justify-center pointer-events-none z-10">
+                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/10 border border-white/40 backdrop-blur-md flex items-center justify-center text-white group-hover:scale-110 group-hover:bg-white group-hover:text-black transition-all duration-500 shadow-[0_0_30px_rgba(0,0,0,0.8)] group-hover:shadow-[0_0_40px_rgba(255,255,255,0.7)]">
                       <svg className="w-6 h-6 md:w-8 md:h-8 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M8 5v14l11-7z" />
                       </svg>
@@ -1567,9 +1551,9 @@ export default function Home() {
                   </div>
 
                   {/* Text Overlay directly OVER the image at the bottom */}
-                  <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8 z-10 flex items-end justify-between gap-4 pointer-events-none">
-                    <div className="space-y-1 max-w-2xl">
-                      <h3 className="font-syne font-bold text-[18px] md:text-[24px] tracking-tight group-hover:tracking-[0.15em] text-white uppercase drop-shadow-lg transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)]">
+                  <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 z-10 flex items-end justify-between gap-4 pointer-events-none">
+                    <div className="space-y-1.5 max-w-2xl">
+                      <h3 className="font-syne font-bold text-[18px] md:text-[26px] tracking-tight group-hover:tracking-[0.12em] text-white uppercase drop-shadow-xl transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)]">
                         {project.title}
                       </h3>
                       {(project.descriptionFr || project.subtitle) && (
