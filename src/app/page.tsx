@@ -880,6 +880,7 @@ export default function Home() {
   const handleProjectClick = (e: React.MouseEvent, project: any) => {
     e.preventDefault();
     if (isProjectTransitioning) return;
+    setHasEnteredSite(true);
     lockScrollForNavigation(2000);
     setIsProjectTransitioning(true);
     setIsHideUI(true);

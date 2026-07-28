@@ -20,7 +20,7 @@ export default function ProjectPage() {
   const router = useRouter();
   const slug = params?.slug as string;
 
-  const { hasEnteredSite, isPlaying, toggleAudio, pauseAudio, playClickSfx, playHoverSfx, setIsHideUI } = useSiteContext();
+  const { hasEnteredSite, setHasEnteredSite, isPlaying, toggleAudio, pauseAudio, playClickSfx, playHoverSfx, setIsHideUI } = useSiteContext();
 
   const project = getProjectBySlug(slug) || projectsData[0];
   const isVideoProject = Boolean(project.isVideo || project.videoUrl);
@@ -107,18 +107,19 @@ export default function ProjectPage() {
     }
   }, [project?.videoUrl, pauseAudio]);
 
-  // On browser reload / F5 / direct URL entry on a project page, return to homepage for preloader
+  // On browser reload / F5 on a project page, return to homepage for preloader
   useEffect(() => {
     if (typeof window === "undefined") return;
     const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
     const navType = navEntries.length > 0 ? navEntries[0].type : "";
-    // Only redirect on actual browser reload or fresh page load (not in-app SPA navigation)
-    if (navType === "reload" || (!hasEnteredSite && navType === "navigate")) {
+    // Only redirect on actual physical browser reload (F5 / Refresh)
+    if (navType === "reload") {
       router.replace("/");
     }
-  }, [router, hasEnteredSite]);
+  }, [router]);
 
   useEffect(() => {
+    setHasEnteredSite(true);
     // Lock scroll for transition + 1.8s wait after page load (perfect Awwwards handoff)
     lockScrollForNavigation(1800);
     setIsScrollLockedState(true);
