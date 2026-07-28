@@ -267,6 +267,7 @@ export default function ProjectPage() {
                 autoPlay
                 loop
                 playsInline
+                preload="auto"
                 controls
                 onPlay={() => {
                   setIsVideoPlaying(true);

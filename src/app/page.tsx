@@ -876,12 +876,12 @@ export default function Home() {
     }
   };
 
-  // FLIP Zoom Transition to Project Page (Luxurious, Smooth & Seamless Awwwards)
+  // FLIP Zoom Transition to Project Page (Seamless Awwwards Zero-Jump Handoff)
   const handleProjectClick = (e: React.MouseEvent, project: any) => {
     e.preventDefault();
     if (isProjectTransitioning) return;
     setHasEnteredSite(true);
-    lockScrollForNavigation(2000);
+    lockScrollForNavigation(1200);
     setIsProjectTransitioning(true);
     setIsHideUI(true);
     playClickSfx();
@@ -920,7 +920,7 @@ export default function Home() {
     clone.appendChild(img);
     document.body.appendChild(clone);
 
-    // Background curtain overlay — seamless dark backdrop
+    // Background curtain overlay — 100% solid dark backdrop hiding home page completely
     const overlay = document.createElement("div");
     overlay.style.position = "fixed";
     overlay.style.inset = "0";
@@ -933,16 +933,18 @@ export default function Home() {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
+    const targetSlug = project.slug || "editorial-1";
+
     const tl = gsap.timeline();
 
-    // 1. Darken background overlay smoothly (0.4s)
+    // 1. Darken background overlay to pure black (0.35s)
     tl.to(overlay, {
       opacity: 1,
-      duration: 0.4,
+      duration: 0.35,
       ease: "power2.out"
     }, 0);
 
-    // 2. Expand clicked cover card gracefully from grid position to 100vw x 100vh fullscreen hero (0.75s)
+    // 2. Expand cover card smoothly to 100vw x 100vh (0.65s)
     tl.to(clone, {
       top: 0,
       left: 0,
@@ -950,34 +952,30 @@ export default function Home() {
       height: viewportHeight,
       borderRadius: "0px",
       boxShadow: "none",
-      duration: 0.75,
+      duration: 0.65,
       ease: "cubic-bezier(0.76, 0, 0.24, 1)",
-      onComplete: () => {
-        if (typeof window !== "undefined") {
-          window.scrollTo(0, 0);
-          document.documentElement.scrollTop = 0;
-          document.body.scrollTop = 0;
-        }
-        router.push(`/project/${project.slug || "editorial-1"}`);
-
-        // Seamless hand-off: quick clean fade out of clone overlay
-        setTimeout(() => {
-          if (typeof window !== "undefined") {
-            window.scrollTo(0, 0);
-          }
-          gsap.to([clone, overlay], {
-            opacity: 0,
-            duration: 0.3,
-            ease: "power2.out",
-            onComplete: () => {
-              clone.remove();
-              overlay.remove();
-              setIsProjectTransitioning(false);
-            }
-          });
-        }, 120);
-      }
     }, 0);
+
+    // 3. Pre-fetch and push Next.js route at 0.25s into the zoom so the route is ready right as the zoom completes
+    tl.call(() => {
+      router.push(`/project/${targetSlug}`);
+    }, [], 0.25);
+
+    // 4. Once zoom finishes, cross-fade clone & overlay cleanly to reveal newly mounted project page
+    tl.call(() => {
+      setTimeout(() => {
+        gsap.to([clone, overlay], {
+          opacity: 0,
+          duration: 0.25,
+          ease: "power2.out",
+          onComplete: () => {
+            clone.remove();
+            overlay.remove();
+            setIsProjectTransitioning(false);
+          }
+        });
+      }, 100);
+    }, [], 0.65);
   };
 
 
