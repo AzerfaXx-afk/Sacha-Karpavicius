@@ -107,13 +107,6 @@ export default function ProjectPage() {
     }
   }, [project?.videoUrl, pauseAudio]);
 
-  // 1. If F5 / refresh happened directly on project page, redirect to '/' so preloader plays
-  useEffect(() => {
-    if (!hasEnteredSite) {
-      router.replace("/");
-    }
-  }, [hasEnteredSite, router]);
-
   useEffect(() => {
     // Lock scroll for transition + 2.4s wait after page load
     lockScrollForNavigation(2400);
@@ -180,12 +173,12 @@ export default function ProjectPage() {
 
         gsap.to(track, {
           x: () => -getScrollDistance(),
-          ease: "none",
+          ease: "power1.out",
           force3D: true,
           scrollTrigger: {
             trigger: section,
             pin: true,
-            scrub: 0.1,
+            scrub: 1.2,
             start: "top top",
             end: () => `+=${Math.max(window.innerHeight * 1.5, getScrollDistance())}`,
             invalidateOnRefresh: true,
@@ -199,10 +192,6 @@ export default function ProjectPage() {
       window.removeEventListener("scroll-lock-changed", handleLockChange);
     };
   }, [slug]);
-
-  if (!hasEnteredSite) {
-    return <div className="bg-[#050505] min-h-screen" />;
-  }
 
   return (
     <main className="min-h-screen bg-[#050505] text-white font-inter selection:bg-white selection:text-black">
