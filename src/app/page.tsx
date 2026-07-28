@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -591,6 +592,12 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // Prefetch all project routes for 0ms instant route swaps on click
+    projectsData.forEach((p) => router.prefetch(`/project/${p.slug}`));
+    videoProjectsData.forEach((p) => router.prefetch(`/project/${p.slug}`));
+  }, [router]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setIsMounted(true);
 
@@ -876,15 +883,19 @@ export default function Home() {
     }
   };
 
-  // FLIP Zoom Transition to Project Page (Seamless Awwwards Zero-Jump Handoff)
+  // FLIP Zoom Transition to Project Page (Instant Prefetched Awwwards Handoff)
   const handleProjectClick = (e: React.MouseEvent, project: any) => {
     e.preventDefault();
     if (isProjectTransitioning) return;
+    const targetSlug = project.slug || "editorial-1";
+
     setHasEnteredSite(true);
-    lockScrollForNavigation(1200);
     setIsProjectTransitioning(true);
     setIsHideUI(true);
     playClickSfx();
+
+    // Call router.push IMMEDIATELY so Next.js swaps to the prefetched route instantly
+    router.push(`/project/${targetSlug}`);
 
     const cardElement = e.currentTarget as HTMLElement;
     const imgElement = cardElement.querySelector("img");
@@ -920,7 +931,7 @@ export default function Home() {
     clone.appendChild(img);
     document.body.appendChild(clone);
 
-    // Background curtain overlay — 100% solid dark backdrop hiding home page completely
+    // Background curtain overlay — 100% solid dark backdrop
     const overlay = document.createElement("div");
     overlay.style.position = "fixed";
     overlay.style.inset = "0";
@@ -933,14 +944,12 @@ export default function Home() {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    const targetSlug = project.slug || "editorial-1";
-
     const tl = gsap.timeline();
 
-    // 1. Darken background overlay to pure black (0.35s)
+    // 1. Darken background overlay to pure black (0.3s)
     tl.to(overlay, {
       opacity: 1,
-      duration: 0.35,
+      duration: 0.3,
       ease: "power2.out"
     }, 0);
 
@@ -954,28 +963,21 @@ export default function Home() {
       boxShadow: "none",
       duration: 0.65,
       ease: "cubic-bezier(0.76, 0, 0.24, 1)",
+      onComplete: () => {
+        setTimeout(() => {
+          gsap.to([clone, overlay], {
+            opacity: 0,
+            duration: 0.25,
+            ease: "power2.out",
+            onComplete: () => {
+              clone.remove();
+              overlay.remove();
+              setIsProjectTransitioning(false);
+            }
+          });
+        }, 100);
+      }
     }, 0);
-
-    // 3. Pre-fetch and push Next.js route at 0.25s into the zoom so the route is ready right as the zoom completes
-    tl.call(() => {
-      router.push(`/project/${targetSlug}`);
-    }, [], 0.25);
-
-    // 4. Once zoom finishes, cross-fade clone & overlay cleanly to reveal newly mounted project page
-    tl.call(() => {
-      setTimeout(() => {
-        gsap.to([clone, overlay], {
-          opacity: 0,
-          duration: 0.25,
-          ease: "power2.out",
-          onComplete: () => {
-            clone.remove();
-            overlay.remove();
-            setIsProjectTransitioning(false);
-          }
-        });
-      }, 100);
-    }, [], 0.65);
   };
 
 
