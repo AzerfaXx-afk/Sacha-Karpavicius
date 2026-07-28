@@ -1,14 +1,21 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useLenis } from "@studio-freight/react-lenis";
 
 export default function PullToRefresh({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const lenis = useLenis();
   const lenisRef = useRef(lenis);
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPulling, setIsPulling] = useState(false);
+
+  // Disable pull-to-refresh on all project pages
+  if (pathname !== "/") {
+    return <>{children}</>;
+  }
   
   const startY = useRef(0);
   const isScrollingDownRef = useRef(false);
