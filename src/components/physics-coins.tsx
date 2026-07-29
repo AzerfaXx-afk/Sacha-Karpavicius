@@ -96,9 +96,9 @@ export default function PhysicsCoins({
 
     updateCanvasDimensions();
 
-    // 1. Matter.js Physics Engine (Lunar Low Gravity)
+    // 1. Matter.js Physics Engine (Lunar Low Gravity - Warhol Arts Buoyant Float)
     const engine = Matter.Engine.create({
-      gravity: { x: 0, y: 0.28, scale: 0.001 },
+      gravity: { x: 0, y: 0.20, scale: 0.001 },
     });
     const world = engine.world;
 
@@ -395,11 +395,12 @@ export default function PhysicsCoins({
     const mouseConstraint = Matter.MouseConstraint.create(engine, {
       mouse,
       constraint: {
-        stiffness: 0.38,
-        damping: 0.015,
+        stiffness: 0.24,
+        damping: 0.04,
         render: { visible: false },
       },
     });
+
 
     Matter.World.add(world, mouseConstraint);
 
@@ -664,15 +665,13 @@ export default function PhysicsCoins({
         }
       });
 
-      // Cursor hover feedback across all characters
-      const hoveredCoin = getCoinNearPointer(cursorX, cursorY);
-      if (mouseConstraint.body) {
+      // Warhol Arts Open-Hand Cursor active 100% across section canvas
+      if (mouseConstraint.body || isPointerDown) {
         canvas.style.cursor = "grabbing";
-      } else if (hoveredCoin) {
-        canvas.style.cursor = "grab";
       } else {
-        canvas.style.cursor = "default";
+        canvas.style.cursor = "grab";
       }
+
     });
 
     // 6. Collision Start (Awwwards Rebound FX & Impact Particle Explosion)
