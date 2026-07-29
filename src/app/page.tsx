@@ -1159,14 +1159,14 @@ export default function Home() {
 
     const tl = gsap.timeline();
 
-    // 1. Darken background overlay to pure black (0.3s)
+    // 1. Darken background overlay to pure black (0.4s)
     tl.to(overlay, {
       opacity: 1,
-      duration: 0.3,
+      duration: 0.4,
       ease: "power2.out"
     }, 0);
 
-    // 2. Expand cover card smoothly to 100vw x 100vh (0.65s)
+    // 2. Expand cover card smoothly to 100vw x 100vh (0.85s slow Awwwards transition)
     tl.to(clone, {
       top: 0,
       left: 0,
@@ -1174,13 +1174,13 @@ export default function Home() {
       height: viewportHeight,
       borderRadius: "0px",
       boxShadow: "none",
-      duration: 0.65,
+      duration: 0.85,
       ease: "cubic-bezier(0.76, 0, 0.24, 1)",
       onComplete: () => {
         setTimeout(() => {
           gsap.to([clone, overlay], {
             opacity: 0,
-            duration: 0.25,
+            duration: 0.35,
             ease: "power2.out",
             onComplete: () => {
               clone.remove();
@@ -1188,9 +1188,10 @@ export default function Home() {
               setIsProjectTransitioning(false);
             }
           });
-        }, 100);
+        }, 120);
       }
     }, 0);
+
   };
 
 

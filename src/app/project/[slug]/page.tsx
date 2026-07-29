@@ -109,17 +109,14 @@ export default function ProjectPage() {
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
     }
-    const isSpaNav = sessionStorage.getItem("spa_nav");
-    if (isSpaNav) {
-      sessionStorage.removeItem("spa_nav");
-      return;
-    }
     const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
     const isReload = navEntries.length > 0 && navEntries[0].type === "reload";
     if (isReload) {
+      sessionStorage.removeItem("spa_nav");
       router.replace("/");
     }
   }, [router]);
+
 
   useEffect(() => {
 
