@@ -825,8 +825,21 @@ export default function Home() {
     const timer = setTimeout(() => {
       setIsMounted(true);
 
-      // In-app navigation: skip preloader if site was already entered in this React session
-      if (hasEnteredSite) {
+      // On physical F5 browser refresh, reset entered state so intro preloader animation plays from scratch
+      if (typeof window !== "undefined") {
+        const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+        const isReload = navEntries.length > 0 && navEntries[0].type === "reload";
+        if (isReload) {
+          sessionStorage.removeItem("spa_nav");
+          setHasEnteredSite(false);
+          setLoading(true);
+          setSiteStarted(false);
+          return;
+        }
+      }
+
+      // In-app SPA navigation (Home button / Logo click): skip preloader if site was already entered
+      if (hasEnteredSite || sessionStorage.getItem("spa_nav") === "true") {
         setLoading(false);
         setSiteStarted(true);
         if (typeof window !== "undefined" && window.location.hash) {

@@ -91,21 +91,14 @@ export default function ProjectPage() {
     };
   }, [setIsHideUI]);
 
-  // Auto-pause background music and play unmuted video on video projects
+  // Background ambient music continues playing seamlessly across projects
   useEffect(() => {
-    if (project?.videoUrl) {
-      pauseAudio();
-      if (videoRef.current) {
-        videoRef.current.muted = false;
-        videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {
-          if (videoRef.current) {
-            videoRef.current.muted = true;
-            videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
-          }
-        });
-      }
+    if (project?.videoUrl && videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
     }
-  }, [project?.videoUrl, pauseAudio]);
+  }, [project?.videoUrl]);
+
 
 
   // On physical browser reload (F5 / Refresh button), return to homepage for full preloader animation
