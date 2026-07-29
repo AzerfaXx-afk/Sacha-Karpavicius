@@ -199,8 +199,8 @@ export default function PhysicsCoins({
       }
     };
 
-    // 2. Setup Screen Boundary Walls with High Restitution Bouncy Walls (Flush with Canvas Edges)
-    const wallOptions = { isStatic: true, friction: 0.02, restitution: 0.96 };
+    // 2. Setup Screen Boundary Walls with Balanced Restitution Bouncy Walls
+    const wallOptions = { isStatic: true, friction: 0.04, restitution: 0.78 };
     const wallThickness = 120;
 
     let ground = Matter.Bodies.rectangle(
@@ -262,8 +262,8 @@ export default function PhysicsCoins({
       portraitBody = Matter.Bodies.rectangle(pX, pY, pW, pH, {
         isStatic: true,
         chamfer: { radius: 16 }, // Matches rounded-2xl of photo card
-        restitution: 0.96,
-        friction: 0.02,
+        restitution: 0.78,
+        friction: 0.04,
       });
 
       Matter.World.add(world, portraitBody);
@@ -271,7 +271,7 @@ export default function PhysicsCoins({
 
     updatePortraitBody();
 
-    // 4. Create Characters (3 MAX ON MOBILE for clutter-free fluidity, 5 ON DESKTOP)
+    // 4. Create Characters (EXACTLY 2 RANDOM COINS ON MOBILE, 5 ON DESKTOP)
     const allCoinDefs: {
       color: string;
       faceType: FaceType;
@@ -322,18 +322,23 @@ export default function PhysicsCoins({
       },
     ];
 
-    // On mobile (<768px), slice to 3 coins max!
-    const activeCoinDefs = isMobile ? allCoinDefs.slice(0, 3) : allCoinDefs;
+    // On mobile (<768px), pick EXACTLY 2 coins randomly!
+    const getRandomMobileCoins = () => {
+      const shuffled = [...allCoinDefs].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, 2);
+    };
+
+    const activeCoinDefs = isMobile ? getRandomMobileCoins() : allCoinDefs;
 
     const coinBodies: Matter.Body[] = activeCoinDefs.map((def, idx) => {
       const spawnX = width * def.spawnXRatio;
       const spawnY = height * def.spawnYRatio;
 
-      // Realistic Bouncy Ball Physics Rigging (restitution: 0.95, low friction, solid density)
+      // Controlled Natural Bouncy Ball Physics (restitution: 0.78, balanced friction)
       const body = Matter.Bodies.circle(spawnX, spawnY, def.baseRadius, {
-        restitution: 0.95,
-        friction: 0.003,
-        frictionAir: 0.002,
+        restitution: 0.78,
+        friction: 0.02,
+        frictionAir: 0.006,
         density: 0.003,
         slop: 0.05,
         angle: (Math.random() - 0.5) * 0.5,
@@ -343,6 +348,7 @@ export default function PhysicsCoins({
         x: def.isLeft ? 0.8 + Math.random() * 1.4 : -(0.8 + Math.random() * 1.4),
         y: Math.random() * 1.8 + 0.6,
       });
+
 
       const coinData: CoinData = {
         color: def.color,
