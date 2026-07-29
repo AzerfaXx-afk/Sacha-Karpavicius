@@ -608,36 +608,24 @@ export default function PhysicsCoins({
         }
 
         if (elapsed >= HOLD_DURATION) {
-          // Long press duration met -> ACTIVATE GRAB!
+          // Long press duration met -> ACTIVATE GRAB centered on coin middle!
           (mouseConstraint as any).constraint.bodyB = targetHoldCoin;
-          (mouseConstraint as any).constraint.pointB = {
-            x: mouse.position.x - targetHoldCoin.position.x,
-            y: mouse.position.y - targetHoldCoin.position.y,
-          };
+          (mouseConstraint as any).constraint.pointB = { x: 0, y: 0 };
           if (data) data.holdProgress = 0;
           targetHoldCoin = null;
         }
       }
-
-
 
       // Prevent mouseConstraint from attaching without long-press
       if (!dragged && !targetHoldCoin) {
         (mouseConstraint as any).constraint.bodyB = null;
       }
 
-      // Smooth Drag Boundary Clamping: Prevents wall tug-of-war jitter near screen edges!
+      // Smooth Centered Drag Boundary Clamping: Pulls coin cleanly from its center!
       if (dragged) {
-        const data = (dragged as any).coinData;
-        const radius = (data?.radius || 40) * (data?.visualScale || 1.0);
-        const targetX = Math.min(width - radius, Math.max(radius, mouse.position.x));
-        const targetY = Math.min(height - radius, Math.max(radius, mouse.position.y));
-
-        (mouseConstraint as any).constraint.pointB = {
-          x: targetX - dragged.position.x,
-          y: targetY - dragged.position.y,
-        };
+        (mouseConstraint as any).constraint.pointB = { x: 0, y: 0 };
       }
+
 
       if (dragged && portraitBody) {
         const pBounds = portraitBody.bounds;
