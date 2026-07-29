@@ -568,7 +568,7 @@ export default function PhysicsCoins({
       try {
         if (degatsAudio) {
           degatsAudio.currentTime = 0;
-          degatsAudio.volume = 0.01; // 1% volume for degats
+          degatsAudio.volume = 0.05; // 5% volume for degats
           degatsAudio.play().catch(() => {});
         }
       } catch (_) {}

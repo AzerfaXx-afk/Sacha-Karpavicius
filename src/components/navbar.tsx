@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import { useLenis } from "@studio-freight/react-lenis";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
+import { triggerPageTransition } from "@/utils/page-transition";
 
 const AnimatedLink = ({ 
   text, 
@@ -500,13 +501,7 @@ export default function Navbar({
               onPlayClickSfx?.();
               handleLinkClick();
               if (pathname !== "/") {
-                if (typeof window !== "undefined") {
-                  sessionStorage.setItem("spa_nav", "true");
-                  window.scrollTo(0, 0);
-                  document.documentElement.scrollTop = 0;
-                  document.body.scrollTop = 0;
-                }
-                router.push("/");
+                triggerPageTransition(router, "/");
               } else {
                 if (lenis) {
                   lenis.scrollTo(0, { immediate: true });
@@ -515,7 +510,6 @@ export default function Navbar({
                 }
               }
             }}
-
           >
             <img src="/logo.png" alt="Sacha Karpavicius Logo" className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
           </div>

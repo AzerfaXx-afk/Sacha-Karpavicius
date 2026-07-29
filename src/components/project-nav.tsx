@@ -3,8 +3,10 @@
 import React, { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Project } from "@/data/projects";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
+import { triggerPageTransition } from "@/utils/page-transition";
 
 interface ProjectNavProps {
   prevProject: Project;
@@ -21,6 +23,7 @@ export default function ProjectNav({
   onPlayClickSfx,
   onPlayHoverSfx,
 }: ProjectNavProps) {
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
   const arrowRef = useRef<HTMLDivElement>(null);
@@ -161,7 +164,7 @@ export default function ProjectNav({
         viewBox="0 0 100 100"
       >
         <polyline
-          points="50,0 48,4.16 50,8.33 48,12.5 50,16.66 48,20.83 50,25 48,29.16 50,33.33 48,37.5 50,41.66 48,45.83 50,50 48,54.16 50,58.33 48,62.5 50,66.66 48,70.83 50,75 48,79.16 50,83.33 48,87.5 50,91.66 48,95.83 50,100"
+          points="52,0 48,4.16 52,8.33 48,12.5 52,16.66 48,20.83 52,25 48,29.16 52,33.33 48,37.5 52,41.66 48,45.83 52,50 48,54.16 52,58.33 48,62.5 52,66.66 48,70.83 52,75 48,79.16 52,83.33 48,87.5 52,91.66 48,95.83 52,100"
           fill="none"
           stroke="rgba(255,255,255,0.4)"
           strokeWidth="0.3"
@@ -169,28 +172,19 @@ export default function ProjectNav({
         />
       </svg>
 
-      {/* ───────────────────── PREVIOUS PROJECT (LEFT 50% HALF BOX) ───────────────────── */}
+      {/* ───────────────────── PREVIOUS PROJECT (LEFT HALF BOX) ───────────────────── */}
       <Link
         href={`/project/${prevProject.slug}`}
         onMouseEnter={() => {
           setHoverSide("prev");
           onPlayHoverSfx();
         }}
-        onClick={() => {
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem("spa_nav", "true");
-            window.scrollTo(0, 0);
-            document.documentElement.scrollTop = 0;
-            document.body.scrollTop = 0;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const lenis = (window as any).__lenis;
-            if (lenis && typeof lenis.scrollTo === "function") {
-              lenis.scrollTo(0, { immediate: true });
-            }
-          }
+        onClick={(e) => {
+          e.preventDefault();
           onPlayClickSfx();
+          triggerPageTransition(router, `/project/${prevProject.slug}`);
         }}
-        className="group relative w-full md:w-[50%] h-[260px] md:h-full flex flex-col justify-between p-6 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-left"
+        className="group relative w-full md:w-[52%] h-[260px] md:h-full flex flex-col justify-between p-6 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-left"
       >
         {/* Full Vibrant Color Reveal on Hover */}
         {prevProject.coverImage && (
@@ -233,28 +227,19 @@ export default function ProjectNav({
         </div>
       </Link>
 
-      {/* ───────────────────── NEXT PROJECT (RIGHT 50% HALF BOX) ───────────────────── */}
+      {/* ───────────────────── NEXT PROJECT (RIGHT HALF BOX) ───────────────────── */}
       <Link
         href={`/project/${nextProject.slug}`}
         onMouseEnter={() => {
           setHoverSide("next");
           onPlayHoverSfx();
         }}
-        onClick={() => {
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem("spa_nav", "true");
-            window.scrollTo(0, 0);
-            document.documentElement.scrollTop = 0;
-            document.body.scrollTop = 0;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const lenis = (window as any).__lenis;
-            if (lenis && typeof lenis.scrollTo === "function") {
-              lenis.scrollTo(0, { immediate: true });
-            }
-          }
+        onClick={(e) => {
+          e.preventDefault();
           onPlayClickSfx();
+          triggerPageTransition(router, `/project/${nextProject.slug}`);
         }}
-        className="group relative w-full md:w-[50%] h-[260px] md:h-full flex flex-col justify-between p-6 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-right border-t border-white/10 md:border-t-0"
+        className="group relative w-full md:w-[52%] md:-ml-[4%] h-[260px] md:h-full flex flex-col justify-between p-6 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-right border-t border-white/10 md:border-t-0"
       >
 
         {/* Full Vibrant Color Reveal on Hover */}

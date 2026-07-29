@@ -12,6 +12,7 @@ import ScrollIndicator from "@/components/scroll-indicator";
 import { projectsData, videoProjectsData, getProjectBySlug } from "@/data/projects";
 import { useSiteContext } from "@/context/site-context";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
+import { triggerPageTransition } from "@/utils/page-transition";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -185,7 +186,8 @@ export default function ProjectPage() {
             trigger: section,
             pin: true,
             pinSpacing: true,
-            scrub: 0.8,
+            scrub: 0.4,
+            anticipatePin: 1,
             start: "top top",
             end: () => `+=${getScrollDistance()}`,
             invalidateOnRefresh: true,
@@ -200,7 +202,16 @@ export default function ProjectPage() {
     };
   }, [slug]);
 
-
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      setIsHideUI(false);
+      if (wasPlayingBeforeVideoRef.current) {
+        wasPlayingBeforeVideoRef.current = false;
+        resumeAudio();
+      }
+    };
+  }, [setIsHideUI, resumeAudio]);
 
   return (
     <main className="min-h-screen bg-[#050505] text-white font-inter selection:bg-white selection:text-black">
@@ -213,8 +224,6 @@ export default function ProjectPage() {
         onPlayHoverSfx={playHoverSfx}
       />
 
-
-
       {/* Persistent Contact Link (Bottom Left) -> Smooth transition to #contact on homepage */}
       <div className={`fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference transition-opacity duration-700 ${isIdle ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"}`}>
         <a
@@ -223,27 +232,7 @@ export default function ProjectPage() {
             e.preventDefault();
             playClickSfx();
             sessionStorage.setItem("scrollToContact", "true");
-
-            const overlay = document.createElement("div");
-            overlay.style.position = "fixed";
-            overlay.style.inset = "0";
-            overlay.style.backgroundColor = "#050505";
-            overlay.style.opacity = "0";
-            overlay.style.zIndex = "99999";
-            overlay.style.transition = "opacity 0.4s ease";
-            document.body.appendChild(overlay);
-
-            requestAnimationFrame(() => {
-              overlay.style.opacity = "1";
-            });
-
-            setTimeout(() => {
-              router.push("/");
-              setTimeout(() => {
-                overlay.style.opacity = "0";
-                setTimeout(() => overlay.remove(), 400);
-              }, 300);
-            }, 400);
+            triggerPageTransition(router, "/#contact");
           }}
           className="inline-flex items-center gap-1.5 border border-white/20 px-3 py-2 md:px-4 md:py-2.5 rounded-sm hover:bg-white hover:text-black transition-all duration-300 font-inter text-[10px] md:text-[12px] text-white cursor-pointer group"
         >
@@ -270,9 +259,25 @@ export default function ProjectPage() {
                 onPlay={() => {
                   setIsVideoPlaying(true);
                   resetIdleTimer();
-                  if (isPlaying) {
+                  const vid = videoRef.current;
+                  if (vid && !vid.muted && vid.volume > 0 && isPlaying) {
                     wasPlayingBeforeVideoRef.current = true;
                     pauseAudio();
+                  }
+                }}
+                onVolumeChange={() => {
+                  const vid = videoRef.current;
+                  if (!vid) return;
+                  if (!vid.muted && vid.volume > 0 && !vid.paused) {
+                    if (isPlaying) {
+                      wasPlayingBeforeVideoRef.current = true;
+                      pauseAudio();
+                    }
+                  } else {
+                    if (wasPlayingBeforeVideoRef.current) {
+                      wasPlayingBeforeVideoRef.current = false;
+                      resumeAudio();
+                    }
                   }
                 }}
                 onPause={() => {
@@ -280,6 +285,7 @@ export default function ProjectPage() {
                   setIsIdle(false);
                   setIsHideUI(false);
                   if (wasPlayingBeforeVideoRef.current) {
+                    wasPlayingBeforeVideoRef.current = false;
                     resumeAudio();
                   }
                 }}
@@ -288,6 +294,7 @@ export default function ProjectPage() {
                   setIsIdle(false);
                   setIsHideUI(false);
                   if (wasPlayingBeforeVideoRef.current) {
+                    wasPlayingBeforeVideoRef.current = false;
                     resumeAudio();
                   }
                 }}
