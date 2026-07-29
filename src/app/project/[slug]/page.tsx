@@ -138,26 +138,21 @@ export default function ProjectPage() {
 
   useEffect(() => {
     setHasEnteredSite(true);
-    // Lock scroll for transition + 1.8s wait after page load (perfect Awwwards handoff)
-    lockScrollForNavigation(1800);
-    setIsScrollLockedState(true);
-
-    const handleLockChange = (e: Event) => {
-      const customEvt = e as CustomEvent<{ isLocked: boolean }>;
-      setIsScrollLockedState(customEvt.detail.isLocked);
-    };
-
-    window.addEventListener("scroll-lock-changed", handleLockChange);
-
+    // Instant smooth scroll reset to top
     if (typeof window !== "undefined") {
-      if ('scrollRestoration' in history) {
-        history.scrollRestoration = 'manual';
-      }
       window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const lenis = (window as any).__lenis;
+      if (lenis && typeof lenis.scrollTo === "function") {
+        lenis.scrollTo(0, { immediate: true });
+        if (typeof lenis.start === "function") lenis.start();
+      }
     }
+    setIsScrollLockedState(false);
     setIsHideUI(false);
+
 
     // Language detection
     if (typeof window !== "undefined" && navigator) {
@@ -219,8 +214,8 @@ export default function ProjectPage() {
 
     return () => {
       ctx.revert();
-      window.removeEventListener("scroll-lock-changed", handleLockChange);
     };
+
   }, [slug]);
 
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
