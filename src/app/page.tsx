@@ -832,25 +832,19 @@ export default function Home() {
       }
     }
 
-    // Detect F5 Physical Browser Refresh vs SPA In-App Navigation
+    // Detect SPA In-App Navigation vs Fresh Site Entry
     if (typeof window !== "undefined") {
-      const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
-      const isReload = navEntries.length > 0 && navEntries[0].type === "reload";
       const isSpaNav = sessionStorage.getItem("spa_nav") === "true";
-
-      if (isReload || !isSpaNav) {
-        // F5 Refresh or Initial Page Load: FORCE intro preloader animation
-        sessionStorage.removeItem("spa_nav");
-        setHasEnteredSite(false);
-        setLoading(true);
-        setSiteStarted(false);
-      } else {
-        // SPA In-App Navigation (Home button / Logo click): skip preloader intro
+      if (hasEnteredSite || isSpaNav) {
         setLoading(false);
         setSiteStarted(true);
         setHasEnteredSite(true);
+      } else {
+        setLoading(true);
+        setSiteStarted(false);
       }
     }
+
 
     // Handle smooth scroll to #contact if triggered from project page Contact click
     if (typeof window !== "undefined") {
