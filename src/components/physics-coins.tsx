@@ -424,7 +424,8 @@ export default function PhysicsCoins({
       pointerHistory = [{ x: px, y: py, time: Date.now() }];
 
       // Synchronize Matter.Mouse position to prevent (0, 0) teleportation bug!
-      Matter.Mouse.setPosition(mouse, { x: px, y: py });
+      mouse.position.x = px;
+      mouse.position.y = py;
 
       const hitCoin = getCoinNearPointer(px, py);
       if (hitCoin) {
@@ -444,7 +445,9 @@ export default function PhysicsCoins({
       const now = Date.now();
 
       // Synchronize Matter.Mouse position on move
-      Matter.Mouse.setPosition(mouse, { x: newX, y: newY });
+      mouse.position.x = newX;
+      mouse.position.y = newY;
+
 
       pointerHistory.push({ x: newX, y: newY, time: now });
       if (pointerHistory.length > 5) pointerHistory.shift();
