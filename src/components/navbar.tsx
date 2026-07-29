@@ -499,17 +499,23 @@ export default function Navbar({
             onClick={() => {
               onPlayClickSfx?.();
               handleLinkClick();
-              lockScrollForNavigation(750);
               if (pathname !== "/") {
+                if (typeof window !== "undefined") {
+                  sessionStorage.setItem("spa_nav", "true");
+                  window.scrollTo(0, 0);
+                  document.documentElement.scrollTop = 0;
+                  document.body.scrollTop = 0;
+                }
                 router.push("/");
               } else {
                 if (lenis) {
-                  lenis.scrollTo(0, { duration: 1.2, immediate: false });
+                  lenis.scrollTo(0, { immediate: true });
                 } else {
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  window.scrollTo({ top: 0, behavior: 'auto' });
                 }
               }
             }}
+
           >
             <img src="/logo.png" alt="Sacha Karpavicius Logo" className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
           </div>

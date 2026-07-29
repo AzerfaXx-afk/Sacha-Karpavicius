@@ -179,11 +179,20 @@ export default function ProjectNav({
         onClick={() => {
           if (typeof window !== "undefined") {
             sessionStorage.setItem("spa_nav", "true");
+            window.scrollTo(0, 0);
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const lenis = (window as any).__lenis;
+            if (lenis && typeof lenis.scrollTo === "function") {
+              lenis.scrollTo(0, { immediate: true });
+            }
           }
           onPlayClickSfx();
-          lockScrollForNavigation(1800);
         }}
-        className="group relative w-full md:w-[51%] h-full flex flex-col justify-between p-8 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-left"
+
+        className="group relative w-full md:w-[50.5%] h-full flex flex-col justify-between p-8 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-left"
+
       >
         {/* Full Vibrant Color Reveal on Hover */}
         {prevProject.coverImage && (
@@ -236,11 +245,20 @@ export default function ProjectNav({
         onClick={() => {
           if (typeof window !== "undefined") {
             sessionStorage.setItem("spa_nav", "true");
+            window.scrollTo(0, 0);
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const lenis = (window as any).__lenis;
+            if (lenis && typeof lenis.scrollTo === "function") {
+              lenis.scrollTo(0, { immediate: true });
+            }
           }
           onPlayClickSfx();
-          lockScrollForNavigation(1800);
         }}
-        className="group relative w-full md:w-[51%] md:-ml-[2%] h-full flex flex-col justify-between p-8 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-right"
+
+        className="group relative w-full md:w-[50.5%] md:-ml-[1%] h-full flex flex-col justify-between p-8 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-right"
+
       >
         {/* Full Vibrant Color Reveal on Hover */}
         {nextProject.coverImage && (

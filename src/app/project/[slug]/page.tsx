@@ -107,9 +107,13 @@ export default function ProjectPage() {
     }
   }, [project?.videoUrl, pauseAudio]);
 
-  // On physical browser reload (F5 / Refresh button), return to homepage for preloader
+
+  // On physical browser reload (F5 / Refresh button), return to homepage for full preloader animation
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
     const isSpaNav = sessionStorage.getItem("spa_nav");
     if (isSpaNav) {
       sessionStorage.removeItem("spa_nav");
@@ -122,21 +126,9 @@ export default function ProjectPage() {
     }
   }, [router]);
 
-  // Always force scroll to top (Y=0) whenever opening or switching projects
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const lenis = (window as any).__lenis;
-      if (lenis && typeof lenis.scrollTo === "function") {
-        lenis.scrollTo(0, { immediate: true });
-      }
-    }
-  }, [slug]);
 
-  useEffect(() => {
+
     setHasEnteredSite(true);
     // Instant smooth scroll reset to top
     if (typeof window !== "undefined") {
@@ -152,7 +144,6 @@ export default function ProjectPage() {
     }
     setIsScrollLockedState(false);
     setIsHideUI(false);
-
 
     // Language detection
     if (typeof window !== "undefined" && navigator) {
@@ -203,10 +194,11 @@ export default function ProjectPage() {
             trigger: section,
             pin: true,
             pinSpacing: true,
-            scrub: true,
+            scrub: 0.8,
             start: "top top",
-            end: () => `+=${getScrollDistance() * 1.2}`,
+            end: () => `+=${getScrollDistance()}`,
             invalidateOnRefresh: true,
+
           },
         });
       }
@@ -215,42 +207,9 @@ export default function ProjectPage() {
     return () => {
       ctx.revert();
     };
-
   }, [slug]);
 
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  const openLightbox = (index: number) => {
-    playClickSfx();
-    setLightboxIndex(index);
-  };
-
-  const closeLightbox = () => {
-    setLightboxIndex(null);
-  };
-
-  const nextLightbox = () => {
-    if (lightboxIndex === null || !project?.gallery?.length) return;
-    playClickSfx();
-    setLightboxIndex((lightboxIndex + 1) % project.gallery.length);
-  };
-
-  const prevLightbox = () => {
-    if (lightboxIndex === null || !project?.gallery?.length) return;
-    playClickSfx();
-    setLightboxIndex((lightboxIndex - 1 + project.gallery.length) % project.gallery.length);
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (lightboxIndex === null) return;
-      if (e.key === "Escape") closeLightbox();
-      if (e.key === "ArrowRight") nextLightbox();
-      if (e.key === "ArrowLeft") prevLightbox();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [lightboxIndex, project?.gallery?.length]);
 
   return (
     <main className="min-h-screen bg-[#050505] text-white font-inter selection:bg-white selection:text-black">
@@ -381,8 +340,7 @@ export default function ProjectPage() {
             {project.gallery.map((imgSrc, i) => (
               <div
                 key={i}
-                onClick={() => openLightbox(i)}
-                className="relative shrink-0 h-[65vh] md:h-[75vh] w-auto max-w-[85vw] rounded-xl overflow-hidden bg-black/40 border border-white/10 group shadow-2xl flex items-center justify-center cursor-pointer transform-gpu transition-transform duration-500 hover:scale-[1.02]"
+                className="relative shrink-0 h-[65vh] md:h-[75vh] w-auto max-w-[85vw] rounded-xl overflow-hidden bg-black/40 border border-white/10 group shadow-2xl flex items-center justify-center"
               >
                 <Image
                   src={imgSrc}
@@ -395,70 +353,10 @@ export default function ProjectPage() {
                   loading={i < 3 ? "eager" : "lazy"}
                   className="h-full w-auto max-w-full object-contain rounded-xl transform-gpu brightness-[1.02] contrast-[1.03] saturate-[1.03]"
                 />
-                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <span className="font-syne font-bold text-[11px] tracking-widest uppercase bg-white/10 border border-white/30 backdrop-blur-md px-4 py-2 rounded-full text-white">
-                    {lang === "fr" ? "Agrandir ⤢" : "Expand ⤢"}
-                  </span>
-                </div>
               </div>
             ))}
           </div>
         </section>
-      )}
-
-      {/* ═══════════════════ FULLSCREEN LIGHTBOX MODAL ═══════════════════ */}
-      {lightboxIndex !== null && project.gallery[lightboxIndex] && (
-        <div 
-          className="fixed inset-0 z-[99999] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 md:p-12 animate-in fade-in duration-300"
-          onClick={closeLightbox}
-        >
-          {/* Close button */}
-          <button 
-            onClick={closeLightbox}
-            className="absolute top-6 right-6 md:top-10 md:right-12 z-50 w-12 h-12 rounded-full bg-white/10 border border-white/20 hover:bg-white hover:text-black flex items-center justify-center text-white transition-all duration-300 text-lg font-mono"
-            aria-label="Close Lightbox"
-          >
-            ✕
-          </button>
-
-          {/* Shot Counter */}
-          <div className="absolute top-6 left-6 md:top-10 md:left-12 z-50 font-mono text-[12px] text-white/60 tracking-widest uppercase">
-            {lightboxIndex + 1} / {project.gallery.length} — {project.title}
-          </div>
-
-          {/* Prev Arrow */}
-          <button 
-            onClick={(e) => { e.stopPropagation(); prevLightbox(); }}
-            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-50 w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/10 border border-white/20 hover:bg-white hover:text-black flex items-center justify-center text-white transition-all duration-300 text-xl font-mono"
-            aria-label="Previous Image"
-          >
-            ←
-          </button>
-
-          {/* Next Arrow */}
-          <button 
-            onClick={(e) => { e.stopPropagation(); nextLightbox(); }}
-            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-50 w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/10 border border-white/20 hover:bg-white hover:text-black flex items-center justify-center text-white transition-all duration-300 text-xl font-mono"
-            aria-label="Next Image"
-          >
-            →
-          </button>
-
-          {/* Fullscreen High-Res Image Container */}
-          <div 
-            className="relative w-full h-full max-w-7xl max-h-[85vh] flex items-center justify-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Image
-              src={project.gallery[lightboxIndex]}
-              alt={`${project.title} Expanded View`}
-              fill
-              quality={100}
-              priority
-              className="object-contain w-full h-full rounded-lg"
-            />
-          </div>
-        </div>
       )}
 
       {/* ═══════════════════ NAVIGATION PRÉCÉDENT / SUIVANT ═══════════════════ */}
@@ -472,4 +370,5 @@ export default function ProjectPage() {
     </main>
   );
 }
+
 
