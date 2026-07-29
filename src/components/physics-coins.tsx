@@ -71,7 +71,7 @@ export default function PhysicsCoins({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    if (!enabled || !siteStarted || !containerRef.current || !canvasRef.current) return;
+    if (!enabled || !containerRef.current || !canvasRef.current) return;
 
     const container = containerRef.current;
     const canvas = canvasRef.current;
@@ -485,7 +485,7 @@ export default function PhysicsCoins({
         const throwVy = pointerVy * scale * 0.95;
 
         if (speed > 2.5 || throwVy < -2.5) {
-          playYaySound();
+          playRandomFlySound();
         }
 
         Matter.Body.setVelocity(grabbedCoin, { x: throwVx, y: throwVy });
@@ -560,21 +560,32 @@ export default function PhysicsCoins({
 
     // Audio Sound Effects Helper Functions (Pre-instantiated for zero latency)
     let lastDegatsSoundTime = 0;
-    let lastYaySoundTime = 0;
+    let lastFlySoundTime = 0;
     const pop1Audio = typeof window !== "undefined" ? new Audio("/sounds/pop1.mp3") : null;
     const pop2Audio = typeof window !== "undefined" ? new Audio("/sounds/pop2.mp3") : null;
     const degatsAudio = typeof window !== "undefined" ? new Audio("/sounds/degats.mp3") : null;
-    const yayAudio = typeof window !== "undefined" ? new Audio("/sounds/yay.mp3") : null;
+    
+    const flyAudios = typeof window !== "undefined" ? [
+      new Audio("/sounds/1.mp3"),
+      new Audio("/sounds/2.mp3"),
+      new Audio("/sounds/3.mp3"),
+      new Audio("/sounds/4.mp3"),
+      new Audio("/sounds/5.mp3"),
+    ] : [];
 
-    const playYaySound = () => {
+    const playRandomFlySound = () => {
       const now = Date.now();
-      if (now - lastYaySoundTime < 300) return;
-      lastYaySoundTime = now;
+      if (now - lastFlySoundTime < 200) return;
+      lastFlySoundTime = now;
       try {
-        if (yayAudio) {
-          yayAudio.currentTime = 0;
-          yayAudio.volume = 0.05; // 5% volume for yay sound
-          yayAudio.play().catch(() => {});
+        if (flyAudios.length > 0) {
+          const randomIndex = Math.floor(Math.random() * flyAudios.length);
+          const audio = flyAudios[randomIndex];
+          if (audio) {
+            audio.currentTime = 0;
+            audio.volume = 0.05; // 5% volume
+            audio.play().catch(() => {});
+          }
         }
       } catch (_) {}
     };

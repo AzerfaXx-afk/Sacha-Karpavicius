@@ -1561,7 +1561,7 @@ export default function Home() {
 
         {/* Hero Title Block */}
         <div className="absolute bottom-20 md:bottom-16 left-1/2 -translate-x-1/2 text-center z-20 w-full px-4 pointer-events-none">
-          <div ref={heroTitleRef} style={{ opacity: 0 }}>
+          <div ref={heroTitleRef} className="transition-opacity duration-1000 ease-out" style={{ opacity: siteStarted ? 1 : 0 }}>
             <h1 className="font-syne font-semibold text-[24px] md:text-[32px] leading-[1.25] pb-2 text-white tracking-wide uppercase pointer-events-none cursor-grab flex flex-col items-center drop-shadow-2xl">
 
               {lang === "fr" ? (
