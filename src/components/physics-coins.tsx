@@ -583,7 +583,7 @@ export default function PhysicsCoins({
           const audio = flyAudios[randomIndex];
           if (audio) {
             audio.currentTime = 0;
-            audio.volume = 0.05; // 5% volume
+            audio.volume = 0.10; // 10% volume for fly sounds
             audio.play().catch(() => {});
           }
         }
@@ -591,6 +591,7 @@ export default function PhysicsCoins({
     };
 
     const playDegatsSound = () => {
+      if (isPoppedOut) return; // Silent when coins are popped out / hidden offscreen
       const now = Date.now();
       if (now - lastDegatsSoundTime < 110) return; // Throttle to prevent overlapping audio distortion
       lastDegatsSoundTime = now;

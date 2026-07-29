@@ -120,9 +120,8 @@ export default function ProjectPage() {
 
 
   useEffect(() => {
-
-
     setHasEnteredSite(true);
+    resumeAudio();
     // Instant smooth scroll reset to top
     if (typeof window !== "undefined") {
       window.scrollTo(0, 0);
