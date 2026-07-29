@@ -161,10 +161,10 @@ export default function ProjectNav({
         viewBox="0 0 100 100"
       >
         <polyline
-          points="50,0 51.5,4.17 48.5,8.33 51.5,12.5 48.5,16.67 51.5,20.83 48.5,25 51.5,29.17 48.5,33.33 51.5,37.5 48.5,41.67 51.5,45.83 48.5,50 51.5,54.17 48.5,58.33 51.5,62.5 48.5,66.67 51.5,70.83 48.5,75 51.5,79.17 48.5,83.33 51.5,87.5 48.5,91.67 51.5,95.83 50,100"
+          points="50,0 48,4.16 50,8.33 48,12.5 50,16.66 48,20.83 50,25 48,29.16 50,33.33 48,37.5 50,41.66 48,45.83 50,50 48,54.16 50,58.33 48,62.5 50,66.66 48,70.83 50,75 48,79.16 50,83.33 48,87.5 50,91.66 48,95.83 50,100"
           fill="none"
-          stroke="rgba(255,255,255,0.5)"
-          strokeWidth="0.4"
+          stroke="rgba(255,255,255,0.4)"
+          strokeWidth="0.3"
           vectorEffect="non-scaling-stroke"
         />
       </svg>
@@ -190,9 +190,7 @@ export default function ProjectNav({
           }
           onPlayClickSfx();
         }}
-
-        className="group relative w-full md:w-[50.5%] h-full flex flex-col justify-between p-8 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-left"
-
+        className="group relative w-full md:w-[50%] h-[260px] md:h-full flex flex-col justify-between p-6 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-left"
       >
         {/* Full Vibrant Color Reveal on Hover */}
         {prevProject.coverImage && (
@@ -213,20 +211,20 @@ export default function ProjectNav({
         )}
 
         {/* Text Content Container */}
-        <div className="relative z-10 w-full max-w-[85%] md:max-w-[80%] h-full flex flex-col justify-between pointer-events-none">
+        <div className="relative z-10 w-full max-w-[90%] md:max-w-[80%] h-full flex flex-col justify-between pointer-events-none">
           {/* Top Label */}
           <div>
-            <span className="font-mono text-[11px] md:text-[12px] tracking-[0.35em] text-white/60 group-hover:text-white uppercase transition-colors duration-700 block drop-shadow-md">
+            <span className="font-mono text-[10px] md:text-[12px] tracking-[0.35em] text-white/60 group-hover:text-white uppercase transition-colors duration-700 block drop-shadow-md">
               {lang === "fr" ? "PROJET PRÉCÉDENT" : "PREVIOUS PROJECT"}
             </span>
           </div>
 
           {/* Title & Subtitle + Year */}
-          <div className="space-y-3 my-auto">
-            <h3 className="font-syne font-bold text-[7vw] sm:text-[5vw] md:text-[3.6vw] uppercase tracking-tight text-white group-hover:scale-102 transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] leading-none drop-shadow-[0_10px_25px_rgba(0,0,0,0.9)]">
+          <div className="space-y-2 md:space-y-3 my-auto">
+            <h3 className="font-syne font-bold text-[6vw] sm:text-[4vw] md:text-[3.6vw] uppercase tracking-tight text-white group-hover:scale-102 transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] leading-none drop-shadow-[0_10px_25px_rgba(0,0,0,0.9)]">
               {prevProject.title}
             </h3>
-            <p className="font-inter text-[11px] md:text-[13px] text-white/70 group-hover:text-white tracking-[0.25em] uppercase transition-colors duration-700 font-light drop-shadow-md">
+            <p className="font-inter text-[10px] md:text-[13px] text-white/70 group-hover:text-white tracking-[0.25em] uppercase transition-colors duration-700 font-light drop-shadow-md">
               {getSubLabel(prevProject)}
             </p>
           </div>
@@ -256,10 +254,9 @@ export default function ProjectNav({
           }
           onPlayClickSfx();
         }}
-
-        className="group relative w-full md:w-[50.5%] md:-ml-[1%] h-full flex flex-col justify-between p-8 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-right"
-
+        className="group relative w-full md:w-[50%] h-[260px] md:h-full flex flex-col justify-between p-6 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-right border-t border-white/10 md:border-t-0"
       >
+
         {/* Full Vibrant Color Reveal on Hover */}
         {nextProject.coverImage && (
           <div className="absolute inset-0 z-0 will-change-transform">

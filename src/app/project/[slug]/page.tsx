@@ -173,9 +173,8 @@ export default function ProjectPage() {
         const section = scrollySectionRef.current;
 
         const getScrollDistance = () => {
-          const trackWidth = track.scrollWidth;
-          const padding = window.innerWidth < 768 ? 40 : 120;
-          return Math.max(0, trackWidth - window.innerWidth + padding);
+          if (!track) return 0;
+          return Math.max(0, track.scrollWidth - window.innerWidth);
         };
 
         gsap.set(track, { force3D: true, willChange: "transform" });
@@ -191,9 +190,9 @@ export default function ProjectPage() {
             start: "top top",
             end: () => `+=${getScrollDistance()}`,
             invalidateOnRefresh: true,
-
           },
         });
+
       }
     });
 
