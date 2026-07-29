@@ -78,9 +78,12 @@ export default function PhysicsCoins({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     let width = container.clientWidth;
     let height = container.clientHeight;
+    const isMobile = width < 768;
+
+    // Mobile Performance Optimization: Cap DPR to 1 on mobile to eliminate GPU lag & disable heavy canvas shadowBlur
+    const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 2);
 
     const updateCanvasDimensions = () => {
       width = container.clientWidth;
@@ -102,8 +105,9 @@ export default function PhysicsCoins({
     const particles: SparkParticle[] = [];
     const shockwaves: ShockwaveRing[] = [];
 
-    // Mobile Gyroscope / Device Orientation Gravity Control
-    const isMobile = width < 768;
+    // Mobile Motion & Gyroscope / Shake Control
+    let lastAccelX = 0;
+    let lastAccelY = 0;
 
     const handleDeviceOrientation = (e: DeviceOrientationEvent) => {
       if (!isMobile) return;
@@ -111,15 +115,45 @@ export default function PhysicsCoins({
       const beta = e.beta || 0;   // [-180, 180] front/back tilt
 
       // Smoothly map mobile tilt angles to gravity force vectors
-      const gx = Math.min(1.2, Math.max(-1.2, (gamma / 35) * 0.7));
-      const gy = Math.min(1.2, Math.max(-1.2, (beta / 35) * 0.7));
+      const targetGx = Math.min(1.4, Math.max(-1.4, (gamma / 30) * 0.9));
+      const targetGy = Math.min(1.4, Math.max(-1.4, (beta / 30) * 0.9));
 
-      engine.gravity.x = gx;
-      engine.gravity.y = gy || 0.28;
+      engine.gravity.x += (targetGx - engine.gravity.x) * 0.25;
+      engine.gravity.y += (targetGy - engine.gravity.y) * 0.25;
     };
 
-    if (isMobile && typeof window !== "undefined" && "DeviceOrientationEvent" in window) {
-      window.addEventListener("deviceorientation", handleDeviceOrientation, true);
+    const handleDeviceMotion = (e: DeviceMotionEvent) => {
+      if (!isMobile || !e.accelerationIncludingGravity) return;
+      const acc = e.accelerationIncludingGravity;
+      const ax = acc.x || 0;
+      const ay = acc.y || 0;
+
+      // Shake detection: calculate instantaneous acceleration delta
+      const deltaX = ax - lastAccelX;
+      const deltaY = ay - lastAccelY;
+      lastAccelX = ax;
+      lastAccelY = ay;
+
+      const shakeForce = Math.hypot(deltaX, deltaY);
+      if (shakeForce > 3.5) {
+        // Phone shake detected! Apply dynamic bounce impulse to all active coins
+        const impulseMult = Math.min(0.015, shakeForce * 0.0008);
+        coinBodies.forEach((coin) => {
+          Matter.Body.applyForce(coin, coin.position, {
+            x: (Math.random() - 0.5) * impulseMult,
+            y: -impulseMult * (0.5 + Math.random() * 0.5),
+          });
+        });
+      }
+    };
+
+    if (isMobile && typeof window !== "undefined") {
+      if ("DeviceOrientationEvent" in window) {
+        window.addEventListener("deviceorientation", handleDeviceOrientation, true);
+      }
+      if ("DeviceMotionEvent" in window) {
+        window.addEventListener("devicemotion", handleDeviceMotion, true);
+      }
     }
 
     // Intensity-Based Collision Particle Trigger
@@ -758,15 +792,19 @@ export default function PhysicsCoins({
         ctx.rotate(angle);
         ctx.scale(data.squashX, data.squashY);
 
-        // 1. Drop Shadow
+        // 1. Drop Shadow (Disabled on mobile for zero GPU lag & locked 60FPS)
         ctx.save();
         ctx.beginPath();
         ctx.arc(0, 0, r, 0, Math.PI * 2);
         ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-        ctx.shadowColor = "rgba(0, 0, 0, 0.55)";
-        ctx.shadowBlur = isGrabbed ? 22 : 12;
-        ctx.shadowOffsetX = isGrabbed ? 6 : 3;
-        ctx.shadowOffsetY = isGrabbed ? 12 : 6;
+        if (!isMobile) {
+          ctx.shadowColor = "rgba(0, 0, 0, 0.55)";
+          ctx.shadowBlur = isGrabbed ? 22 : 12;
+          ctx.shadowOffsetX = isGrabbed ? 6 : 3;
+          ctx.shadowOffsetY = isGrabbed ? 12 : 6;
+        } else {
+          ctx.shadowBlur = 0;
+        }
         ctx.fill();
         ctx.restore();
 
@@ -1104,6 +1142,7 @@ export default function PhysicsCoins({
       window.removeEventListener("resize", handleResize);
       if (typeof window !== "undefined") {
         window.removeEventListener("deviceorientation", handleDeviceOrientation, true);
+        window.removeEventListener("devicemotion", handleDeviceMotion, true);
       }
       window.removeEventListener("mousedown", handlePointerDown);
       window.removeEventListener("mouseup", handlePointerUp);
