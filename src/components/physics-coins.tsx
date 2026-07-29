@@ -626,6 +626,19 @@ export default function PhysicsCoins({
         (mouseConstraint as any).constraint.bodyB = null;
       }
 
+      // Smooth Drag Boundary Clamping: Prevents wall tug-of-war jitter near screen edges!
+      if (dragged) {
+        const data = (dragged as any).coinData;
+        const radius = (data?.radius || 40) * (data?.visualScale || 1.0);
+        const targetX = Math.min(width - radius, Math.max(radius, mouse.position.x));
+        const targetY = Math.min(height - radius, Math.max(radius, mouse.position.y));
+
+        (mouseConstraint as any).constraint.pointB = {
+          x: targetX - dragged.position.x,
+          y: targetY - dragged.position.y,
+        };
+      }
+
       if (dragged && portraitBody) {
         const pBounds = portraitBody.bounds;
         const radius = (dragged as any).coinData?.radius || 40;
@@ -641,6 +654,7 @@ export default function PhysicsCoins({
           (mouseConstraint as any).constraint.bodyB = null;
         }
       }
+
 
       // Autonomous Life Motion & Anti-Stuck System
       coinBodies.forEach((coin) => {
@@ -1256,10 +1270,13 @@ export default function PhysicsCoins({
       if (!container || !canvas) return;
       updateCanvasDimensions();
 
-      Matter.Body.setPosition(ground, { x: width / 2, y: height + wallThickness / 2 - 10 });
-      Matter.Body.setPosition(rightWall, { x: width + wallThickness / 2 - 10, y: height / 2 });
+      Matter.Body.setPosition(ground, { x: width / 2, y: height + wallThickness / 2 });
+      Matter.Body.setPosition(ceiling, { x: width / 2, y: -wallThickness / 2 });
+      Matter.Body.setPosition(leftWall, { x: -wallThickness / 2, y: height / 2 });
+      Matter.Body.setPosition(rightWall, { x: width + wallThickness / 2, y: height / 2 });
       updatePortraitBody();
     };
+
 
     window.addEventListener("resize", handleResize);
 
