@@ -424,12 +424,14 @@ export default function PhysicsCoins({
       pointerHistory = [{ x: px, y: py, time: Date.now() }];
 
       const hitCoin = getCoinNearPointer(px, py);
-      if (hitCoin && !mouseConstraint.body) {
-        targetHoldCoin = hitCoin;
-        holdStartTime = Date.now();
-        playGrabPopSound(); // Play pop sound immediately on touch / click!
+      if (hitCoin) {
+        // INSTANT 1-CLICK GRAB (Warhol Arts style)!
+        (mouseConstraint as any).constraint.bodyB = hitCoin;
+        (mouseConstraint as any).constraint.pointB = { x: 0, y: 0 };
+        playGrabPopSound(); // Play pop sound instantly on touch / click!
       }
     };
+
 
     const handlePointerMove = (e: MouseEvent | TouchEvent) => {
       const rect = canvas.getBoundingClientRect();
@@ -483,21 +485,10 @@ export default function PhysicsCoins({
         const spin = Math.min(0.35, Math.max(-0.35, pointerVx * 0.018));
         Matter.Body.setAngularVelocity(grabbedCoin, spin);
       }
- else if (targetHoldCoin) {
-        const elapsed = Date.now() - holdStartTime;
-        if (elapsed < HOLD_DURATION) {
-          // Quick tap: gentle push impulse instead of grabbing
-          const forceX = (Math.random() - 0.5) * 0.012;
-          const forceY = -0.012;
-          Matter.Body.applyForce(targetHoldCoin, targetHoldCoin.position, { x: forceX, y: forceY });
-        }
-        const data = (targetHoldCoin as any).coinData as CoinData;
-        if (data) data.holdProgress = 0;
-      }
-      targetHoldCoin = null;
       isPointerDown = false;
       pointerHistory = [];
     };
+
 
     window.addEventListener("mousedown", handlePointerDown);
     window.addEventListener("mouseup", handlePointerUp);
@@ -577,38 +568,11 @@ export default function PhysicsCoins({
         }
       }
 
-      // Long-Press Grab Processing
-      if (targetHoldCoin && isPointerDown && !dragged) {
-        const elapsed = Date.now() - holdStartTime;
-        const data = (targetHoldCoin as any).coinData as CoinData;
-        if (data) {
-          data.holdProgress = Math.min(1.0, elapsed / HOLD_DURATION);
-        }
-
-        if (elapsed >= HOLD_DURATION) {
-          // Long press duration met -> ACTIVATE GRAB centered on coin middle!
-          (mouseConstraint as any).constraint.bodyB = targetHoldCoin;
-          (mouseConstraint as any).constraint.pointB = { x: 0, y: 0 };
-          if (data) data.holdProgress = 0;
-          targetHoldCoin = null;
-        }
+      // Centered Spring Drag (Warhol Arts style)
+      if (dragged) {
+        (mouseConstraint as any).constraint.pointB = { x: 0, y: 0 };
       }
 
-      // Prevent mouseConstraint from attaching without long-press
-      if (!dragged && !targetHoldCoin) {
-        (mouseConstraint as any).constraint.bodyB = null;
-      }
-
-      // Smooth Centered Drag & Sensor Toggle: Eliminates wall collision jitter near top and bottom edges!
-      coinBodies.forEach((coin) => {
-        const isHeld = mouseConstraint.body === coin;
-        if (isHeld) {
-          coin.isSensor = true;
-          (mouseConstraint as any).constraint.pointB = { x: 0, y: 0 };
-        } else {
-          coin.isSensor = false;
-        }
-      });
 
 
 
