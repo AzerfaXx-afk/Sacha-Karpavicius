@@ -502,10 +502,11 @@ export default function PhysicsCoins({
     window.addEventListener("mousemove", handlePointerMove);
     window.addEventListener("touchmove", handlePointerMove, { passive: true });
 
-    // Scroll Listener for Awwwards Upward Balloon Float & Dissolve Physics
+    // Scroll Listener for Awwwards Pop-Out Shrink & Pop-In Entrance Physics
     let scrollY = 0;
     let lastScrollY = 0;
     let scrollVelocity = 0;
+    let isPoppedOut = false;
 
     const handleScroll = () => {
       if (typeof window === "undefined") return;
@@ -513,9 +514,45 @@ export default function PhysicsCoins({
       scrollVelocity = currentY - lastScrollY;
       lastScrollY = currentY;
       scrollY = currentY;
+
+      // When scrolling down past hero: POP-OUT SHRINK (disappear with bouncy pop contraction)
+      if (currentY > 40 && !isPoppedOut) {
+        isPoppedOut = true;
+        coinBodies.forEach((coin, idx) => {
+          const data = (coin as any).coinData as CoinData;
+          if (data) {
+            gsap.killTweensOf(data);
+            gsap.to(data, {
+              entryScale: 0,
+              entryOpacity: 0,
+              duration: 0.42,
+              delay: idx * 0.04,
+              ease: "back.in(1.8)",
+            });
+          }
+        });
+      } 
+      // When scrolling back up to top: POP-IN ENTRANCE (bouncy pop-in entrance)
+      else if (currentY <= 40 && isPoppedOut) {
+        isPoppedOut = false;
+        coinBodies.forEach((coin, idx) => {
+          const data = (coin as any).coinData as CoinData;
+          if (data) {
+            gsap.killTweensOf(data);
+            gsap.to(data, {
+              entryScale: 1.0,
+              entryOpacity: 1.0,
+              duration: 0.65,
+              delay: idx * 0.08,
+              ease: "back.out(2.2)",
+            });
+          }
+        });
+      }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
+
 
     // Audio Sound Effects Helper Functions (Pre-instantiated for zero latency)
     let lastDegatsSoundTime = 0;
@@ -853,15 +890,12 @@ export default function PhysicsCoins({
         const px = data.pupilX;
         const py = data.pupilY;
 
-        const scrollProgress = Math.min(1.0, Math.max(0, scrollY / (height * 0.65)));
-        const scrollAlpha = Math.max(0, 1.0 - scrollProgress * 1.55);
-        const scrollScale = Math.max(0.2, 1.0 - scrollProgress * 0.45);
-
         ctx.save();
-        ctx.globalAlpha = Math.min(1.0, Math.max(0, data.entryOpacity * scrollAlpha));
+        ctx.globalAlpha = Math.min(1.0, Math.max(0, data.entryOpacity));
         ctx.translate(pos.x, pos.y);
         ctx.rotate(angle);
-        ctx.scale(data.squashX * scrollScale, data.squashY * scrollScale);
+        ctx.scale(data.squashX, data.squashY);
+
 
         // 1. Drop Shadow (Disabled on mobile for zero GPU lag & locked 60FPS)
         ctx.save();
