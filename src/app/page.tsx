@@ -822,75 +822,43 @@ export default function Home() {
   }, [router]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsMounted(true);
+    setIsMounted(true);
 
-      // On physical F5 browser refresh, reset entered state so intro preloader animation plays from scratch
-      if (typeof window !== "undefined") {
-        const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
-        const isReload = navEntries.length > 0 && navEntries[0].type === "reload";
-        if (isReload) {
-          sessionStorage.removeItem("spa_nav");
-          setHasEnteredSite(false);
-          setLoading(true);
-          setSiteStarted(false);
-          return;
-        }
+    // Language detection
+    if (typeof window !== "undefined" && navigator) {
+      const userLang = navigator.language || (navigator as Navigator & { userLanguage?: string }).userLanguage;
+      if (userLang && !userLang.toLowerCase().startsWith("fr")) {
+        setLang("en");
       }
+    }
 
-      // In-app SPA navigation (Home button / Logo click): skip preloader if site was already entered
-      if (hasEnteredSite || sessionStorage.getItem("spa_nav") === "true") {
+    // In-app navigation: skip preloader if site was already entered in this session
+    if (hasEnteredSite || (typeof window !== "undefined" && sessionStorage.getItem("spa_nav") === "true")) {
+      setLoading(false);
+      setSiteStarted(true);
+      setHasEnteredSite(true);
+    } else {
+      setLoading(true);
+      setSiteStarted(false);
+    }
+
+    // Handle smooth scroll to #contact if triggered from project page Contact click
+    if (typeof window !== "undefined") {
+      const shouldScrollToContact = sessionStorage.getItem("scrollToContact");
+      if (shouldScrollToContact === "true") {
+        sessionStorage.removeItem("scrollToContact");
         setLoading(false);
         setSiteStarted(true);
-        if (typeof window !== "undefined" && window.location.hash) {
-          const hash = window.location.hash;
-          setTimeout(() => {
-            const target = document.querySelector(hash);
-            if (target) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const lenis = (window as any).__lenis;
-              if (lenis) {
-                lenis.scrollTo(target as HTMLElement, { offset: 0, duration: 1.8 });
-              } else {
-                target.scrollIntoView({ behavior: "smooth" });
-              }
-            }
-          }, 400);
-        }
-      } else {
-        // F5 / Fresh Page Reload: ALWAYS force preloader & clear URL hash
-        setLoading(true);
-        setSiteStarted(false);
-        if (typeof window !== "undefined" && window.location.hash) {
-          window.history.replaceState(null, "", window.location.pathname);
-        }
+        setHasEnteredSite(true);
+        setTimeout(() => {
+          const contactEl = document.getElementById("contact");
+          if (contactEl) {
+            contactEl.scrollIntoView({ behavior: "smooth" });
+          }
+        }, 350);
       }
+    }
 
-      // Language detection
-      if (typeof window !== "undefined" && navigator) {
-        const userLang = navigator.language || (navigator as Navigator & { userLanguage?: string }).userLanguage;
-        if (userLang && !userLang.toLowerCase().startsWith("fr")) {
-          setLang("en");
-        }
-      }
-
-      // Handle smooth scroll to #contact if triggered from project page Contact click
-      if (typeof window !== "undefined") {
-        const shouldScrollToContact = sessionStorage.getItem("scrollToContact");
-        if (shouldScrollToContact === "true") {
-          sessionStorage.removeItem("scrollToContact");
-          setLoading(false);
-          setSiteStarted(true);
-          setHasEnteredSite(true);
-          setTimeout(() => {
-            const contactEl = document.getElementById("contact");
-            if (contactEl) {
-              contactEl.scrollIntoView({ behavior: "smooth" });
-            }
-          }, 350);
-        }
-      }
-    }, 0);
 
     // Initialize gapless background music player
     playerRef.current = new GaplessPlayer("/musique.mp3");
@@ -910,11 +878,11 @@ export default function Home() {
     entranceAudioRef.current.preload = "auto";
 
     return () => {
-      clearTimeout(timer);
       if (playerRef.current) {
         playerRef.current.pause(0);
       }
     };
+
   }, [hasEnteredSite]);
 
   // Keep isHoveringNameRef synced and reset image center on hover

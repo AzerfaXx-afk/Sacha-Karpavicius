@@ -20,7 +20,7 @@ export default function ProjectPage() {
   const router = useRouter();
   const slug = params?.slug as string;
 
-  const { hasEnteredSite, setHasEnteredSite, isPlaying, toggleAudio, pauseAudio, playClickSfx, playHoverSfx, setIsHideUI } = useSiteContext();
+  const { hasEnteredSite, setHasEnteredSite, isPlaying, toggleAudio, pauseAudio, resumeAudio, playClickSfx, playHoverSfx, setIsHideUI } = useSiteContext();
 
   const project = getProjectBySlug(slug) || projectsData[0];
   const isVideoProject = Boolean(project.isVideo || project.videoUrl);
@@ -41,6 +41,8 @@ export default function ProjectPage() {
   const titleRef = useRef<HTMLDivElement>(null);
   const metaRef = useRef<HTMLDivElement>(null);
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const wasPlayingBeforeVideoRef = useRef(false);
+
 
   // Horizontal Scrollytelling Refs
   const scrollySectionRef = useRef<HTMLDivElement>(null);
@@ -271,14 +273,30 @@ export default function ProjectPage() {
                 onPlay={() => {
                   setIsVideoPlaying(true);
                   resetIdleTimer();
+                  if (isPlaying) {
+                    wasPlayingBeforeVideoRef.current = true;
+                    pauseAudio();
+                  }
                 }}
                 onPause={() => {
                   setIsVideoPlaying(false);
                   setIsIdle(false);
                   setIsHideUI(false);
+                  if (wasPlayingBeforeVideoRef.current) {
+                    resumeAudio();
+                  }
+                }}
+                onEnded={() => {
+                  setIsVideoPlaying(false);
+                  setIsIdle(false);
+                  setIsHideUI(false);
+                  if (wasPlayingBeforeVideoRef.current) {
+                    resumeAudio();
+                  }
                 }}
                 className="object-cover w-full h-full min-h-full min-w-full"
               />
+
             ) : (
               <Image
                 src={project.heroImage}

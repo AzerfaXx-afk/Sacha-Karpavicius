@@ -12,6 +12,7 @@ interface SiteContextType {
   isPlaying: boolean;
   toggleAudio: () => void;
   pauseAudio: () => void;
+  resumeAudio: () => void;
   playEntrance: () => void;
   playClickSfx: () => void;
   playHoverSfx: () => void;
@@ -27,10 +28,12 @@ const SiteContext = createContext<SiteContextType>({
   isPlaying: false,
   toggleAudio: () => {},
   pauseAudio: () => {},
+  resumeAudio: () => {},
   playEntrance: () => {},
   playClickSfx: () => {},
   playHoverSfx: () => {},
 });
+
 
 export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   const [hasEnteredSite, setHasEnteredSite] = useState(false);
@@ -175,6 +178,15 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const resumeAudio = () => {
+    wasPlayingBeforeBackgroundRef.current = false;
+    isAutoPausedRef.current = false;
+
+    if (audioRef.current) {
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+    }
+  };
+
   const playEntrance = () => {
     wasPlayingBeforeBackgroundRef.current = false;
     isAutoPausedRef.current = false;
@@ -215,6 +227,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
         isPlaying,
         toggleAudio,
         pauseAudio,
+        resumeAudio,
         playEntrance,
         playClickSfx,
         playHoverSfx,
@@ -224,6 +237,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
     </SiteContext.Provider>
   );
 };
+
 
 export const useSiteContext = () => useContext(SiteContext);
 
