@@ -423,15 +423,17 @@ export default function PhysicsCoins({
       pointerVy = 0;
       pointerHistory = [{ x: px, y: py, time: Date.now() }];
 
+      // Synchronize Matter.Mouse position to prevent (0, 0) teleportation bug!
+      Matter.Mouse.setPosition(mouse, { x: px, y: py });
+
       const hitCoin = getCoinNearPointer(px, py);
       if (hitCoin) {
-        // INSTANT 1-CLICK GRAB (Warhol Arts style)!
+        (mouseConstraint as any).constraint.pointA = { x: px, y: py };
         (mouseConstraint as any).constraint.bodyB = hitCoin;
         (mouseConstraint as any).constraint.pointB = { x: 0, y: 0 };
         playGrabPopSound(); // Play pop sound instantly on touch / click!
       }
     };
-
 
     const handlePointerMove = (e: MouseEvent | TouchEvent) => {
       const rect = canvas.getBoundingClientRect();
@@ -440,6 +442,9 @@ export default function PhysicsCoins({
       const newX = clientX - rect.left;
       const newY = clientY - rect.top;
       const now = Date.now();
+
+      // Synchronize Matter.Mouse position on move
+      Matter.Mouse.setPosition(mouse, { x: newX, y: newY });
 
       pointerHistory.push({ x: newX, y: newY, time: now });
       if (pointerHistory.length > 5) pointerHistory.shift();
@@ -456,6 +461,7 @@ export default function PhysicsCoins({
       cursorX = newX;
       cursorY = newY;
     };
+
 
     const handlePointerUp = () => {
       if (mouseConstraint.body) {
