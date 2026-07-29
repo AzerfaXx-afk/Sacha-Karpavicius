@@ -104,7 +104,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
     isAutoPausedRef.current = false;
   }, []);
 
-  // Listen to tab switching, page hiding, window blur/focus, and app freeze/resume
+  // Listen to tab switching & document visibility change
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
 
@@ -116,44 +116,13 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    const onPageHide = () => {
-      handleBackground();
-    };
-
-    const onPageShow = () => {
-      handleForeground();
-    };
-
-    const onBlur = () => {
-      if (document.hidden || document.visibilityState === "hidden") {
-        handleBackground();
-      }
-    };
-
-    const onFocus = () => {
-      if (!document.hidden && document.visibilityState === "visible") {
-        handleForeground();
-      }
-    };
-
     document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("pagehide", onPageHide);
-    window.addEventListener("pageshow", onPageShow);
-    window.addEventListener("blur", onBlur);
-    window.addEventListener("focus", onFocus);
-    window.addEventListener("freeze", handleBackground);
-    window.addEventListener("resume", handleForeground);
 
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("pagehide", onPageHide);
-      window.removeEventListener("pageshow", onPageShow);
-      window.removeEventListener("blur", onBlur);
-      window.removeEventListener("focus", onFocus);
-      window.removeEventListener("freeze", handleBackground);
-      window.removeEventListener("resume", handleForeground);
     };
   }, [handleBackground, handleForeground]);
+
 
   const toggleAudio = () => {
     if (!audioRef.current) return;
