@@ -491,6 +491,30 @@ export default function PhysicsCoins({
     window.addEventListener("mousemove", handlePointerMove);
     window.addEventListener("touchmove", handlePointerMove, { passive: true });
 
+    // Audio Sound Effects Helper Functions
+    let lastDegatsSoundTime = 0;
+
+    const playDegatsSound = () => {
+      const now = Date.now();
+      if (now - lastDegatsSoundTime < 110) return; // Throttle to prevent overlapping audio distortion
+      lastDegatsSoundTime = now;
+
+      try {
+        const audio = new Audio("/sounds/degats.mp3");
+        audio.volume = 0.45;
+        audio.play().catch(() => {});
+      } catch (_) {}
+    };
+
+    const playGrabPopSound = () => {
+      try {
+        const chosenFile = Math.random() > 0.5 ? "/sounds/pop1.mp3" : "/sounds/pop2.mp3";
+        const audio = new Audio(chosenFile);
+        audio.volume = 0.45;
+        audio.play().catch(() => {});
+      } catch (_) {}
+    };
+
     // Frame update logic
     Matter.Events.on(engine, "beforeUpdate", () => {
       const dragged = mouseConstraint.body;
@@ -504,7 +528,7 @@ export default function PhysicsCoins({
         }
 
         if (elapsed >= HOLD_DURATION) {
-          // Long press duration met -> ACTIVATE GRAB!
+          // Long press duration met -> ACTIVATE GRAB & PLAY RANDOM POP SOUND (PC)!
           (mouseConstraint as any).constraint.bodyB = targetHoldCoin;
           (mouseConstraint as any).constraint.pointB = {
             x: mouse.position.x - targetHoldCoin.position.x,
@@ -512,6 +536,11 @@ export default function PhysicsCoins({
           };
           if (data) data.holdProgress = 0;
           targetHoldCoin = null;
+
+          // Play random pop sound on desktop grab!
+          if (!isMobile) {
+            playGrabPopSound();
+          }
         }
       }
 
@@ -593,10 +622,18 @@ export default function PhysicsCoins({
           // Immediate Impact Damage Expression (decays over ~1.5s)
           coinData.impactAmount = 1.0;
 
-          if (otherBody === portraitBody) {
-            triggerCollisionFX(targetCoin.position.x, targetCoin.position.y, coinData.color, impactSpeed * 1.4);
+          const isWallOrBoundary =
+            otherBody === ground ||
+            otherBody === leftWall ||
+            otherBody === rightWall ||
+            otherBody === ceiling ||
+            otherBody === portraitBody;
 
-            if (portraitRef.current) {
+          if (isWallOrBoundary) {
+            triggerCollisionFX(targetCoin.position.x, targetCoin.position.y, coinData.color, impactSpeed * 1.4);
+            playDegatsSound();
+
+            if (otherBody === portraitBody && portraitRef.current) {
               const rot = (Math.random() - 0.5) * 8;
               gsap.killTweensOf(portraitRef.current);
               gsap.fromTo(
@@ -612,10 +649,12 @@ export default function PhysicsCoins({
             }
           } else if (impactSpeed > 1.8) {
             triggerCollisionFX(targetCoin.position.x, targetCoin.position.y, coinData.color, impactSpeed);
+            playDegatsSound();
           }
         }
       });
     });
+
 
     // Helper: Draw 4-point Star with crisp geometry
     const drawStar = (
