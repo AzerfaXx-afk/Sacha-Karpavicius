@@ -487,12 +487,22 @@ export default function PhysicsCoins({
 
     window.addEventListener("mousedown", handlePointerDown);
     window.addEventListener("mouseup", handlePointerUp);
-    window.addEventListener("touchstart", handlePointerDown, { passive: true });
-    window.addEventListener("touchend", handlePointerUp);
-    window.addEventListener("mousemove", handlePointerMove);
-    window.addEventListener("touchmove", handlePointerMove, { passive: true });
+    // Scroll Listener for Awwwards Upward Balloon Float & Dissolve Physics
+    let scrollY = 0;
+    let lastScrollY = 0;
+    let scrollVelocity = 0;
 
-    // Audio Sound Effects Helper Functions (Pre-instantiated for zero latency & 5% volume)
+    const handleScroll = () => {
+      if (typeof window === "undefined") return;
+      const currentY = window.scrollY;
+      scrollVelocity = currentY - lastScrollY;
+      lastScrollY = currentY;
+      scrollY = currentY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    // Audio Sound Effects Helper Functions (Pre-instantiated for zero latency & 1% volume)
     let lastDegatsSoundTime = 0;
     const pop1Audio = typeof window !== "undefined" ? new Audio("/sounds/pop1.mp3") : null;
     const pop2Audio = typeof window !== "undefined" ? new Audio("/sounds/pop2.mp3") : null;
@@ -506,7 +516,7 @@ export default function PhysicsCoins({
       try {
         if (degatsAudio) {
           degatsAudio.currentTime = 0;
-          degatsAudio.volume = 0.05; // 5% volume
+          degatsAudio.volume = 0.01; // 1% volume
           degatsAudio.play().catch(() => {});
         }
       } catch (_) {}
@@ -517,7 +527,7 @@ export default function PhysicsCoins({
         const chosen = Math.random() > 0.5 ? pop1Audio : pop2Audio;
         if (chosen) {
           chosen.currentTime = 0;
-          chosen.volume = 0.05; // 5% volume
+          chosen.volume = 0.01; // 1% volume
           chosen.play().catch(() => {});
         }
       } catch (_) {}
@@ -526,6 +536,27 @@ export default function PhysicsCoins({
     // Frame update logic
     Matter.Events.on(engine, "beforeUpdate", () => {
       const dragged = mouseConstraint.body;
+
+      // Awwwards Scroll Physics: Upward balloon float & dispersion on scroll
+      const scrollProgress = Math.min(1.0, Math.max(0, scrollY / (height * 0.65)));
+
+      if (!isMobile) {
+        if (scrollProgress > 0) {
+          const targetGy = 0.28 - scrollProgress * 0.95;
+          engine.gravity.y += (targetGy - engine.gravity.y) * 0.15;
+
+          if (scrollVelocity > 1) {
+            coinBodies.forEach((coin) => {
+              Matter.Body.applyForce(coin, coin.position, {
+                x: (Math.random() - 0.5) * 0.0006,
+                y: -Math.min(0.0035, scrollVelocity * 0.00018),
+              });
+            });
+          }
+        } else {
+          engine.gravity.y += (0.28 - engine.gravity.y) * 0.15;
+        }
+      }
 
       // Long-Press Grab Processing
       if (targetHoldCoin && isPointerDown && !dragged) {
@@ -546,6 +577,7 @@ export default function PhysicsCoins({
           targetHoldCoin = null;
         }
       }
+
 
 
       // Prevent mouseConstraint from attaching without long-press
@@ -829,11 +861,15 @@ export default function PhysicsCoins({
         const px = data.pupilX;
         const py = data.pupilY;
 
+        const scrollProgress = Math.min(1.0, Math.max(0, scrollY / (height * 0.65)));
+        const scrollAlpha = Math.max(0, 1.0 - scrollProgress * 1.55);
+        const scrollScale = Math.max(0.2, 1.0 - scrollProgress * 0.45);
+
         ctx.save();
-        ctx.globalAlpha = Math.min(1.0, Math.max(0, data.entryOpacity));
+        ctx.globalAlpha = Math.min(1.0, Math.max(0, data.entryOpacity * scrollAlpha));
         ctx.translate(pos.x, pos.y);
         ctx.rotate(angle);
-        ctx.scale(data.squashX, data.squashY);
+        ctx.scale(data.squashX * scrollScale, data.squashY * scrollScale);
 
         // 1. Drop Shadow (Disabled on mobile for zero GPU lag & locked 60FPS)
         ctx.save();
@@ -1183,6 +1219,7 @@ export default function PhysicsCoins({
 
     return () => {
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScroll);
       if (typeof window !== "undefined") {
         window.removeEventListener("deviceorientation", handleDeviceOrientation, true);
         window.removeEventListener("devicemotion", handleDeviceMotion, true);
@@ -1197,6 +1234,7 @@ export default function PhysicsCoins({
       Matter.World.clear(world, false);
       Matter.Engine.clear(engine);
     };
+
   }, [containerRef, portraitRef, enabled, siteStarted]);
 
   return (
