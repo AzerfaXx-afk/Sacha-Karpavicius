@@ -491,8 +491,11 @@ export default function PhysicsCoins({
     window.addEventListener("mousemove", handlePointerMove);
     window.addEventListener("touchmove", handlePointerMove, { passive: true });
 
-    // Audio Sound Effects Helper Functions
+    // Audio Sound Effects Helper Functions (Pre-instantiated for zero latency & 10% volume)
     let lastDegatsSoundTime = 0;
+    const pop1Audio = typeof window !== "undefined" ? new Audio("/sounds/pop1.mp3") : null;
+    const pop2Audio = typeof window !== "undefined" ? new Audio("/sounds/pop2.mp3") : null;
+    const degatsAudio = typeof window !== "undefined" ? new Audio("/sounds/degats.mp3") : null;
 
     const playDegatsSound = () => {
       const now = Date.now();
@@ -500,20 +503,25 @@ export default function PhysicsCoins({
       lastDegatsSoundTime = now;
 
       try {
-        const audio = new Audio("/sounds/degats.mp3");
-        audio.volume = 0.45;
-        audio.play().catch(() => {});
+        if (degatsAudio) {
+          degatsAudio.currentTime = 0;
+          degatsAudio.volume = 0.10; // 10% volume
+          degatsAudio.play().catch(() => {});
+        }
       } catch (_) {}
     };
 
     const playGrabPopSound = () => {
       try {
-        const chosenFile = Math.random() > 0.5 ? "/sounds/pop1.mp3" : "/sounds/pop2.mp3";
-        const audio = new Audio(chosenFile);
-        audio.volume = 0.45;
-        audio.play().catch(() => {});
+        const chosen = Math.random() > 0.5 ? pop1Audio : pop2Audio;
+        if (chosen) {
+          chosen.currentTime = 0;
+          chosen.volume = 0.10; // 10% volume
+          chosen.play().catch(() => {});
+        }
       } catch (_) {}
     };
+
 
     // Frame update logic
     Matter.Events.on(engine, "beforeUpdate", () => {
