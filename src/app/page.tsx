@@ -13,6 +13,8 @@ import { projectsData, videoProjectsData } from "@/data/projects";
 import { useSiteContext } from "@/context/site-context";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
 
+import PhysicsCoins from "@/components/physics-coins";
+
 gsap.registerPlugin(ScrollTrigger);
 
 /* ──── Project data ──── */
@@ -452,6 +454,228 @@ function warmUpAudio(el: HTMLAudioElement | null) {
   el.play()
     .then(() => { el.pause(); el.currentTime = 0; el.volume = prevVol; })
     .catch(() => { el.volume = prevVol; });
+}
+
+function VideoCardItem({
+  project,
+  idx,
+  onClick,
+  playHoverSfx,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  project: any;
+  idx: number;
+  onClick: (e: React.MouseEvent) => void;
+  playHoverSfx?: () => void;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [activeSlot, setActiveSlot] = useState<1 | 2>(1);
+
+  const videoRef1 = useRef<HTMLVideoElement>(null);
+  const videoRef2 = useRef<HTMLVideoElement>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isPoster = project.coverImage.toLowerCase().includes("affiche");
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (playHoverSfx) playHoverSfx();
+
+    const v1 = videoRef1.current;
+    const v2 = videoRef2.current;
+    if (!v1 && !v2) return;
+
+    const baseVideo = v1 || v2;
+    const duration =
+      baseVideo?.duration && !isNaN(baseVideo.duration) && baseVideo.duration > 5
+        ? baseVideo.duration
+        : 35;
+
+    // 5 strategic highlights across the video (10%, 30%, 50%, 70%, 88%)
+    const clips = [
+      duration * 0.10,
+      duration * 0.30,
+      duration * 0.50,
+      duration * 0.70,
+      duration * 0.88,
+    ];
+
+    let clipIdx = 0;
+    let currentSlot: 1 | 2 = 1;
+
+    // Initialize Slot 1 with Clip 0
+    if (v1) {
+      try { v1.currentTime = clips[0]; } catch {}
+      v1.play().catch(() => {});
+    }
+    setActiveSlot(1);
+
+    // Pre-warm Slot 2 with Clip 1 in background
+    if (v2) {
+      try { v2.currentTime = clips[1]; } catch {}
+    }
+
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    // Cycle clips seamlessly every 3.0s (3000ms) with zero stutter crossfade
+    intervalRef.current = setInterval(() => {
+      clipIdx = (clipIdx + 1) % clips.length;
+      const nextClipTime = clips[(clipIdx + 1) % clips.length];
+
+      if (currentSlot === 1) {
+        if (v2) {
+          try { v2.currentTime = clips[clipIdx]; } catch {}
+          v2.play().catch(() => {});
+        }
+        currentSlot = 2;
+        setActiveSlot(2);
+
+        setTimeout(() => {
+          if (v1) {
+            v1.pause();
+            try { v1.currentTime = nextClipTime; } catch {}
+          }
+        }, 500);
+      } else {
+        if (v1) {
+          try { v1.currentTime = clips[clipIdx]; } catch {}
+          v1.play().catch(() => {});
+        }
+        currentSlot = 1;
+        setActiveSlot(1);
+
+        setTimeout(() => {
+          if (v2) {
+            v2.pause();
+            try { v2.currentTime = nextClipTime; } catch {}
+          }
+        }, 500);
+      }
+    }, 3000);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    if (videoRef1.current) videoRef1.current.pause();
+    if (videoRef2.current) videoRef2.current.pause();
+  };
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  return (
+    <div
+      data-work-card
+      data-cursor="PLAY"
+      onClick={onClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="group relative cursor-pointer"
+    >
+      {/* Cinema Ambient Backlight Bloom */}
+      <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/25 via-white/15 to-blue-600/25 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
+      {/* Main Full-Width Widescreen Media Container fitted perfectly to screen height */}
+      <div className="relative w-full overflow-hidden bg-[#0d0d0d] rounded-xl border border-white/10 aspect-[16/9] md:aspect-[21/9] max-h-[65vh] md:max-h-[70vh]">
+        {/* Ambient Blurred Background for Cinema Posters */}
+        {isPoster && (
+          <div className="absolute inset-0 scale-110 blur-3xl opacity-30 group-hover:opacity-60 transition-opacity duration-700 pointer-events-none">
+            <Image
+              src={project.coverImage}
+              alt=""
+              fill
+              sizes="100vw"
+              className="object-cover object-center"
+              quality={30}
+            />
+          </div>
+        )}
+
+        {/* Cover Image & Parallax Wrapper */}
+        <div
+          data-parallax-img
+          className="absolute -top-[10%] left-0 w-full h-[120%] will-change-transform"
+        >
+          <Image
+            src={project.coverImage}
+            alt={project.title}
+            fill
+            className={`${
+              isPoster ? "object-contain p-4 md:p-8 drop-shadow-[0_25px_60px_rgba(0,0,0,0.9)]" : "object-cover"
+            } object-center transition-all duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-105 brightness-[1.02] contrast-[1.04] transform-gpu`}
+            quality={96}
+            sizes="100vw"
+            priority={idx < 2}
+          />
+
+          {/* Dual-Video Seamless Crossfade Video Slot A */}
+          {project.videoUrl && (
+            <video
+              ref={videoRef1}
+              src={project.videoUrl}
+              loop
+              muted
+              playsInline
+              preload="auto"
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out ${
+                isHovered && activeSlot === 1 ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+            />
+          )}
+
+          {/* Dual-Video Seamless Crossfade Video Slot B */}
+          {project.videoUrl && (
+            <video
+              ref={videoRef2}
+              src={project.videoUrl}
+              loop
+              muted
+              playsInline
+              preload="auto"
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out ${
+                isHovered && activeSlot === 2 ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+            />
+          )}
+        </div>
+
+        {/* Hover dark overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500 pointer-events-none" />
+
+        {/* Centered Minimalist Play Button Overlay */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <div className="w-14 h-14 md:w-18 md:h-18 rounded-full bg-white/10 border border-white/30 backdrop-blur-md flex items-center justify-center text-white opacity-90 group-hover:opacity-100 group-hover:scale-110 group-hover:bg-white group-hover:text-black group-hover:border-white transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_0_40px_rgba(0,0,0,0.8)]">
+            <svg className="w-6 h-6 md:w-7 md:h-7 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* Project Info Bar below card — EXACT SAME FORMAT AS PHOTO CARDS */}
+      <div className="mt-4 relative overflow-hidden">
+        <div className="flex items-center justify-between py-1">
+          <h3 className="font-syne font-bold text-[15px] md:text-[18px] tracking-tight group-hover:tracking-[0.15em] text-white/90 group-hover:text-white uppercase transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
+            {project.title}
+          </h3>
+
+          <div className="flex-1 mx-4 h-[1px] relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/50 to-white/90 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]" />
+          </div>
+
+          <span className="text-[12px] font-mono text-white/70 opacity-0 group-hover:opacity-100 -translate-x-3 group-hover:translate-x-0 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] delay-75 shrink-0">
+            0{idx + 1} ↗
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function Home() {
@@ -1071,15 +1295,15 @@ export default function Home() {
       workCards.forEach((card) => {
         gsap.fromTo(
           card,
-          { y: 120, opacity: 0 },
+          { y: 50, opacity: 0 },
           {
             y: 0,
             opacity: 1,
-            duration: 1.2,
+            duration: 0.75,
             ease: "power3.out",
             scrollTrigger: {
               trigger: card,
-              start: "top 85%",
+              start: "top 92%",
               toggleActions: "play none none none",
             },
           }
@@ -1325,6 +1549,8 @@ export default function Home() {
         id="hero"
         className="relative w-full h-screen overflow-hidden bg-[#050505]"
       >
+        <PhysicsCoins containerRef={heroRef} portraitRef={heroImgRef} siteStarted={siteStarted} />
+
         {/* Central Image Container (Awwwards Profile Portrait) */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-6 md:mt-0" style={{ perspective: "1000px" }}>
           <div
@@ -1453,31 +1679,31 @@ export default function Home() {
                     src={project.coverImage}
                     alt={project.title}
                     fill
-                    className={`object-cover ${project.objectPosition || "object-[center_35%]"} transition-transform duration-[1.2s] ease-[cubic-bezier(.25,.46,.45,.94)] group-hover:scale-105 group-data-[touch-hover=true]:scale-105 brightness-[1.02] contrast-[1.02] saturate-[1.02] transform-gpu`}
+                    className={`object-cover ${project.objectPosition || "object-[center_35%]"} transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-105 group-data-[touch-hover=true]:scale-105 brightness-[1.02] contrast-[1.02] saturate-[1.02] transform-gpu`}
                     quality={96}
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 1200px"
                     priority={idx < 2}
                   />
                 </div>
                 {/* Hover overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 group-data-[touch-hover=true]:bg-black/30 transition-colors duration-700" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 group-data-[touch-hover=true]:bg-black/30 transition-colors duration-500" />
               </div>
 
               {/* Project info */}
               <div className="mt-4 relative overflow-hidden">
                 <div className="flex items-center justify-between py-1">
                   {/* Title with ultra-smooth left-to-right letter spacing expansion */}
-                  <h3 className="font-syne font-bold text-[15px] md:text-[18px] tracking-tight group-hover:tracking-[0.15em] group-data-[touch-hover=true]:tracking-[0.15em] text-white/90 group-hover:text-white group-data-[touch-hover=true]:text-white uppercase transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)]">
+                  <h3 className="font-syne font-bold text-[15px] md:text-[18px] tracking-tight group-hover:tracking-[0.15em] group-data-[touch-hover=true]:tracking-[0.15em] text-white/90 group-hover:text-white group-data-[touch-hover=true]:text-white uppercase transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
                     {project.title}
                   </h3>
 
                   {/* Silky left-to-right sliding line */}
                   <div className="flex-1 mx-4 h-[1px] relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/50 to-white/90 scale-x-0 group-hover:scale-x-100 group-data-[touch-hover=true]:scale-x-100 origin-left transition-transform duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)]" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/50 to-white/90 scale-x-0 group-hover:scale-x-100 group-data-[touch-hover=true]:scale-x-100 origin-left transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]" />
                   </div>
 
                   {/* Number & Arrow sliding smoothly from left to right */}
-                  <span className="text-[12px] font-mono text-white/70 opacity-0 group-hover:opacity-100 group-data-[touch-hover=true]:opacity-100 -translate-x-3 group-hover:translate-x-0 group-data-[touch-hover=true]:translate-x-0 transition-all duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] delay-100 shrink-0">
+                  <span className="text-[12px] font-mono text-white/70 opacity-0 group-hover:opacity-100 group-data-[touch-hover=true]:opacity-100 -translate-x-3 group-hover:translate-x-0 group-data-[touch-hover=true]:translate-x-0 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] delay-75 shrink-0">
                     0{idx + 1} ↗
                   </span>
                 </div>
@@ -1504,86 +1730,17 @@ export default function Home() {
           </h2>
         </div>
 
-        {/* Video projects - Full-width Widescreen & Cinema Poster Adaptive Cards */}
-        <div className="px-5 md:px-16 space-y-10 md:space-y-14">
-          {videoProjectsData.map((project) => {
-            const isPoster = project.coverImage.toLowerCase().includes("affiche");
-            return (
-              <div
-                key={project.id}
-                data-work-card
-                data-cursor="PLAY"
-                onMouseEnter={() => {
-                  if (playHoverSfx) playHoverSfx();
-                }}
-                onClick={(e) => handleProjectClick(e, project)}
-                className="group relative cursor-pointer rounded-2xl border border-white/10 bg-[#080808] transition-all duration-700 hover:border-white/25 hover:shadow-[0_20px_70px_rgba(0,0,0,0.95)]"
-              >
-                {/* Cinema Ambient Backlight Bloom */}
-                <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/20 via-white/15 to-blue-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-1000 pointer-events-none" />
-
-                <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-2xl overflow-hidden flex items-center justify-center">
-                  {/* Ambient Blurred Background for Cinema Posters */}
-                  <div className="absolute inset-0 scale-110 blur-3xl opacity-40 group-hover:opacity-70 transition-opacity duration-700 pointer-events-none">
-                    <Image
-                      src={project.coverImage}
-                      alt=""
-                      fill
-                      sizes="100vw"
-                      className="object-cover object-center"
-                      quality={30}
-                    />
-                  </div>
-
-                  {/* Main Cover Media */}
-                  <div data-parallax-img className="absolute inset-0 w-full h-full will-change-transform">
-                    <Image
-                      src={project.coverImage}
-                      alt={project.title}
-                      fill
-                      className={`${
-                        isPoster ? "object-contain p-3 md:p-6 drop-shadow-[0_25px_60px_rgba(0,0,0,0.9)]" : "object-cover"
-                      } object-center transition-all duration-[1200ms] ease-[cubic-bezier(.25,.46,.45,.94)] group-hover:scale-105 brightness-[1.03] contrast-[1.04] saturate-[1.04] transform-gpu`}
-                      quality={96}
-                      sizes="100vw"
-                      priority
-                    />
-                  </div>
-
-                  {/* Dark bottom gradient overlay for crystal clear text readability directly on the image */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none" />
-
-                  {/* Play Button Overlay (Centered) */}
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/25 transition-colors duration-700 flex items-center justify-center pointer-events-none z-10">
-                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/10 border border-white/40 backdrop-blur-md flex items-center justify-center text-white group-hover:scale-110 group-hover:bg-white group-hover:text-black transition-all duration-500 shadow-[0_0_30px_rgba(0,0,0,0.8)] group-hover:shadow-[0_0_40px_rgba(255,255,255,0.7)]">
-                      <svg className="w-6 h-6 md:w-8 md:h-8 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  {/* Text Overlay directly OVER the image at the bottom */}
-                  <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 z-10 flex items-end justify-between gap-4 pointer-events-none">
-                    <div className="space-y-1.5 max-w-2xl">
-                      <h3 className="font-syne font-bold text-[18px] md:text-[26px] tracking-tight group-hover:tracking-[0.12em] text-white uppercase drop-shadow-xl transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)]">
-                        {project.title}
-                      </h3>
-                      {(project.descriptionFr || project.subtitle) && (
-                        <p className="font-inter text-[12px] md:text-[14px] text-white/90 font-light leading-relaxed drop-shadow-md">
-                          {lang === "fr" ? project.descriptionFr : (project.descriptionEn || project.descriptionFr || project.subtitle)}
-                        </p>
-                      )}
-                    </div>
-                    <div className="shrink-0">
-                      <span className="font-mono text-[11px] md:text-[13px] tracking-[0.2em] text-white/80 uppercase drop-shadow-md">
-                        {project.year}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        {/* Video projects full-width cinema cards */}
+        <div className="px-5 md:px-16 space-y-12 md:space-y-16">
+          {videoProjectsData.map((project, idx) => (
+            <VideoCardItem
+              key={project.id}
+              project={project}
+              idx={idx}
+              onClick={(e) => handleProjectClick(e, project)}
+              playHoverSfx={playHoverSfx}
+            />
+          ))}
         </div>
       </section>
 
