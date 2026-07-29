@@ -872,10 +872,6 @@ export default function Home() {
 
 
 
-    // Initialize gapless background music player
-    playerRef.current = new GaplessPlayer("/musique.mp3");
-    playerRef.current.load();
-
     // Initialize SFX
     hoverAudioRef.current = new Audio("/hover.mp3");
     hoverAudioRef.current.volume = 0.08;
@@ -888,12 +884,6 @@ export default function Home() {
     entranceAudioRef.current = new Audio("/entrance.mp3");
     entranceAudioRef.current.volume = 0.3;
     entranceAudioRef.current.preload = "auto";
-
-    return () => {
-      if (playerRef.current) {
-        playerRef.current.pause(0);
-      }
-    };
 
   }, [hasEnteredSite]);
 

@@ -46,10 +46,10 @@ export default function SmoothScrollProvider({
       root 
       autoRaf={false}
       options={{ 
-        lerp: 0.07, 
-        duration: 1.3, 
-        wheelMultiplier: 0.95,
-        touchMultiplier: 1.4,
+        lerp: 0.05, 
+        duration: 1.6, 
+        wheelMultiplier: 1.0,
+        touchMultiplier: 1.8,
         smoothWheel: true,
         syncTouch: false,
         easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
