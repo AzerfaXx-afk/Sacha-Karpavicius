@@ -442,6 +442,7 @@ export default function PhysicsCoins({
       if (hitCoin && !mouseConstraint.body) {
         targetHoldCoin = hitCoin;
         holdStartTime = Date.now();
+        playGrabPopSound(); // Play pop sound immediately on touch / click!
       }
     };
 
@@ -491,7 +492,7 @@ export default function PhysicsCoins({
     window.addEventListener("mousemove", handlePointerMove);
     window.addEventListener("touchmove", handlePointerMove, { passive: true });
 
-    // Audio Sound Effects Helper Functions (Pre-instantiated for zero latency & 10% volume)
+    // Audio Sound Effects Helper Functions (Pre-instantiated for zero latency & 5% volume)
     let lastDegatsSoundTime = 0;
     const pop1Audio = typeof window !== "undefined" ? new Audio("/sounds/pop1.mp3") : null;
     const pop2Audio = typeof window !== "undefined" ? new Audio("/sounds/pop2.mp3") : null;
@@ -505,7 +506,7 @@ export default function PhysicsCoins({
       try {
         if (degatsAudio) {
           degatsAudio.currentTime = 0;
-          degatsAudio.volume = 0.10; // 10% volume
+          degatsAudio.volume = 0.05; // 5% volume
           degatsAudio.play().catch(() => {});
         }
       } catch (_) {}
@@ -516,12 +517,11 @@ export default function PhysicsCoins({
         const chosen = Math.random() > 0.5 ? pop1Audio : pop2Audio;
         if (chosen) {
           chosen.currentTime = 0;
-          chosen.volume = 0.10; // 10% volume
+          chosen.volume = 0.05; // 5% volume
           chosen.play().catch(() => {});
         }
       } catch (_) {}
     };
-
 
     // Frame update logic
     Matter.Events.on(engine, "beforeUpdate", () => {
@@ -536,7 +536,7 @@ export default function PhysicsCoins({
         }
 
         if (elapsed >= HOLD_DURATION) {
-          // Long press duration met -> ACTIVATE GRAB & PLAY RANDOM POP SOUND (PC)!
+          // Long press duration met -> ACTIVATE GRAB!
           (mouseConstraint as any).constraint.bodyB = targetHoldCoin;
           (mouseConstraint as any).constraint.pointB = {
             x: mouse.position.x - targetHoldCoin.position.x,
@@ -544,13 +544,9 @@ export default function PhysicsCoins({
           };
           if (data) data.holdProgress = 0;
           targetHoldCoin = null;
-
-          // Play random pop sound on desktop grab!
-          if (!isMobile) {
-            playGrabPopSound();
-          }
         }
       }
+
 
       // Prevent mouseConstraint from attaching without long-press
       if (!dragged && !targetHoldCoin) {
