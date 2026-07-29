@@ -199,26 +199,26 @@ export default function PhysicsCoins({
       }
     };
 
-    // 2. Setup Screen Boundary Walls with Balanced Restitution Bouncy Walls
+    // 2. Setup Screen Boundary Walls
     const wallOptions = { isStatic: true, friction: 0.04, restitution: 0.78 };
     const wallThickness = 120;
 
     let ground = Matter.Bodies.rectangle(
       width / 2,
-      height + wallThickness / 2,
+      height + wallThickness / 2 + 50,
       width * 3,
       wallThickness,
       wallOptions
     );
     let leftWall = Matter.Bodies.rectangle(
-      -wallThickness / 2,
+      -wallThickness / 2 - 50,
       height / 2,
       wallThickness,
       height * 3,
       wallOptions
     );
     let rightWall = Matter.Bodies.rectangle(
-      width + wallThickness / 2,
+      width + wallThickness / 2 + 50,
       height / 2,
       wallThickness,
       height * 3,
@@ -226,13 +226,14 @@ export default function PhysicsCoins({
     );
     let ceiling = Matter.Bodies.rectangle(
       width / 2,
-      -wallThickness / 2,
+      -wallThickness / 2 - 50,
       width * 3,
       wallThickness,
       wallOptions
     );
 
     Matter.World.add(world, [ground, leftWall, rightWall, ceiling]);
+
 
     // 3. Sacha Portrait Card Obstacle (Desktop only so it doesn't block mobile screens)
     let portraitBody: Matter.Body | null = null;
@@ -493,6 +494,13 @@ export default function PhysicsCoins({
         const grabbedCoin = mouseConstraint.body;
         (mouseConstraint as any).constraint.bodyB = null;
 
+        // Restore coin position safely if released near edge so it bounces smoothly
+        const data = (grabbedCoin as any).coinData;
+        const radius = (data?.radius || 40) * (data?.visualScale || 1.0);
+        const safeX = Math.min(width - radius - 5, Math.max(radius + 5, grabbedCoin.position.x));
+        const safeY = Math.min(height - radius - 5, Math.max(radius + 5, grabbedCoin.position.y));
+        Matter.Body.setPosition(grabbedCoin, { x: safeX, y: safeY });
+
         const speed = Math.hypot(pointerVx, pointerVy);
         const maxSpeed = 22; // Safe max velocity cap to prevent physics wall clipping
         const scale = speed > maxSpeed ? maxSpeed / speed : 1.0;
@@ -505,7 +513,8 @@ export default function PhysicsCoins({
         // Apply dynamic spin proportional to fling curve
         const spin = Math.min(0.35, Math.max(-0.35, pointerVx * 0.018));
         Matter.Body.setAngularVelocity(grabbedCoin, spin);
-      } else if (targetHoldCoin) {
+      }
+ else if (targetHoldCoin) {
         const elapsed = Date.now() - holdStartTime;
         if (elapsed < HOLD_DURATION) {
           // Quick tap: gentle push impulse instead of grabbing
