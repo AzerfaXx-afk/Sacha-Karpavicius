@@ -199,8 +199,8 @@ export default function PhysicsCoins({
       }
     };
 
-    // 2. Setup Screen Boundary Walls
-    const wallOptions = { isStatic: true, friction: 0.04, restitution: 0.88 };
+    // 2. Setup Screen Boundary Walls with High Restitution Bouncy Walls
+    const wallOptions = { isStatic: true, friction: 0.02, restitution: 0.96 };
     const wallThickness = 120;
 
     let ground = Matter.Bodies.rectangle(
@@ -262,8 +262,8 @@ export default function PhysicsCoins({
       portraitBody = Matter.Bodies.rectangle(pX, pY, pW, pH, {
         isStatic: true,
         chamfer: { radius: 20 },
-        restitution: 0.92,
-        friction: 0.05,
+        restitution: 0.96,
+        friction: 0.02,
       });
 
       Matter.World.add(world, portraitBody);
@@ -329,17 +329,19 @@ export default function PhysicsCoins({
       const spawnX = width * def.spawnXRatio;
       const spawnY = height * def.spawnYRatio;
 
+      // Realistic Bouncy Ball Physics Rigging (restitution: 0.95, low friction, solid density)
       const body = Matter.Bodies.circle(spawnX, spawnY, def.baseRadius, {
-        restitution: 0.88,
-        friction: 0.03,
-        frictionAir: 0.005,
-        density: 0.002,
+        restitution: 0.95,
+        friction: 0.003,
+        frictionAir: 0.002,
+        density: 0.003,
+        slop: 0.05,
         angle: (Math.random() - 0.5) * 0.5,
       });
 
       Matter.Body.setVelocity(body, {
-        x: def.isLeft ? 0.6 + Math.random() * 1.2 : -(0.6 + Math.random() * 1.2),
-        y: Math.random() * 1.5 + 0.5,
+        x: def.isLeft ? 0.8 + Math.random() * 1.4 : -(0.8 + Math.random() * 1.4),
+        y: Math.random() * 1.8 + 0.6,
       });
 
       const coinData: CoinData = {
@@ -387,8 +389,8 @@ export default function PhysicsCoins({
     const mouseConstraint = Matter.MouseConstraint.create(engine, {
       mouse,
       constraint: {
-        stiffness: 0.35,
-        damping: 0.02,
+        stiffness: 0.38,
+        damping: 0.015,
         render: { visible: false },
       },
     });
@@ -407,20 +409,26 @@ export default function PhysicsCoins({
     let pointerVx = 0;
     let pointerVy = 0;
 
+    // 100% Precision Grab Detection across entire coin circle interior, features, eyes, mouth & contour
     const getCoinNearPointer = (px: number, py: number) => {
-      // Check distance from cursor to coin center across all characters (includes center, face features, eyes, mouth & contour + 18px margin)
+      // 1. Native Matter.Query.point polygon/circle test
+      const hitBodies = Matter.Query.point(coinBodies, { x: px, y: py });
+      if (hitBodies.length > 0) return hitBodies[0];
+
+      // 2. Exact Euclidean distance from cursor to coin center (+20px boundary margin)
       for (let i = 0; i < coinBodies.length; i++) {
         const coin = coinBodies[i];
         const data = (coin as any).coinData as CoinData;
-        const r = (data?.radius || 40) * (data?.visualScale || 1.0) + 18;
+        const currentR = (data?.radius || 40) * (data?.visualScale || 1.0) * (data?.entryScale || 1.0) + 20;
         const dx = px - coin.position.x;
         const dy = py - coin.position.y;
-        if (dx * dx + dy * dy <= r * r) {
+        if (dx * dx + dy * dy <= currentR * currentR) {
           return coin;
         }
       }
       return null;
     };
+
 
     const handlePointerDown = (e: MouseEvent | TouchEvent) => {
       // On mobile, touching coins does nothing! Motion is purely driven by Gyroscope + floating gravity.
