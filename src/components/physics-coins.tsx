@@ -484,6 +484,10 @@ export default function PhysicsCoins({
         const throwVx = pointerVx * scale * 0.95;
         const throwVy = pointerVy * scale * 0.95;
 
+        if (speed > 2.5 || throwVy < -2.5) {
+          playYaySound();
+        }
+
         Matter.Body.setVelocity(grabbedCoin, { x: throwVx, y: throwVy });
 
         // Apply dynamic spin proportional to fling curve
@@ -556,9 +560,24 @@ export default function PhysicsCoins({
 
     // Audio Sound Effects Helper Functions (Pre-instantiated for zero latency)
     let lastDegatsSoundTime = 0;
+    let lastYaySoundTime = 0;
     const pop1Audio = typeof window !== "undefined" ? new Audio("/sounds/pop1.mp3") : null;
     const pop2Audio = typeof window !== "undefined" ? new Audio("/sounds/pop2.mp3") : null;
     const degatsAudio = typeof window !== "undefined" ? new Audio("/sounds/degats.mp3") : null;
+    const yayAudio = typeof window !== "undefined" ? new Audio("/sounds/yay.mp3") : null;
+
+    const playYaySound = () => {
+      const now = Date.now();
+      if (now - lastYaySoundTime < 300) return;
+      lastYaySoundTime = now;
+      try {
+        if (yayAudio) {
+          yayAudio.currentTime = 0;
+          yayAudio.volume = 0.05; // 5% volume for yay sound
+          yayAudio.play().catch(() => {});
+        }
+      } catch (_) {}
+    };
 
     const playDegatsSound = () => {
       const now = Date.now();

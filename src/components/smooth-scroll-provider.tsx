@@ -46,11 +46,13 @@ export default function SmoothScrollProvider({
       root 
       autoRaf={false}
       options={{ 
-        lerp: 0.08, 
-        duration: 1.2, 
-        wheelMultiplier: 1,
-        touchMultiplier: 1.2,
+        lerp: 0.07, 
+        duration: 1.3, 
+        wheelMultiplier: 0.95,
+        touchMultiplier: 1.4,
+        smoothWheel: true,
         syncTouch: false,
+        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       }}
     >
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}

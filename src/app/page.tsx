@@ -832,10 +832,17 @@ export default function Home() {
       }
     }
 
-    // Detect SPA In-App Navigation vs Fresh Site Entry
+    // Detect SPA In-App Navigation vs Fresh Site Entry / F5 Reload
     if (typeof window !== "undefined") {
+      const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+      const isReload = navEntries.length > 0 && navEntries[0].type === "reload";
+
+      if (isReload) {
+        sessionStorage.removeItem("spa_nav");
+      }
+
       const isSpaNav = sessionStorage.getItem("spa_nav") === "true";
-      if (hasEnteredSite || isSpaNav) {
+      if (!isReload && (hasEnteredSite || isSpaNav)) {
         setLoading(false);
         setSiteStarted(true);
         setHasEnteredSite(true);

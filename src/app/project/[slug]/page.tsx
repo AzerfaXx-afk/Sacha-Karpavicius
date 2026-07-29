@@ -174,7 +174,14 @@ export default function ProjectPage() {
 
         const getScrollDistance = () => {
           if (!track) return 0;
-          return Math.max(0, track.scrollWidth - window.innerWidth);
+          const lastChild = track.lastElementChild as HTMLElement;
+          if (!lastChild) return Math.max(0, track.scrollWidth - window.innerWidth);
+          
+          const lastChildRight = lastChild.offsetLeft + lastChild.offsetWidth;
+          const paddingRight = window.innerWidth >= 768 ? 64 : 20;
+          const distance = (lastChildRight + paddingRight) - window.innerWidth;
+          
+          return Math.max(0, distance);
         };
 
         gsap.set(track, { force3D: true, willChange: "transform" });
@@ -186,7 +193,7 @@ export default function ProjectPage() {
             trigger: section,
             pin: true,
             pinSpacing: true,
-            scrub: 0.4,
+            scrub: 0.3,
             anticipatePin: 1,
             start: "top top",
             end: () => `+=${getScrollDistance()}`,
@@ -194,6 +201,14 @@ export default function ProjectPage() {
           },
         });
 
+        // Auto refresh ScrollTrigger when layout changes or images load
+        const ro = new ResizeObserver(() => {
+          ScrollTrigger.refresh();
+        });
+        ro.observe(track);
+
+        setTimeout(() => ScrollTrigger.refresh(), 300);
+        setTimeout(() => ScrollTrigger.refresh(), 800);
       }
     });
 
@@ -365,6 +380,7 @@ export default function ProjectPage() {
                   sizes="(max-width: 768px) 90vw, 70vw"
                   priority={i < 3}
                   loading={i < 3 ? "eager" : "lazy"}
+                  onLoad={() => ScrollTrigger.refresh()}
                   className="h-full w-auto max-w-full object-contain rounded-xl transform-gpu brightness-[1.02] contrast-[1.03] saturate-[1.03]"
                 />
               </div>
