@@ -199,26 +199,26 @@ export default function PhysicsCoins({
       }
     };
 
-    // 2. Setup Screen Boundary Walls with High Restitution Bouncy Walls
+    // 2. Setup Screen Boundary Walls with High Restitution Bouncy Walls (Flush with Canvas Edges)
     const wallOptions = { isStatic: true, friction: 0.02, restitution: 0.96 };
     const wallThickness = 120;
 
     let ground = Matter.Bodies.rectangle(
       width / 2,
-      height + wallThickness / 2 - 10,
+      height + wallThickness / 2,
       width * 3,
       wallThickness,
       wallOptions
     );
     let leftWall = Matter.Bodies.rectangle(
-      -wallThickness / 2 + 10,
+      -wallThickness / 2,
       height / 2,
       wallThickness,
       height * 3,
       wallOptions
     );
     let rightWall = Matter.Bodies.rectangle(
-      width + wallThickness / 2 - 10,
+      width + wallThickness / 2,
       height / 2,
       wallThickness,
       height * 3,
@@ -226,7 +226,7 @@ export default function PhysicsCoins({
     );
     let ceiling = Matter.Bodies.rectangle(
       width / 2,
-      -wallThickness / 2 + 10,
+      -wallThickness / 2,
       width * 3,
       wallThickness,
       wallOptions
@@ -261,7 +261,7 @@ export default function PhysicsCoins({
 
       portraitBody = Matter.Bodies.rectangle(pX, pY, pW, pH, {
         isStatic: true,
-        chamfer: { radius: 20 },
+        chamfer: { radius: 16 }, // Matches rounded-2xl of photo card
         restitution: 0.96,
         friction: 0.02,
       });
@@ -384,7 +384,7 @@ export default function PhysicsCoins({
 
     Matter.World.add(world, coinBodies);
 
-    // 5. Mouse / Touch Drag Constraint with STRICT LONG-PRESS REQUIREMENT & FLING THROWING
+    // 5. Mouse / Touch Drag Constraint with STRICT LONG-PRESS REQUIREMENT & INERTIA THROWING
     const mouse = Matter.Mouse.create(canvas);
     const mouseConstraint = Matter.MouseConstraint.create(engine, {
       mouse,
@@ -408,6 +408,7 @@ export default function PhysicsCoins({
     let pointerY = 0;
     let pointerVx = 0;
     let pointerVy = 0;
+    let pointerHistory: { x: number; y: number; time: number }[] = [];
 
     // 100% Precision Grab Detection across entire coin circle interior, features, eyes, mouth & contour
     const getCoinNearPointer = (px: number, py: number) => {
@@ -445,6 +446,7 @@ export default function PhysicsCoins({
       pointerY = py;
       pointerVx = 0;
       pointerVy = 0;
+      pointerHistory = [{ x: px, y: py, time: Date.now() }];
 
       const hitCoin = getCoinNearPointer(px, py);
       if (hitCoin && !mouseConstraint.body) {
@@ -460,9 +462,18 @@ export default function PhysicsCoins({
       const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
       const newX = clientX - rect.left;
       const newY = clientY - rect.top;
+      const now = Date.now();
 
-      pointerVx = newX - pointerX;
-      pointerVy = newY - pointerY;
+      pointerHistory.push({ x: newX, y: newY, time: now });
+      if (pointerHistory.length > 5) pointerHistory.shift();
+
+      if (pointerHistory.length >= 2) {
+        const oldest = pointerHistory[0];
+        const dt = Math.max(1, now - oldest.time);
+        pointerVx = ((newX - oldest.x) / dt) * 16.6;
+        pointerVy = ((newY - oldest.y) / dt) * 16.6;
+      }
+
       pointerX = newX;
       pointerY = newY;
       cursorX = newX;
@@ -471,13 +482,22 @@ export default function PhysicsCoins({
 
     const handlePointerUp = () => {
       if (mouseConstraint.body) {
-        // FLING / THROW PHYSICS: On release, apply throwing velocity so you can fling coins across screen!
+        // Precise Inertia Fling Throwing proportional to cursor movement velocity
         const grabbedCoin = mouseConstraint.body;
         (mouseConstraint as any).constraint.bodyB = null;
-        Matter.Body.setVelocity(grabbedCoin, {
-          x: Math.min(16, Math.max(-16, pointerVx * 0.85)),
-          y: Math.min(16, Math.max(-16, pointerVy * 0.85)),
-        });
+
+        const speed = Math.hypot(pointerVx, pointerVy);
+        const maxSpeed = 22; // Safe max velocity cap to prevent physics wall clipping
+        const scale = speed > maxSpeed ? maxSpeed / speed : 1.0;
+
+        const throwVx = pointerVx * scale * 0.95;
+        const throwVy = pointerVy * scale * 0.95;
+
+        Matter.Body.setVelocity(grabbedCoin, { x: throwVx, y: throwVy });
+
+        // Apply dynamic spin proportional to fling curve
+        const spin = Math.min(0.35, Math.max(-0.35, pointerVx * 0.018));
+        Matter.Body.setAngularVelocity(grabbedCoin, spin);
       } else if (targetHoldCoin) {
         const elapsed = Date.now() - holdStartTime;
         if (elapsed < HOLD_DURATION) {
@@ -491,10 +511,16 @@ export default function PhysicsCoins({
       }
       targetHoldCoin = null;
       isPointerDown = false;
+      pointerHistory = [];
     };
 
     window.addEventListener("mousedown", handlePointerDown);
     window.addEventListener("mouseup", handlePointerUp);
+    window.addEventListener("touchstart", handlePointerDown, { passive: true });
+    window.addEventListener("touchend", handlePointerUp);
+    window.addEventListener("mousemove", handlePointerMove);
+    window.addEventListener("touchmove", handlePointerMove, { passive: true });
+
     // Scroll Listener for Awwwards Upward Balloon Float & Dissolve Physics
     let scrollY = 0;
     let lastScrollY = 0;
@@ -510,7 +536,7 @@ export default function PhysicsCoins({
 
     window.addEventListener("scroll", handleScroll, { passive: true });
 
-    // Audio Sound Effects Helper Functions (Pre-instantiated for zero latency & 1% volume)
+    // Audio Sound Effects Helper Functions (Pre-instantiated for zero latency)
     let lastDegatsSoundTime = 0;
     const pop1Audio = typeof window !== "undefined" ? new Audio("/sounds/pop1.mp3") : null;
     const pop2Audio = typeof window !== "undefined" ? new Audio("/sounds/pop2.mp3") : null;
@@ -524,7 +550,7 @@ export default function PhysicsCoins({
       try {
         if (degatsAudio) {
           degatsAudio.currentTime = 0;
-          degatsAudio.volume = 0.01; // 1% volume
+          degatsAudio.volume = 0.01; // 1% volume for degats
           degatsAudio.play().catch(() => {});
         }
       } catch (_) {}
@@ -535,7 +561,7 @@ export default function PhysicsCoins({
         const chosen = Math.random() > 0.5 ? pop1Audio : pop2Audio;
         if (chosen) {
           chosen.currentTime = 0;
-          chosen.volume = 0.01; // 1% volume
+          chosen.volume = 0.05; // 5% volume for pop sound
           chosen.play().catch(() => {});
         }
       } catch (_) {}
@@ -802,9 +828,16 @@ export default function PhysicsCoins({
         const isGrabbed = mouseConstraint.body === coin;
         const isHolding = targetHoldCoin === coin && data.holdProgress > 0;
 
-        // Organic rubber squash/stretch easing
-        data.squashX += (1.0 - data.squashX) * 0.08;
-        data.squashY += (1.0 - data.squashY) * 0.08;
+        // Organic rubber squash/stretch easing & Dynamic drag stretch animation
+        if (isGrabbed) {
+          const speed = Math.hypot(coin.velocity.x, coin.velocity.y);
+          const dragStretch = Math.min(0.28, speed * 0.022);
+          data.squashX = 1.0 + dragStretch;
+          data.squashY = Math.max(0.72, 1.0 - dragStretch * 0.55);
+        } else {
+          data.squashX += (1.0 - data.squashX) * 0.08;
+          data.squashY += (1.0 - data.squashY) * 0.08;
+        }
 
         // Slow impact expression decay (~1.5 seconds)
         if (data.impactAmount > 0) {
