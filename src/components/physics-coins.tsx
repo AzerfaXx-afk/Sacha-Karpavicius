@@ -460,8 +460,10 @@ export default function PhysicsCoins({
         // Precise Inertia Fling Throwing proportional to cursor movement velocity
         const grabbedCoin = mouseConstraint.body;
         (mouseConstraint as any).constraint.bodyB = null;
+        grabbedCoin.isSensor = false;
 
         // Restore coin position safely if released near edge so it bounces smoothly
+
         const data = (grabbedCoin as any).coinData;
         const radius = (data?.radius || 40) * (data?.visualScale || 1.0);
         const safeX = Math.min(width - radius - 5, Math.max(radius + 5, grabbedCoin.position.x));
@@ -597,10 +599,17 @@ export default function PhysicsCoins({
         (mouseConstraint as any).constraint.bodyB = null;
       }
 
-      // Smooth Centered Drag Boundary Clamping: Pulls coin cleanly from its center!
-      if (dragged) {
-        (mouseConstraint as any).constraint.pointB = { x: 0, y: 0 };
-      }
+      // Smooth Centered Drag & Sensor Toggle: Eliminates wall collision jitter near top and bottom edges!
+      coinBodies.forEach((coin) => {
+        const isHeld = mouseConstraint.body === coin;
+        if (isHeld) {
+          coin.isSensor = true;
+          (mouseConstraint as any).constraint.pointB = { x: 0, y: 0 };
+        } else {
+          coin.isSensor = false;
+        }
+      });
+
 
 
 
