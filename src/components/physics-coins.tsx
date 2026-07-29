@@ -199,26 +199,26 @@ export default function PhysicsCoins({
       }
     };
 
-    // 2. Setup Screen Boundary Walls
+    // 2. Setup Screen Boundary Walls (Flush with Canvas Boundaries)
     const wallOptions = { isStatic: true, friction: 0.04, restitution: 0.78 };
     const wallThickness = 120;
 
     let ground = Matter.Bodies.rectangle(
       width / 2,
-      height + wallThickness / 2 + 50,
+      height + wallThickness / 2,
       width * 3,
       wallThickness,
       wallOptions
     );
     let leftWall = Matter.Bodies.rectangle(
-      -wallThickness / 2 - 50,
+      -wallThickness / 2,
       height / 2,
       wallThickness,
       height * 3,
       wallOptions
     );
     let rightWall = Matter.Bodies.rectangle(
-      width + wallThickness / 2 + 50,
+      width + wallThickness / 2,
       height / 2,
       wallThickness,
       height * 3,
@@ -226,7 +226,7 @@ export default function PhysicsCoins({
     );
     let ceiling = Matter.Bodies.rectangle(
       width / 2,
-      -wallThickness / 2 - 50,
+      -wallThickness / 2,
       width * 3,
       wallThickness,
       wallOptions
@@ -234,43 +234,10 @@ export default function PhysicsCoins({
 
     Matter.World.add(world, [ground, leftWall, rightWall, ceiling]);
 
-
-    // 3. Sacha Portrait Card Obstacle (Desktop only so it doesn't block mobile screens)
+    // 3. Portrait Obstacle - Set to null as requested (Coins only collide with each other & screen bounds!)
     let portraitBody: Matter.Body | null = null;
+    const updatePortraitBody = () => {};
 
-    const updatePortraitBody = () => {
-      if (!portraitRef.current || !container) return;
-
-      // On Mobile (<768px), do not create a rigid wall portrait obstacle so coins float freely!
-      if (isMobile) {
-        if (portraitBody) Matter.World.remove(world, portraitBody);
-        portraitBody = null;
-        return;
-      }
-
-      const pRect = portraitRef.current.getBoundingClientRect();
-      const cRect = container.getBoundingClientRect();
-
-      const pX = pRect.left - cRect.left + pRect.width / 2;
-      const pY = pRect.top - cRect.top + pRect.height / 2;
-      const pW = pRect.width;
-      const pH = pRect.height;
-
-      if (portraitBody) {
-        Matter.World.remove(world, portraitBody);
-      }
-
-      portraitBody = Matter.Bodies.rectangle(pX, pY, pW, pH, {
-        isStatic: true,
-        chamfer: { radius: 16 }, // Matches rounded-2xl of photo card
-        restitution: 0.78,
-        friction: 0.04,
-      });
-
-      Matter.World.add(world, portraitBody);
-    };
-
-    updatePortraitBody();
 
     // 4. Create Characters (EXACTLY 2 RANDOM COINS ON MOBILE, 5 ON DESKTOP)
     const allCoinDefs: {
@@ -635,22 +602,6 @@ export default function PhysicsCoins({
         (mouseConstraint as any).constraint.pointB = { x: 0, y: 0 };
       }
 
-
-      if (dragged && portraitBody) {
-        const pBounds = portraitBody.bounds;
-        const radius = (dragged as any).coinData?.radius || 40;
-        const mX = mouse.position.x;
-        const mY = mouse.position.y;
-
-        if (
-          mX > pBounds.min.x - radius * 0.5 &&
-          mX < pBounds.max.x + radius * 0.5 &&
-          mY > pBounds.min.y - radius * 0.5 &&
-          mY < pBounds.max.y + radius * 0.5
-        ) {
-          (mouseConstraint as any).constraint.bodyB = null;
-        }
-      }
 
 
       // Autonomous Life Motion & Anti-Stuck System
