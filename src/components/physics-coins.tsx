@@ -102,6 +102,26 @@ export default function PhysicsCoins({
     const particles: SparkParticle[] = [];
     const shockwaves: ShockwaveRing[] = [];
 
+    // Mobile Gyroscope / Device Orientation Gravity Control
+    const isMobile = width < 768;
+
+    const handleDeviceOrientation = (e: DeviceOrientationEvent) => {
+      if (!isMobile) return;
+      const gamma = e.gamma || 0; // [-90, 90] left/right tilt
+      const beta = e.beta || 0;   // [-180, 180] front/back tilt
+
+      // Smoothly map mobile tilt angles to gravity force vectors
+      const gx = Math.min(1.2, Math.max(-1.2, (gamma / 35) * 0.7));
+      const gy = Math.min(1.2, Math.max(-1.2, (beta / 35) * 0.7));
+
+      engine.gravity.x = gx;
+      engine.gravity.y = gy || 0.28;
+    };
+
+    if (isMobile && typeof window !== "undefined" && "DeviceOrientationEvent" in window) {
+      window.addEventListener("deviceorientation", handleDeviceOrientation, true);
+    }
+
     // Intensity-Based Collision Particle Trigger
     const triggerCollisionFX = (x: number, y: number, color: string, speed: number = 4) => {
       const intensity = Math.min(1.0, Math.max(0.2, speed / 7.0));
@@ -181,7 +201,6 @@ export default function PhysicsCoins({
     Matter.World.add(world, [ground, leftWall, rightWall, ceiling]);
 
     // 3. Sacha Portrait Card Obstacle (Desktop only so it doesn't block mobile screens)
-    const isMobile = width < 768;
     let portraitBody: Matter.Body | null = null;
 
     const updatePortraitBody = () => {
@@ -355,13 +374,20 @@ export default function PhysicsCoins({
     let pointerVy = 0;
 
     const getCoinNearPointer = (px: number, py: number) => {
+      // 1. Check Matter.Query.point (native exact circle collider interior check)
+      const hitBodies = Matter.Query.point(coinBodies, { x: px, y: py });
+      if (hitBodies.length > 0) {
+        return hitBodies[0];
+      }
+
+      // 2. Full circle radius fallback (includes inner face + outer boundary margin)
       for (let i = 0; i < coinBodies.length; i++) {
         const coin = coinBodies[i];
         const data = (coin as any).coinData as CoinData;
-        const r = (data?.radius || 40) + 22;
+        const effectiveR = (data?.radius || 40) * (data?.visualScale || 1.0) + 14;
         const dx = px - coin.position.x;
         const dy = py - coin.position.y;
-        if (dx * dx + dy * dy <= r * r) {
+        if (dx * dx + dy * dy <= effectiveR * effectiveR) {
           return coin;
         }
       }
@@ -369,6 +395,9 @@ export default function PhysicsCoins({
     };
 
     const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+      // On mobile, touching coins does nothing! Motion is purely driven by Gyroscope + floating gravity.
+      if (isMobile && "touches" in e) return;
+
       isPointerDown = true;
       const rect = canvas.getBoundingClientRect();
       const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
@@ -1079,6 +1108,9 @@ export default function PhysicsCoins({
 
     return () => {
       window.removeEventListener("resize", handleResize);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("deviceorientation", handleDeviceOrientation, true);
+      }
       window.removeEventListener("mousedown", handlePointerDown);
       window.removeEventListener("mouseup", handlePointerUp);
       window.removeEventListener("touchstart", handlePointerDown);
