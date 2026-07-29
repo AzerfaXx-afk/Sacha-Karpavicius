@@ -990,12 +990,12 @@ export default function Home() {
     const uiElements = [getInTouchRef.current, instaBtnRef.current].filter(Boolean);
     if (uiElements.length === 0) return;
 
-    if (siteStarted || isHoveringName) {
+    if (hasEnteredSite || siteStarted || isHoveringName) {
       gsap.to(uiElements, { y: 0, opacity: 1, duration: 0.8, ease: "power3.out", overwrite: true });
     } else {
       gsap.to(uiElements, { y: 20, opacity: 0, duration: 0.5, ease: "power3.in", overwrite: true });
     }
-  }, [siteStarted, isHoveringName]);
+  }, [hasEnteredSite, siteStarted, isHoveringName]);
 
   // Mobile menu open / close sync and centering
   useEffect(() => {
@@ -1425,8 +1425,8 @@ export default function Home() {
       {loading && <Preloader onComplete={onPreloaderComplete} onStart={handleStartSite} onHoverChange={setIsHoveringName} lang={lang} />}
 
       <Navbar 
-        showUI={siteStarted || isHoveringName} 
-        clickable={siteStarted} 
+        showUI={hasEnteredSite || siteStarted || isHoveringName} 
+        clickable={hasEnteredSite || siteStarted} 
         lang={lang} 
         onPlayClickSfx={playClickSfx}
         onPlayHoverSfx={playHoverSfx}
@@ -1449,7 +1449,7 @@ export default function Home() {
 
 
       {/* Persistent Get In Touch (Bottom Left) */}
-      <div ref={getInTouchRef} className={`fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference opacity-0 ${siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+      <div ref={getInTouchRef} className={`fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference opacity-0 ${hasEnteredSite || siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}>
         <a 
           href="#contact" 
           onClick={(e) => {
@@ -1561,7 +1561,7 @@ export default function Home() {
 
         {/* Hero Title Block */}
         <div className="absolute bottom-20 md:bottom-16 left-1/2 -translate-x-1/2 text-center z-20 w-full px-4 pointer-events-none">
-          <div ref={heroTitleRef} className="transition-opacity duration-1000 ease-out" style={{ opacity: siteStarted ? 1 : 0 }}>
+          <div ref={heroTitleRef} className="transition-opacity duration-1000 ease-out" style={{ opacity: hasEnteredSite || siteStarted ? 1 : 0 }}>
             <h1 className="font-syne font-semibold text-[24px] md:text-[32px] leading-[1.25] pb-2 text-white tracking-wide uppercase pointer-events-none cursor-grab flex flex-col items-center drop-shadow-2xl">
 
               {lang === "fr" ? (
