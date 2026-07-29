@@ -374,20 +374,14 @@ export default function PhysicsCoins({
     let pointerVy = 0;
 
     const getCoinNearPointer = (px: number, py: number) => {
-      // 1. Check Matter.Query.point (native exact circle collider interior check)
-      const hitBodies = Matter.Query.point(coinBodies, { x: px, y: py });
-      if (hitBodies.length > 0) {
-        return hitBodies[0];
-      }
-
-      // 2. Full circle radius fallback (includes inner face + outer boundary margin)
+      // Check distance from cursor to coin center across all characters (includes center, face features, eyes, mouth & contour + 18px margin)
       for (let i = 0; i < coinBodies.length; i++) {
         const coin = coinBodies[i];
         const data = (coin as any).coinData as CoinData;
-        const effectiveR = (data?.radius || 40) * (data?.visualScale || 1.0) + 14;
+        const r = (data?.radius || 40) * (data?.visualScale || 1.0) + 18;
         const dx = px - coin.position.x;
         const dy = py - coin.position.y;
-        if (dx * dx + dy * dy <= effectiveR * effectiveR) {
+        if (dx * dx + dy * dy <= r * r) {
           return coin;
         }
       }
@@ -531,8 +525,8 @@ export default function PhysicsCoins({
         }
       });
 
-      // Cursor hover feedback
-      const hoveredCoin = getCoinNearPointer(mouse.position.x, mouse.position.y);
+      // Cursor hover feedback across all characters
+      const hoveredCoin = getCoinNearPointer(cursorX, cursorY);
       if (mouseConstraint.body) {
         canvas.style.cursor = "grabbing";
       } else if (hoveredCoin) {
