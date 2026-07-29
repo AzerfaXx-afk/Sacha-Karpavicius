@@ -358,19 +358,21 @@ export default function PhysicsCoins({
 
     Matter.World.add(world, coinBodies);
 
-    // 5. Mouse / Touch Drag Constraint with STRICT LONG-PRESS REQUIREMENT & INERTIA THROWING
+    // 5. Mouse / Touch Drag Constraint with Native Matter.js Mouse Alignment
     const mouse = Matter.Mouse.create(canvas);
+    mouse.pixelRatio = dpr; // CRITICAL: Aligns Matter.Mouse coordinates with DPR canvas scaling!
+
     const mouseConstraint = Matter.MouseConstraint.create(engine, {
       mouse,
       constraint: {
-        stiffness: 0.24,
-        damping: 0.04,
+        stiffness: 0.22,
+        damping: 0.05,
         render: { visible: false },
       },
     });
 
-
     Matter.World.add(world, mouseConstraint);
+
 
     let cursorX = width / 2;
     let cursorY = height / 2;
@@ -423,18 +425,12 @@ export default function PhysicsCoins({
       pointerVy = 0;
       pointerHistory = [{ x: px, y: py, time: Date.now() }];
 
-      // Synchronize Matter.Mouse position to prevent (0, 0) teleportation bug!
-      mouse.position.x = px;
-      mouse.position.y = py;
-
       const hitCoin = getCoinNearPointer(px, py);
       if (hitCoin) {
-        (mouseConstraint as any).constraint.pointA = { x: px, y: py };
-        (mouseConstraint as any).constraint.bodyB = hitCoin;
-        (mouseConstraint as any).constraint.pointB = { x: 0, y: 0 };
         playGrabPopSound(); // Play pop sound instantly on touch / click!
       }
     };
+
 
     const handlePointerMove = (e: MouseEvent | TouchEvent) => {
       const rect = canvas.getBoundingClientRect();
