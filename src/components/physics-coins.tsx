@@ -605,12 +605,18 @@ export default function PhysicsCoins({
         }
       });
 
-      // Warhol Arts Open-Hand Cursor active 100% across section canvas
-      if (mouseConstraint.body || isPointerDown) {
-        canvas.style.cursor = "grabbing";
-      } else {
-        canvas.style.cursor = "grab";
+      // Warhol Arts Open-Hand Cursor active 100% across hero section canvas & container
+      const isGrabbing = mouseConstraint.body || isPointerDown;
+      const cursorStyle = isGrabbing ? "grabbing" : "grab";
+
+      canvas.style.cursor = cursorStyle;
+      if (container) container.style.cursor = cursorStyle;
+      if (isGrabbing) {
+        document.body.style.cursor = "grabbing";
+      } else if (document.body.style.cursor === "grabbing") {
+        document.body.style.cursor = "";
       }
+
 
     });
 
