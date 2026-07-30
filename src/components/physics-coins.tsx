@@ -213,12 +213,40 @@ export default function PhysicsCoins({
       }
     };
 
-    // 2. Boundaries Setup (Floors, Walls & Portrait Physical Repeller)
+    // 2. Setup Screen Boundary Walls (Flush with Canvas Boundaries)
     const wallOptions = { isStatic: true, friction: 0.1, restitution: 0.8 };
-    const ground = Matter.Bodies.rectangle(width / 2, height + 60, width * 3, 120, wallOptions);
-    const leftWall = Matter.Bodies.rectangle(-60, height / 2, 120, height * 3, wallOptions);
-    const rightWall = Matter.Bodies.rectangle(width + 60, height / 2, 120, height * 3, wallOptions);
-    const ceiling = Matter.Bodies.rectangle(width / 2, -100, width * 3, 120, wallOptions);
+    const wallThickness = 120;
+
+    const ground = Matter.Bodies.rectangle(
+      width / 2,
+      height + wallThickness / 2,
+      width * 3,
+      wallThickness,
+      wallOptions
+    );
+    const leftWall = Matter.Bodies.rectangle(
+      -wallThickness / 2,
+      height / 2,
+      wallThickness,
+      height * 3,
+      wallOptions
+    );
+    const rightWall = Matter.Bodies.rectangle(
+      width + wallThickness / 2,
+      height / 2,
+      wallThickness,
+      height * 3,
+      wallOptions
+    );
+    const ceiling = Matter.Bodies.rectangle(
+      width / 2,
+      -wallThickness / 2,
+      width * 3,
+      wallThickness,
+      wallOptions
+    );
+
+    Matter.World.add(world, [ground, leftWall, rightWall, ceiling]);
 
     let portraitBody: Matter.Body | null = null;
     const updatePortraitRepeller = () => {
@@ -1278,10 +1306,10 @@ export default function PhysicsCoins({
       if (!container || !canvas) return;
       updateCanvasDimensions();
 
-      Matter.Body.setPosition(ground, { x: width / 2, y: height + 60 });
-      Matter.Body.setPosition(ceiling, { x: width / 2, y: -60 });
-      Matter.Body.setPosition(leftWall, { x: -60, y: height / 2 });
-      Matter.Body.setPosition(rightWall, { x: width + 60, y: height / 2 });
+      Matter.Body.setPosition(ground, { x: width / 2, y: height + wallThickness / 2 });
+      Matter.Body.setPosition(ceiling, { x: width / 2, y: -wallThickness / 2 });
+      Matter.Body.setPosition(leftWall, { x: -wallThickness / 2, y: height / 2 });
+      Matter.Body.setPosition(rightWall, { x: width + wallThickness / 2, y: height / 2 });
       updatePortraitRepeller();
     };
 
