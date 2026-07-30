@@ -345,12 +345,11 @@ export default function ProjectPage() {
         <div className={`relative z-10 w-full px-5 md:px-16 pb-16 md:pb-20 text-left flex flex-col justify-end items-start pointer-events-none transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] ${isIdle ? "translate-y-8 md:translate-y-12" : "translate-y-0"}`}>
           <div ref={titleRef} className="space-y-2 flex flex-col items-start max-w-full pointer-events-auto">
             <div className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
               <span className="font-mono text-[10px] md:text-[11px] tracking-[0.4em] text-white/70 uppercase font-semibold drop-shadow-md">
-                {project.year} — {project.category}
+                {project.year}
               </span>
             </div>
-            <h1 className="font-syne font-extrabold text-[7vw] sm:text-[5vw] md:text-[3.5vw] leading-[0.95] uppercase tracking-tight text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.95)]">
+            <h1 className="font-syne font-extrabold text-[5vw] sm:text-[3.5vw] md:text-[2.2vw] leading-[0.95] uppercase tracking-tight text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.95)]">
               {project.title}
             </h1>
             {project.descriptionFr && (

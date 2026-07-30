@@ -87,6 +87,13 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
       }
       setIsPlaying(false);
     }
+
+    // Pause all videos when tab is hidden or user leaves app
+    if (typeof document !== "undefined") {
+      document.querySelectorAll("video").forEach((vid) => {
+        try { vid.pause(); } catch (_) {}
+      });
+    }
   }, []);
 
   const handleForeground = useCallback(() => {
