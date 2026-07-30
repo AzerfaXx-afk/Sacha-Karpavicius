@@ -1548,7 +1548,7 @@ export default function Home() {
         id="hero"
         className="relative w-full h-screen overflow-hidden bg-[#050505]"
       >
-        <PhysicsCoins containerRef={heroRef} portraitRef={heroImgRef} siteStarted={siteStarted} />
+        <PhysicsCoins containerRef={heroRef} portraitRef={heroImgRef} siteStarted={siteStarted || hasEnteredSite} />
 
         {/* Central Image Container (Awwwards Profile Portrait) */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-6 md:mt-0" style={{ perspective: "1000px" }}>
