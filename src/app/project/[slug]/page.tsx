@@ -278,12 +278,15 @@ export default function ProjectPage() {
     );
   }
 
-  // Preload all gallery images into browser cache for 60 FPS stutter-free scrolling
+  // Preload & GPU-decode all gallery images into browser cache for 60 FPS stutter-free scrolling
   useEffect(() => {
     if (!project?.gallery || project.gallery.length === 0) return;
     project.gallery.forEach((imgSrc) => {
       const img = new window.Image();
       img.src = imgSrc;
+      if ("decode" in img) {
+        img.decode().catch(() => {});
+      }
     });
   }, [project?.gallery]);
 
@@ -378,23 +381,21 @@ export default function ProjectPage() {
               <div
                 key={i}
                 data-scrolly-card
-                className="relative shrink-0 h-[65vh] md:h-[75vh] w-auto max-w-[85vw] rounded-2xl overflow-hidden bg-transparent group shadow-[0_30px_80px_rgba(0,0,0,0.9)] flex items-center justify-center border border-white/10 transition-all duration-500 hover:border-white/30"
+                className="relative shrink-0 h-[70vh] md:h-[80vh] w-auto max-w-[90vw] group flex items-center justify-center transition-transform duration-500 hover:scale-[1.015]"
               >
-                <div className="relative h-full w-auto overflow-hidden flex items-center justify-center">
-                  <Image
-                    data-scrolly-img
-                    src={imgSrc}
-                    alt={`${project.title} Shot ${i + 1}`}
-                    width={1600}
-                    height={1200}
-                    quality={92}
-                    sizes="(max-width: 768px) 90vw, 70vw"
-                    priority={i < 3}
-                    loading={i < 3 ? "eager" : "lazy"}
-                    onLoad={() => ScrollTrigger.refresh()}
-                    className="h-full w-auto max-w-full object-contain rounded-2xl transform-gpu brightness-[1.02] contrast-[1.03] saturate-[1.03] will-change-transform"
-                  />
-                </div>
+                <Image
+                  data-scrolly-img
+                  src={imgSrc}
+                  alt={`${project.title} Shot ${i + 1}`}
+                  width={1600}
+                  height={1200}
+                  quality={96}
+                  sizes="(max-width: 768px) 90vw, 80vw"
+                  priority={i < 4}
+                  loading="eager"
+                  onLoad={() => ScrollTrigger.refresh()}
+                  className="h-full w-auto max-w-full object-contain rounded-xl drop-shadow-[0_20px_60px_rgba(0,0,0,0.85)] transform-gpu brightness-[1.02] contrast-[1.03] saturate-[1.03] will-change-transform"
+                />
               </div>
             ))}
           </div>
