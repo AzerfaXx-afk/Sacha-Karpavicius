@@ -476,46 +476,49 @@ function VideoCardItem({
   const handleMouseEnter = () => {
     setIsHovered(true);
     if (playHoverSfx) playHoverSfx();
-
-    const vid = videoRef.current;
-    if (!vid) return;
-
-    vid.muted = true;
-    vid.playsInline = true;
-    vid.play().catch(() => {});
-
-    let clipIdx = 0;
-    if (intervalRef.current) clearInterval(intervalRef.current);
-
-    // Guaranteed 5 clip extraits of 3s each in a loop
-    intervalRef.current = setInterval(() => {
-      const v = videoRef.current;
-      if (!v) return;
-      const dur = v.duration && !isNaN(v.duration) && v.duration > 5 ? v.duration : 40;
-      const clips = [
-        dur * 0.08,
-        dur * 0.28,
-        dur * 0.48,
-        dur * 0.68,
-        dur * 0.88,
-      ];
-      clipIdx = (clipIdx + 1) % clips.length;
-      try {
-        v.currentTime = clips[clipIdx];
-      } catch (_) {}
-    }, 3000);
   };
 
   const handleMouseLeave = () => {
     setIsHovered(false);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
   };
+
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid || !project.videoUrl) return;
+
+    if (isHovered) {
+      vid.muted = true;
+      vid.defaultMuted = true;
+      vid.play().catch(() => {});
+
+      let clipIdx = 0;
+      if (intervalRef.current) clearInterval(intervalRef.current);
+
+      // Cycle 5 clips of 3 seconds each in a loop
+      intervalRef.current = setInterval(() => {
+        const v = videoRef.current;
+        if (!v) return;
+        const dur = v.duration && !isNaN(v.duration) && v.duration > 5 ? v.duration : 40;
+        const clips = [
+          dur * 0.08,
+          dur * 0.28,
+          dur * 0.48,
+          dur * 0.68,
+          dur * 0.88,
+        ];
+        clipIdx = (clipIdx + 1) % clips.length;
+        try {
+          v.currentTime = clips[clipIdx];
+        } catch (_) {}
+      }, 3000);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      vid.pause();
+    }
+  }, [isHovered, project.videoUrl]);
 
   useEffect(() => {
     return () => {

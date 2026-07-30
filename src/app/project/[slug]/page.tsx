@@ -96,28 +96,25 @@ export default function ProjectPage() {
     };
   }, [setIsHideUI]);
 
-  // Launch video directly on enter & pause background music when video plays with audio
+  // Launch video directly on enter & pause background music when video plays
   useEffect(() => {
     if (project?.videoUrl && videoRef.current) {
       const vid = videoRef.current;
       vid.currentTime = 0;
-      vid.muted = false;
+      vid.muted = true;
+      vid.defaultMuted = true;
       vid.play()
         .then(() => {
           setIsVideoPlaying(true);
           resetIdleTimer();
-          if (isPlaying) {
-            wasPlayingBeforeVideoRef.current = true;
-            pauseAudio();
-          }
         })
         .catch(() => {
-          // Fallback to muted play if browser requires explicit unmute gesture
-          vid.muted = true;
-          vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+          if (videoRef.current) {
+            videoRef.current.play().catch(() => {});
+          }
         });
     }
-  }, [project?.videoUrl, isPlaying, pauseAudio, resetIdleTimer]);
+  }, [project?.videoUrl, resetIdleTimer]);
 
 
 
