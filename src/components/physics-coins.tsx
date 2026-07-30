@@ -69,6 +69,24 @@ export default function PhysicsCoins({
   enabled = true,
 }: PhysicsCoinsProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const siteStartedRef = useRef(siteStarted);
+  const coinDatasRef = useRef<CoinData[]>([]);
+
+  useEffect(() => {
+    siteStartedRef.current = siteStarted;
+    if (siteStarted && coinDatasRef.current.length > 0) {
+      coinDatasRef.current.forEach((data, idx) => {
+        gsap.killTweensOf(data);
+        gsap.to(data, {
+          entryScale: 1.0,
+          entryOpacity: 1.0,
+          duration: 0.75,
+          delay: idx * 0.08,
+          ease: "back.out(2.2)",
+        });
+      });
+    }
+  }, [siteStarted]);
 
   useEffect(() => {
     if (!enabled || !containerRef.current || !canvasRef.current) return;
@@ -148,12 +166,8 @@ export default function PhysicsCoins({
     };
 
     if (isMobile && typeof window !== "undefined") {
-      if ("DeviceOrientationEvent" in window) {
-        window.addEventListener("deviceorientation", handleDeviceOrientation, true);
-      }
-      if ("DeviceMotionEvent" in window) {
-        window.addEventListener("devicemotion", handleDeviceMotion, true);
-      }
+      window.addEventListener("deviceorientation", handleDeviceOrientation);
+      window.addEventListener("devicemotion", handleDeviceMotion);
     }
 
     // Intensity-Based Collision Particle Trigger
@@ -199,47 +213,34 @@ export default function PhysicsCoins({
       }
     };
 
-    // 2. Setup Screen Boundary Walls (Flush with Canvas Boundaries)
-    const wallOptions = { isStatic: true, friction: 0.04, restitution: 0.78 };
-    const wallThickness = 120;
+    // 2. Boundaries Setup (Floors, Walls & Portrait Physical Repeller)
+    const wallOptions = { isStatic: true, friction: 0.1, restitution: 0.8 };
+    const ground = Matter.Bodies.rectangle(width / 2, height + 60, width * 3, 120, wallOptions);
+    const leftWall = Matter.Bodies.rectangle(-60, height / 2, 120, height * 3, wallOptions);
+    const rightWall = Matter.Bodies.rectangle(width + 60, height / 2, 120, height * 3, wallOptions);
+    const ceiling = Matter.Bodies.rectangle(width / 2, -100, width * 3, 120, wallOptions);
 
-    let ground = Matter.Bodies.rectangle(
-      width / 2,
-      height + wallThickness / 2,
-      width * 3,
-      wallThickness,
-      wallOptions
-    );
-    let leftWall = Matter.Bodies.rectangle(
-      -wallThickness / 2,
-      height / 2,
-      wallThickness,
-      height * 3,
-      wallOptions
-    );
-    let rightWall = Matter.Bodies.rectangle(
-      width + wallThickness / 2,
-      height / 2,
-      wallThickness,
-      height * 3,
-      wallOptions
-    );
-    let ceiling = Matter.Bodies.rectangle(
-      width / 2,
-      -wallThickness / 2,
-      width * 3,
-      wallThickness,
-      wallOptions
-    );
-
-    Matter.World.add(world, [ground, leftWall, rightWall, ceiling]);
-
-    // 3. Portrait Obstacle - Set to null as requested (Coins only collide with each other & screen bounds!)
     let portraitBody: Matter.Body | null = null;
-    const updatePortraitBody = () => {};
+    const updatePortraitRepeller = () => {
+      if (portraitRef.current) {
+        const pRect = portraitRef.current.getBoundingClientRect();
+        const cRect = container.getBoundingClientRect();
+        const px = pRect.left - cRect.left + pRect.width / 2;
+        const py = pRect.top - cRect.top + pRect.height / 2;
+        const pr = Math.min(pRect.width, pRect.height) / 2 + 15;
 
+        if (!portraitBody) {
+          portraitBody = Matter.Bodies.circle(px, py, pr, { isStatic: true, restitution: 0.95 });
+          Matter.World.add(world, portraitBody);
+        } else {
+          Matter.Body.setPosition(portraitBody, { x: px, y: py });
+        }
+      }
+    };
 
-    // 4. Create Characters (EXACTLY 2 RANDOM COINS ON MOBILE, 5 ON DESKTOP)
+    updatePortraitRepeller();
+
+    // 3. Coin Definitions & Setup
     const allCoinDefs: {
       color: string;
       faceType: FaceType;
@@ -298,6 +299,8 @@ export default function PhysicsCoins({
 
     const activeCoinDefs = isMobile ? getRandomMobileCoins() : allCoinDefs;
 
+    const coinDatasList: CoinData[] = [];
+
     const coinBodies: Matter.Body[] = activeCoinDefs.map((def, idx) => {
       const spawnX = width * def.spawnXRatio;
       const spawnY = height * def.spawnYRatio;
@@ -324,8 +327,8 @@ export default function PhysicsCoins({
         radius: def.baseRadius,
         impactAmount: 0,
         visualScale: 1.0,
-        entryScale: 0,
-        entryOpacity: 0,
+        entryScale: siteStartedRef.current ? 1.0 : 0,
+        entryOpacity: siteStartedRef.current ? 1.0 : 0,
         squashX: 1.0,
         squashY: 1.0,
         pupilX: 0,
@@ -343,18 +346,23 @@ export default function PhysicsCoins({
       };
 
       (body as any).coinData = coinData;
+      coinDatasList.push(coinData);
 
-      // GSAP Pop Entry Animation
-      gsap.to(coinData, {
-        entryScale: 1.0,
-        entryOpacity: 1.0,
-        duration: 0.8,
-        delay: idx * 0.1,
-        ease: "back.out(2.2)",
-      });
+      if (siteStartedRef.current) {
+        // GSAP Pop Entry Animation if site is already started
+        gsap.to(coinData, {
+          entryScale: 1.0,
+          entryOpacity: 1.0,
+          duration: 0.8,
+          delay: idx * 0.1,
+          ease: "back.out(2.2)",
+        });
+      }
 
       return body;
     });
+
+    coinDatasRef.current = coinDatasList;
 
     Matter.World.add(world, coinBodies);
 
@@ -574,6 +582,7 @@ export default function PhysicsCoins({
     ] : [];
 
     const playRandomFlySound = () => {
+      if (!siteStartedRef.current) return; // Completely silent before user enters site
       const now = Date.now();
       if (now - lastFlySoundTime < 200) return;
       lastFlySoundTime = now;
@@ -591,6 +600,7 @@ export default function PhysicsCoins({
     };
 
     const playDegatsSound = () => {
+      if (!siteStartedRef.current) return; // Completely silent before user enters site
       if (isPoppedOut) return; // Silent when coins are popped out / hidden offscreen
       const now = Date.now();
       if (now - lastDegatsSoundTime < 110) return; // Throttle to prevent overlapping audio distortion
@@ -606,6 +616,7 @@ export default function PhysicsCoins({
     };
 
     const playGrabPopSound = () => {
+      if (!siteStartedRef.current) return; // Completely silent before user enters site
       try {
         const chosen = Math.random() > 0.5 ? pop1Audio : pop2Audio;
         if (chosen) {
@@ -1267,11 +1278,11 @@ export default function PhysicsCoins({
       if (!container || !canvas) return;
       updateCanvasDimensions();
 
-      Matter.Body.setPosition(ground, { x: width / 2, y: height + wallThickness / 2 });
-      Matter.Body.setPosition(ceiling, { x: width / 2, y: -wallThickness / 2 });
-      Matter.Body.setPosition(leftWall, { x: -wallThickness / 2, y: height / 2 });
-      Matter.Body.setPosition(rightWall, { x: width + wallThickness / 2, y: height / 2 });
-      updatePortraitBody();
+      Matter.Body.setPosition(ground, { x: width / 2, y: height + 60 });
+      Matter.Body.setPosition(ceiling, { x: width / 2, y: -60 });
+      Matter.Body.setPosition(leftWall, { x: -60, y: height / 2 });
+      Matter.Body.setPosition(rightWall, { x: width + 60, y: height / 2 });
+      updatePortraitRepeller();
     };
 
 
