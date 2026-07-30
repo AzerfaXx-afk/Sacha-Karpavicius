@@ -370,18 +370,18 @@ export default function ProjectPage() {
       {project.gallery.length > 0 && (
         <section
           ref={scrollySectionRef}
-          className="relative z-10 w-full overflow-hidden bg-[#050505] pt-20 md:pt-24 pb-16 md:pb-24 border-t border-white/10"
+          className="relative z-10 w-full overflow-hidden bg-[#050505] pt-24 md:pt-28 pb-10 md:pb-14 border-t border-white/10"
         >
           {/* Track Container (Preserves Authentic Aspect Ratio of Horizontal & Vertical Photos) */}
           <div
             ref={horizontalTrackRef}
-            className="flex gap-8 md:gap-14 px-5 md:px-16 will-change-transform items-center shrink-0 min-w-max py-2"
+            className="flex gap-8 md:gap-14 px-5 md:px-16 will-change-transform items-start shrink-0 min-w-max py-2"
           >
             {project.gallery.map((imgSrc, i) => (
               <div
                 key={i}
                 data-scrolly-card
-                className="relative shrink-0 h-[56vh] md:h-[65vh] w-auto max-w-[85vw] group flex items-center justify-center transition-transform duration-500 hover:scale-[1.015]"
+                className="relative shrink-0 h-[64vh] md:h-[72vh] w-auto max-w-[85vw] group flex items-center justify-center transition-transform duration-500 hover:scale-[1.015]"
               >
                 <Image
                   data-scrolly-img
@@ -400,9 +400,9 @@ export default function ProjectPage() {
             ))}
           </div>
 
-          {/* Awwwards Bottom Progress Line HUD - Positioned cleanly ABOVE contact button level */}
-          <div className="px-6 md:px-20 mt-10 md:mt-12 mb-6 md:mb-8 pointer-events-none">
-            <div className="w-full h-[2px] bg-white/15 rounded-full overflow-hidden shadow-sm">
+          {/* Awwwards Bottom Progress Line HUD - Positioned right above contact button */}
+          <div className="px-6 md:px-20 mt-6 md:mt-8 mb-2 md:mb-4 pointer-events-none">
+            <div className="w-full h-[2px] bg-white/20 rounded-full overflow-hidden shadow-sm">
               <div
                 ref={progressBarRef}
                 className="h-full w-full bg-gradient-to-r from-white/40 via-white to-white origin-left transform-gpu scale-x-0"
