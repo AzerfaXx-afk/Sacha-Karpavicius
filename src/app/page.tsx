@@ -585,8 +585,8 @@ function VideoCardItem({
       {/* Cinema Ambient Backlight Bloom */}
       <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/25 via-white/15 to-blue-600/25 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
-      {/* Main Widescreen Compact Media Container */}
-      <div className="relative w-full overflow-hidden bg-[#0d0d0d] rounded-xl border border-white/10 aspect-[16/9] md:aspect-[21/9] max-h-[44vh] md:max-h-[48vh] shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
+      {/* Main Imposing Widescreen Cinema Media Container */}
+      <div className="relative w-full overflow-hidden bg-[#0d0d0d] rounded-2xl border border-white/10 aspect-[16/9] md:aspect-[21/9] min-h-[50vh] md:min-h-[60vh] max-h-[72vh] shadow-[0_25px_80px_rgba(0,0,0,0.85)]">
         {/* Ambient Blurred Background for Cinema Posters */}
         {isPoster && (
           <div className="absolute inset-0 scale-110 blur-3xl opacity-30 group-hover:opacity-60 transition-opacity duration-700 pointer-events-none">
@@ -596,7 +596,7 @@ function VideoCardItem({
               fill
               sizes="100vw"
               className="object-cover object-center"
-              quality={30}
+              quality={40}
             />
           </div>
         )}
@@ -612,8 +612,8 @@ function VideoCardItem({
             fill
             className={`${
               isPoster ? "object-contain p-4 md:p-8 drop-shadow-[0_25px_60px_rgba(0,0,0,0.9)]" : "object-cover"
-            } object-center transition-all duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-105 brightness-[1.02] contrast-[1.04] transform-gpu`}
-            quality={96}
+            } object-center transition-all duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-105 brightness-[1.03] contrast-[1.05] transform-gpu`}
+            quality={100}
             sizes="100vw"
             priority={idx < 2}
           />
@@ -648,16 +648,6 @@ function VideoCardItem({
             />
           )}
         </div>
-
-        {/* Top Right Extraits Badge (Shows 5 clips indicator on hover) */}
-        {project.videoUrl && (
-          <div className={`absolute top-4 right-4 z-20 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/20 text-white transition-all duration-500 flex items-center gap-2 ${isHovered ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"}`}>
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
-            <span className="font-mono text-[9px] md:text-[10px] tracking-[0.2em] uppercase font-semibold">
-              EXTRAIT 0{currentClipNum} / 05
-            </span>
-          </div>
-        )}
 
         {/* Hover dark overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500 pointer-events-none" />
