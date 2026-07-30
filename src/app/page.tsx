@@ -469,102 +469,56 @@ function VideoCardItem({
   playHoverSfx?: () => void;
 }) {
   const [isHovered, setIsHovered] = useState(false);
-  const [activeSlot, setActiveSlot] = useState<1 | 2>(1);
-  const [currentClipNum, setCurrentClipNum] = useState<number>(1);
-
-  const videoRef1 = useRef<HTMLVideoElement>(null);
-  const videoRef2 = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isPoster = project.coverImage.toLowerCase().includes("affiche");
 
   const handleMouseEnter = () => {
     setIsHovered(true);
-    setCurrentClipNum(1);
     if (playHoverSfx) playHoverSfx();
 
-    const v1 = videoRef1.current;
-    const v2 = videoRef2.current;
-    if (!v1 && !v2) return;
+    const vid = videoRef.current;
+    if (!vid) return;
 
-    const baseVideo = v1 || v2;
-    const duration =
-      baseVideo?.duration && !isNaN(baseVideo.duration) && baseVideo.duration > 5
-        ? baseVideo.duration
-        : 35;
-
-    // 5 strategic highlights across the video (10%, 30%, 50%, 70%, 88%)
+    // Guaranteed strategic 5 clip timestamps across the video duration
+    const dur = vid.duration && !isNaN(vid.duration) && vid.duration > 5 ? vid.duration : 40;
     const clips = [
-      duration * 0.10,
-      duration * 0.30,
-      duration * 0.50,
-      duration * 0.70,
-      duration * 0.88,
+      dur * 0.08,
+      dur * 0.28,
+      dur * 0.48,
+      dur * 0.68,
+      dur * 0.88,
     ];
 
     let clipIdx = 0;
-    let currentSlot: 1 | 2 = 1;
+    try {
+      vid.currentTime = clips[0];
+    } catch (_) {}
 
-    // Initialize Slot 1 with Clip 0
-    if (v1) {
-      try { v1.currentTime = clips[0]; } catch {}
-      v1.play().catch(() => {});
-    }
-    setActiveSlot(1);
-
-    // Pre-warm Slot 2 with Clip 1 in background
-    if (v2) {
-      try { v2.currentTime = clips[1]; } catch {}
-    }
+    vid.play().catch(() => {});
 
     if (intervalRef.current) clearInterval(intervalRef.current);
 
-    // Cycle clips seamlessly every 3.0s (3000ms) with zero stutter crossfade
+    // Cycle 5 clips of 3 seconds each in a loop
     intervalRef.current = setInterval(() => {
       clipIdx = (clipIdx + 1) % clips.length;
-      setCurrentClipNum(clipIdx + 1);
-      const nextClipTime = clips[(clipIdx + 1) % clips.length];
-
-      if (currentSlot === 1) {
-        if (v2) {
-          try { v2.currentTime = clips[clipIdx]; } catch {}
-          v2.play().catch(() => {});
-        }
-        currentSlot = 2;
-        setActiveSlot(2);
-
-        setTimeout(() => {
-          if (v1) {
-            v1.pause();
-            try { v1.currentTime = nextClipTime; } catch {}
-          }
-        }, 500);
-      } else {
-        if (v1) {
-          try { v1.currentTime = clips[clipIdx]; } catch {}
-          v1.play().catch(() => {});
-        }
-        currentSlot = 1;
-        setActiveSlot(1);
-
-        setTimeout(() => {
-          if (v2) {
-            v2.pause();
-            try { v2.currentTime = nextClipTime; } catch {}
-          }
-        }, 500);
+      if (videoRef.current) {
+        try {
+          videoRef.current.currentTime = clips[clipIdx];
+        } catch (_) {}
       }
     }, 3000);
   };
 
   const handleMouseLeave = () => {
     setIsHovered(false);
-    setCurrentClipNum(1);
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-    if (videoRef1.current) videoRef1.current.pause();
-    if (videoRef2.current) videoRef2.current.pause();
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
   };
 
   useEffect(() => {
@@ -580,13 +534,13 @@ function VideoCardItem({
       onClick={onClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="group relative cursor-pointer"
+      className="group relative cursor-pointer mb-10 md:mb-14"
     >
       {/* Cinema Ambient Backlight Bloom */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/25 via-white/15 to-blue-600/25 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+      <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/20 via-white/10 to-blue-600/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
-      {/* Main Imposing Widescreen Cinema Media Container */}
-      <div className="relative w-full overflow-hidden bg-[#0d0d0d] rounded-2xl border border-white/10 aspect-[16/9] md:aspect-[21/9] min-h-[50vh] md:min-h-[60vh] max-h-[72vh] shadow-[0_25px_80px_rgba(0,0,0,0.85)]">
+      {/* Main Compact Widescreen Cinema Media Container */}
+      <div className="relative w-full overflow-hidden bg-[#0d0d0d] rounded-xl border border-white/10 aspect-[16/9] md:aspect-[21/9] max-h-[46vh] md:max-h-[52vh] shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
         {/* Ambient Blurred Background for Cinema Posters */}
         {isPoster && (
           <div className="absolute inset-0 scale-110 blur-3xl opacity-30 group-hover:opacity-60 transition-opacity duration-700 pointer-events-none">
@@ -617,43 +571,28 @@ function VideoCardItem({
             sizes="100vw"
             priority={idx < 2}
           />
-
-          {/* Dual-Video Seamless Crossfade Video Slot A */}
-          {project.videoUrl && (
-            <video
-              ref={videoRef1}
-              src={project.videoUrl}
-              loop
-              muted
-              playsInline
-              preload="auto"
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out ${
-                isHovered && activeSlot === 1 ? "opacity-100" : "opacity-0 pointer-events-none"
-              }`}
-            />
-          )}
-
-          {/* Dual-Video Seamless Crossfade Video Slot B */}
-          {project.videoUrl && (
-            <video
-              ref={videoRef2}
-              src={project.videoUrl}
-              loop
-              muted
-              playsInline
-              preload="auto"
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out ${
-                isHovered && activeSlot === 2 ? "opacity-100" : "opacity-0 pointer-events-none"
-              }`}
-            />
-          )}
         </div>
 
+        {/* Rock-Solid Single Video Hover Extraits Reader */}
+        {project.videoUrl && (
+          <video
+            ref={videoRef}
+            src={project.videoUrl}
+            loop
+            muted
+            playsInline
+            preload="auto"
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-400 ease-in-out z-10 pointer-events-none ${
+              isHovered ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        )}
+
         {/* Hover dark overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500 pointer-events-none" />
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500 pointer-events-none z-20" />
 
         {/* Centered Minimalist Play Button Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
           <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-white/10 border border-white/30 backdrop-blur-md flex items-center justify-center text-white opacity-90 group-hover:opacity-100 group-hover:scale-110 group-hover:bg-white group-hover:text-black group-hover:border-white transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_0_40px_rgba(0,0,0,0.8)]">
             <svg className="w-5 h-5 md:w-6 md:h-6 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M8 5v14l11-7z" />
