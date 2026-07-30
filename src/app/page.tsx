@@ -482,36 +482,27 @@ function VideoCardItem({
 
     vid.muted = true;
     vid.playsInline = true;
-
-    const dur = vid.duration && !isNaN(vid.duration) && vid.duration > 5 ? vid.duration : 40;
-    const clips = [
-      dur * 0.08,
-      dur * 0.28,
-      dur * 0.48,
-      dur * 0.68,
-      dur * 0.88,
-    ];
-
-    let clipIdx = 0;
-    if (vid.readyState >= 1) {
-      try { vid.currentTime = clips[0]; } catch (_) {}
-    }
-
     vid.play().catch(() => {});
 
+    let clipIdx = 0;
     if (intervalRef.current) clearInterval(intervalRef.current);
 
-    // Cycle 5 clips of 3 seconds each in a loop
+    // Guaranteed 5 clip extraits of 3s each in a loop
     intervalRef.current = setInterval(() => {
+      const v = videoRef.current;
+      if (!v) return;
+      const dur = v.duration && !isNaN(v.duration) && v.duration > 5 ? v.duration : 40;
+      const clips = [
+        dur * 0.08,
+        dur * 0.28,
+        dur * 0.48,
+        dur * 0.68,
+        dur * 0.88,
+      ];
       clipIdx = (clipIdx + 1) % clips.length;
-      const currentVid = videoRef.current;
-      if (currentVid) {
-        try {
-          if (currentVid.readyState >= 1) {
-            currentVid.currentTime = clips[clipIdx];
-          }
-        } catch (_) {}
-      }
+      try {
+        v.currentTime = clips[clipIdx];
+      } catch (_) {}
     }, 3000);
   };
 
@@ -545,7 +536,7 @@ function VideoCardItem({
       <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/20 via-white/10 to-blue-600/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
       {/* Main Cinema Media Container — Sized so title sits right above bottom contact button */}
-      <div className="relative w-full overflow-hidden bg-[#0d0d0d] rounded-xl border border-white/10 aspect-[16/9] md:aspect-[21/9] min-h-[52vh] md:min-h-[58vh] max-h-[64vh] shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
+      <div className="relative w-full overflow-hidden bg-[#0d0d0d] rounded-xl border border-white/10 aspect-[16/9] md:aspect-[21/9] min-h-[50vh] md:min-h-[56vh] max-h-[60vh] shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
         {/* Ambient Blurred Background for Cinema Posters */}
         {isPoster && (
           <div className="absolute inset-0 scale-110 blur-3xl opacity-30 group-hover:opacity-60 transition-opacity duration-700 pointer-events-none">
