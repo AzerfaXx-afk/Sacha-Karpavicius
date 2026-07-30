@@ -248,27 +248,13 @@ export default function PhysicsCoins({
 
     Matter.World.add(world, [ground, leftWall, rightWall, ceiling]);
 
-    let portraitBody: Matter.Body | null = null;
-    const updatePortraitRepeller = () => {
-      if (portraitRef.current) {
-        const pRect = portraitRef.current.getBoundingClientRect();
-        const cRect = container.getBoundingClientRect();
-        const px = pRect.left - cRect.left + pRect.width / 2;
-        const py = pRect.top - cRect.top + pRect.height / 2;
-        const pr = Math.min(pRect.width, pRect.height) / 2 + 15;
+    // No central obstacle wall — characters pass freely across the entire screen!
+    const updatePortraitRepeller = () => {};
 
-        if (!portraitBody) {
-          portraitBody = Matter.Bodies.circle(px, py, pr, { isStatic: true, restitution: 0.95 });
-          Matter.World.add(world, portraitBody);
-        } else {
-          Matter.Body.setPosition(portraitBody, { x: px, y: py });
-        }
-      }
-    };
+    // 3. Responsive Coin Definitions & Setup (Scaled for Mobile < 768px, Tablet 768-1024px, Desktop > 1024px)
+    const isTablet = width >= 768 && width < 1024;
+    const scaleFactor = isMobile ? 0.72 : isTablet ? 0.85 : 1.0;
 
-    updatePortraitRepeller();
-
-    // 3. Coin Definitions & Setup
     const allCoinDefs: {
       color: string;
       faceType: FaceType;
@@ -280,7 +266,7 @@ export default function PhysicsCoins({
       {
         color: "#E6FB28", // Yellow
         faceType: "yellow_brows",
-        baseRadius: isMobile ? 36 : 50,
+        baseRadius: Math.round(50 * scaleFactor),
         isLeft: true,
         spawnXRatio: 0.08 + Math.random() * 0.10,
         spawnYRatio: 0.15 + Math.random() * 0.2,
@@ -288,7 +274,7 @@ export default function PhysicsCoins({
       {
         color: "#FF52A0", // Pink
         faceType: "pink_happy",
-        baseRadius: isMobile ? 38 : 54,
+        baseRadius: Math.round(54 * scaleFactor),
         isLeft: false,
         spawnXRatio: 0.82 + Math.random() * 0.10,
         spawnYRatio: 0.15 + Math.random() * 0.2,
@@ -296,33 +282,33 @@ export default function PhysicsCoins({
       {
         color: "#F0EFEA", // Off-White
         faceType: "white_sparkle",
-        baseRadius: isMobile ? 40 : 56,
+        baseRadius: Math.round(56 * scaleFactor),
         isLeft: true,
         spawnXRatio: 0.06 + Math.random() * 0.10,
         spawnYRatio: 0.35 + Math.random() * 0.2,
       },
       {
-        color: "#FF4D26", // Deep Orange (Desktop extra)
+        color: "#FF4D26", // Deep Orange
         faceType: "orange_minimal",
-        baseRadius: 52,
+        baseRadius: Math.round(52 * scaleFactor),
         isLeft: true,
         spawnXRatio: 0.14 + Math.random() * 0.10,
         spawnYRatio: 0.55 + Math.random() * 0.2,
       },
       {
-        color: "#B345FF", // Electric Violet (Desktop extra)
+        color: "#B345FF", // Electric Violet
         faceType: "purple_chill",
-        baseRadius: 48,
+        baseRadius: Math.round(48 * scaleFactor),
         isLeft: false,
         spawnXRatio: 0.78 + Math.random() * 0.12,
         spawnYRatio: 0.55 + Math.random() * 0.2,
       },
     ];
 
-    // On mobile (<768px), pick EXACTLY 2 coins randomly!
+    // On mobile (<768px), pick 2 or 3 coins randomly for optimal screen space
     const getRandomMobileCoins = () => {
       const shuffled = [...allCoinDefs].sort(() => Math.random() - 0.5);
-      return shuffled.slice(0, 2);
+      return shuffled.slice(0, 3);
     };
 
     const activeCoinDefs = isMobile ? getRandomMobileCoins() : allCoinDefs;
@@ -754,27 +740,11 @@ export default function PhysicsCoins({
             otherBody === ground ||
             otherBody === leftWall ||
             otherBody === rightWall ||
-            otherBody === ceiling ||
-            otherBody === portraitBody;
+            otherBody === ceiling;
 
           if (isWallOrBoundary) {
             triggerCollisionFX(targetCoin.position.x, targetCoin.position.y, coinData.color, impactSpeed * 1.4);
             playDegatsSound();
-
-            if (otherBody === portraitBody && portraitRef.current) {
-              const rot = (Math.random() - 0.5) * 8;
-              gsap.killTweensOf(portraitRef.current);
-              gsap.fromTo(
-                portraitRef.current,
-                { scale: 0.978, rotationZ: rot },
-                {
-                  scale: 1,
-                  rotationZ: 0,
-                  duration: 0.65,
-                  ease: "elastic.out(1.2, 0.4)",
-                }
-              );
-            }
           } else if (impactSpeed > 1.8) {
             triggerCollisionFX(targetCoin.position.x, targetCoin.position.y, coinData.color, impactSpeed);
             playDegatsSound();
