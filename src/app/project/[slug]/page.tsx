@@ -278,6 +278,15 @@ export default function ProjectPage() {
     );
   }
 
+  // Preload all gallery images into browser cache for 60 FPS stutter-free scrolling
+  useEffect(() => {
+    if (!project?.gallery || project.gallery.length === 0) return;
+    project.gallery.forEach((imgSrc) => {
+      const img = new window.Image();
+      img.src = imgSrc;
+    });
+  }, [project?.gallery]);
+
   return (
     <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden selection:bg-white selection:text-black">
       <Navbar
@@ -333,19 +342,19 @@ export default function ProjectPage() {
           </div>
         </div>
 
-        <div className={`relative z-10 w-full px-5 md:px-16 pb-20 md:pb-24 text-left flex flex-col justify-end items-start pointer-events-none transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] ${isIdle ? "translate-y-8 md:translate-y-12" : "translate-y-0"}`}>
-          <div ref={titleRef} className="space-y-2 flex flex-col items-start max-w-full pointer-events-auto bg-black/40 backdrop-blur-xl border border-white/10 px-6 py-5 md:px-8 md:py-6 rounded-2xl shadow-[0_30px_90px_rgba(0,0,0,0.9)]">
+        <div className={`relative z-10 w-full px-5 md:px-16 pb-16 md:pb-20 text-left flex flex-col justify-end items-start pointer-events-none transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] ${isIdle ? "translate-y-8 md:translate-y-12" : "translate-y-0"}`}>
+          <div ref={titleRef} className="space-y-2 flex flex-col items-start max-w-full pointer-events-auto">
             <div className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-              <span className="font-mono text-[10px] md:text-[11px] tracking-[0.4em] text-white/80 uppercase font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              <span className="font-mono text-[10px] md:text-[11px] tracking-[0.4em] text-white/70 uppercase font-semibold drop-shadow-md">
                 {project.year} — {project.category}
               </span>
             </div>
-            <h1 className="font-syne font-extrabold text-[5.5vw] sm:text-[4vw] md:text-[3vw] lg:text-[2.5vw] leading-[1.05] uppercase tracking-tight text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
+            <h1 className="font-syne font-extrabold text-[7vw] sm:text-[5vw] md:text-[3.5vw] leading-[0.95] uppercase tracking-tight text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.95)]">
               {project.title}
             </h1>
             {project.descriptionFr && (
-              <p className="font-inter text-[11px] sm:text-[12px] md:text-[13px] leading-relaxed text-white/80 max-w-xl md:max-w-2xl font-light pt-1 drop-shadow-md">
+              <p className="font-inter text-[12px] sm:text-[13px] md:text-[14px] leading-relaxed text-white/80 max-w-xl md:max-w-2xl font-light pt-1 drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
                 {lang === "fr" ? project.descriptionFr : (project.descriptionEn || project.descriptionFr)}
               </p>
             )}

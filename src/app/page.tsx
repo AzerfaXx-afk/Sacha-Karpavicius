@@ -1220,6 +1220,25 @@ export default function Home() {
         document.body.scrollTop = 0;
       }
     }
+  }, []);
+
+  // Preload all project cover images for 60 FPS stutter-free scrolling
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const allImages = [
+      "/principal.jpg",
+      ...projectsData.map((p) => p.coverImage),
+      ...videoProjectsData.map((p) => p.coverImage),
+    ];
+    allImages.forEach((src) => {
+      if (src) {
+        const img = new window.Image();
+        img.src = src;
+      }
+    });
+  }, []);
+
+  useEffect(() => {
     if (!siteStarted) return;
     const ctx = gsap.context(() => {
       /* ── Hero reveal ── */
