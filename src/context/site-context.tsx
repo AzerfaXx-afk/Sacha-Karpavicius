@@ -45,10 +45,14 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
   const clickAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  // User preference: true if user started or turned on music
+  const userWantsAudioRef = useRef(false);
+
   // Background audio pause/resume tracking refs
   const wasPlayingBeforeBackgroundRef = useRef(false);
   const isAutoPausedRef = useRef(false);
   const isPlayingRef = useRef(isPlaying);
+  const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     isPlayingRef.current = isPlaying;
@@ -130,17 +134,18 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
     isAutoPausedRef.current = false;
 
     if (isPlaying) {
+      userWantsAudioRef.current = false;
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
+      userWantsAudioRef.current = true;
+      audioRef.current.volume = 0.35;
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     }
   };
 
   const pauseAudio = () => {
-    wasPlayingBeforeBackgroundRef.current = false;
-    isAutoPausedRef.current = false;
-
+    if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
     if (audioRef.current) {
       audioRef.current.pause();
       setIsPlaying(false);
@@ -148,19 +153,30 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const resumeAudio = () => {
-    wasPlayingBeforeBackgroundRef.current = false;
-    isAutoPausedRef.current = false;
+    if (!audioRef.current) return;
+    if (!userWantsAudioRef.current && !isPlayingRef.current && !hasEnteredSite) return;
 
-    if (audioRef.current) {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+    userWantsAudioRef.current = true;
+    if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+    
+    if (audioRef.current.paused) {
+      audioRef.current.volume = 0.35;
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => {});
+    } else {
+      setIsPlaying(true);
     }
   };
 
   const playEntrance = () => {
     wasPlayingBeforeBackgroundRef.current = false;
     isAutoPausedRef.current = false;
+    userWantsAudioRef.current = true;
 
     if (audioRef.current) {
+      audioRef.current.volume = 0.35;
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     }
     try {

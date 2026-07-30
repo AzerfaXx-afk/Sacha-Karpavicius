@@ -470,6 +470,7 @@ function VideoCardItem({
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const [activeSlot, setActiveSlot] = useState<1 | 2>(1);
+  const [currentClipNum, setCurrentClipNum] = useState<number>(1);
 
   const videoRef1 = useRef<HTMLVideoElement>(null);
   const videoRef2 = useRef<HTMLVideoElement>(null);
@@ -478,6 +479,7 @@ function VideoCardItem({
 
   const handleMouseEnter = () => {
     setIsHovered(true);
+    setCurrentClipNum(1);
     if (playHoverSfx) playHoverSfx();
 
     const v1 = videoRef1.current;
@@ -519,6 +521,7 @@ function VideoCardItem({
     // Cycle clips seamlessly every 3.0s (3000ms) with zero stutter crossfade
     intervalRef.current = setInterval(() => {
       clipIdx = (clipIdx + 1) % clips.length;
+      setCurrentClipNum(clipIdx + 1);
       const nextClipTime = clips[(clipIdx + 1) % clips.length];
 
       if (currentSlot === 1) {
@@ -555,6 +558,7 @@ function VideoCardItem({
 
   const handleMouseLeave = () => {
     setIsHovered(false);
+    setCurrentClipNum(1);
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -581,8 +585,8 @@ function VideoCardItem({
       {/* Cinema Ambient Backlight Bloom */}
       <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/25 via-white/15 to-blue-600/25 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
-      {/* Main Full-Width Widescreen Media Container fitted perfectly to screen height */}
-      <div className="relative w-full overflow-hidden bg-[#0d0d0d] rounded-xl border border-white/10 aspect-[16/9] md:aspect-[21/9] max-h-[65vh] md:max-h-[70vh]">
+      {/* Main Widescreen Compact Media Container */}
+      <div className="relative w-full overflow-hidden bg-[#0d0d0d] rounded-xl border border-white/10 aspect-[16/9] md:aspect-[21/9] max-h-[44vh] md:max-h-[48vh] shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
         {/* Ambient Blurred Background for Cinema Posters */}
         {isPoster && (
           <div className="absolute inset-0 scale-110 blur-3xl opacity-30 group-hover:opacity-60 transition-opacity duration-700 pointer-events-none">
@@ -645,13 +649,23 @@ function VideoCardItem({
           )}
         </div>
 
+        {/* Top Right Extraits Badge (Shows 5 clips indicator on hover) */}
+        {project.videoUrl && (
+          <div className={`absolute top-4 right-4 z-20 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/20 text-white transition-all duration-500 flex items-center gap-2 ${isHovered ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"}`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
+            <span className="font-mono text-[9px] md:text-[10px] tracking-[0.2em] uppercase font-semibold">
+              EXTRAIT 0{currentClipNum} / 05
+            </span>
+          </div>
+        )}
+
         {/* Hover dark overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500 pointer-events-none" />
 
         {/* Centered Minimalist Play Button Overlay */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-          <div className="w-14 h-14 md:w-18 md:h-18 rounded-full bg-white/10 border border-white/30 backdrop-blur-md flex items-center justify-center text-white opacity-90 group-hover:opacity-100 group-hover:scale-110 group-hover:bg-white group-hover:text-black group-hover:border-white transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_0_40px_rgba(0,0,0,0.8)]">
-            <svg className="w-6 h-6 md:w-7 md:h-7 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor">
+          <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-white/10 border border-white/30 backdrop-blur-md flex items-center justify-center text-white opacity-90 group-hover:opacity-100 group-hover:scale-110 group-hover:bg-white group-hover:text-black group-hover:border-white transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_0_40px_rgba(0,0,0,0.8)]">
+            <svg className="w-5 h-5 md:w-6 md:h-6 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M8 5v14l11-7z" />
             </svg>
           </div>
@@ -1099,6 +1113,7 @@ export default function Home() {
     if (typeof window !== "undefined") {
       sessionStorage.setItem("spa_nav", "true");
     }
+    lockScrollForNavigation(2000);
     setHasEnteredSite(true);
     setIsProjectTransitioning(true);
     setIsHideUI(true);

@@ -35,6 +35,7 @@ export default function ProjectPage() {
   const [isIdle, setIsIdle] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
   const [isScrollLockedState, setIsScrollLockedState] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(1);
 
   const heroRef = useRef<HTMLDivElement>(null);
   const heroImgRef = useRef<HTMLDivElement>(null);
@@ -48,6 +49,7 @@ export default function ProjectPage() {
   // Horizontal Scrollytelling Refs
   const scrollySectionRef = useRef<HTMLDivElement>(null);
   const horizontalTrackRef = useRef<HTMLDivElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
 
   // Inactivity auto-hide UI (Netflix style: hides navbar, contact badge & audio signal only while playing and idle)
   const resetIdleTimer = useCallback(() => {
@@ -94,13 +96,28 @@ export default function ProjectPage() {
     };
   }, [setIsHideUI]);
 
-  // Background ambient music continues playing seamlessly across projects
+  // Launch video directly on enter & pause background music when video plays with audio
   useEffect(() => {
     if (project?.videoUrl && videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+      const vid = videoRef.current;
+      vid.currentTime = 0;
+      vid.muted = false;
+      vid.play()
+        .then(() => {
+          setIsVideoPlaying(true);
+          resetIdleTimer();
+          if (isPlaying) {
+            wasPlayingBeforeVideoRef.current = true;
+            pauseAudio();
+          }
+        })
+        .catch(() => {
+          // Fallback to muted play if browser requires explicit unmute gesture
+          vid.muted = true;
+          vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+        });
     }
-  }, [project?.videoUrl]);
+  }, [project?.videoUrl, isPlaying, pauseAudio, resetIdleTimer]);
 
 
 
@@ -122,20 +139,22 @@ export default function ProjectPage() {
   useEffect(() => {
     setHasEnteredSite(true);
     resumeAudio();
-    // Instant smooth scroll reset to top
-    if (typeof window !== "undefined") {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const lenis = (window as any).__lenis;
-      if (lenis && typeof lenis.scrollTo === "function") {
-        lenis.scrollTo(0, { immediate: true });
-        if (typeof lenis.start === "function") lenis.start();
-      }
-    }
-    setIsScrollLockedState(false);
+
+    // Lock navigation scroll for 2 full seconds upon landing on project page
+    lockScrollForNavigation(2000);
+    setIsScrollLockedState(true);
     setIsHideUI(false);
+
+    const lockTimer = setTimeout(() => {
+      setIsScrollLockedState(false);
+    }, 2000);
+
+    const handleLockChange = (e: CustomEvent) => {
+      setIsScrollLockedState(Boolean(e.detail?.isLocked));
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("scroll-lock-changed", handleLockChange as EventListener);
+    }
 
     // Language detection
     if (typeof window !== "undefined" && navigator) {
@@ -185,19 +204,48 @@ export default function ProjectPage() {
 
         gsap.set(track, { force3D: true, willChange: "transform" });
 
-        gsap.to(track, {
+        const horizontalTween = gsap.to(track, {
           x: () => -getScrollDistance(),
           ease: "none",
           scrollTrigger: {
             trigger: section,
             pin: true,
             pinSpacing: true,
-            scrub: 0.3,
+            scrub: 1.2, // Silky Awwwards inertia momentum
             anticipatePin: 1,
             start: "top top",
             end: () => `+=${getScrollDistance()}`,
             invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              if (progressBarRef.current) {
+                gsap.set(progressBarRef.current, { scaleX: self.progress });
+              }
+              const total = project.gallery.length;
+              const idx = Math.min(total - 1, Math.floor(self.progress * total));
+              setCurrentSlide(idx + 1);
+            },
           },
+        });
+
+        // Parallax depth effect for each photo card as it glides horizontally
+        const innerImgs = track.querySelectorAll("[data-scrolly-img]");
+        innerImgs.forEach((img) => {
+          gsap.fromTo(
+            img,
+            { xPercent: 8, scale: 1.05 },
+            {
+              xPercent: -8,
+              scale: 1.0,
+              ease: "none",
+              scrollTrigger: {
+                trigger: img.parentElement,
+                containerAnimation: horizontalTween,
+                start: "left right",
+                end: "right left",
+                scrub: true,
+              },
+            }
+          );
         });
 
         // Auto refresh ScrollTrigger when layout changes or images load
@@ -331,19 +379,19 @@ export default function ProjectPage() {
           </div>
         </div>
 
-        {/* Hero Meta & Title Overlay (LEFT ALIGNED - SAFELY ABOVE FLOATING CONTACT BADGE) */}
-        <div className={`relative z-10 w-full px-5 md:px-16 pb-16 md:pb-24 text-left flex flex-col items-start pointer-events-none transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] ${isIdle ? "translate-y-8 md:translate-y-12" : "translate-y-0"}`}>
-          <div ref={titleRef} className="space-y-2 flex flex-col items-start max-w-full pointer-events-auto">
-            <span className="font-mono text-[10px] md:text-[12px] tracking-[0.4em] text-white/60 uppercase block">
-              {project.year}
+        {/* Hero Meta & Title Overlay (POSITIONNÉ EN BAS POUR LIBÉRER TOTALEMENT LE SUJET/IMAGE) */}
+        <div className={`relative z-10 w-full px-5 md:px-16 pb-6 md:pb-10 text-left flex flex-col justify-end items-start pointer-events-none transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] ${isIdle ? "translate-y-8 md:translate-y-12" : "translate-y-0"}`}>
+          <div ref={titleRef} className="space-y-1.5 flex flex-col items-start max-w-full pointer-events-auto bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 md:p-6 rounded-2xl backdrop-blur-[2px]">
+            <span className="font-mono text-[10px] md:text-[11px] tracking-[0.4em] text-white/70 uppercase block font-medium">
+              {project.year} — {project.category}
             </span>
 
-            <h1 className="font-syne font-bold text-[6vw] sm:text-[4.5vw] md:text-[3.2vw] lg:text-[2.6vw] leading-none uppercase tracking-tight text-white whitespace-nowrap drop-shadow-2xl">
+            <h1 className="font-syne font-bold text-[5vw] sm:text-[3.8vw] md:text-[2.6vw] lg:text-[2.2vw] leading-none uppercase tracking-tight text-white whitespace-nowrap drop-shadow-2xl">
               {project.title}
             </h1>
 
             {project.descriptionFr && (
-              <p className="font-inter text-[12px] sm:text-[13px] md:text-[14px] leading-relaxed text-white/80 max-w-xl md:max-w-2xl font-light pt-1.5 drop-shadow-md">
+              <p className="font-inter text-[11px] sm:text-[12px] md:text-[13px] leading-relaxed text-white/80 max-w-xl md:max-w-2xl font-light pt-1 drop-shadow-md">
                 {lang === "fr" ? project.descriptionFr : (project.descriptionEn || project.descriptionFr)}
               </p>
             )}
@@ -354,36 +402,74 @@ export default function ProjectPage() {
         <ScrollIndicator isLocked={isScrollLockedState} />
       </section>
 
-      {/* ═══════════════════ PINNED HORIZONTAL SCROLLYTELLING CAROUSEL ═══════════════════ */}
+      {/* ═══════════════════ PINNED HORIZONTAL SCROLLYTELLING CAROUSEL (AWWWARDS) ═══════════════════ */}
       {project.gallery.length > 0 && (
         <section
           ref={scrollySectionRef}
-          className="relative z-10 w-full overflow-hidden bg-[#050505] py-16 md:py-28 border-t border-white/10"
+          className="relative z-10 w-full overflow-hidden bg-[#050505] pt-12 pb-16 md:pt-16 md:pb-24 border-t border-white/10"
         >
+          {/* Scrollytelling Header HUD (Gallery title + Slide counter) */}
+          <div className="px-5 md:px-16 mb-6 flex items-center justify-between pointer-events-none">
+            <div className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              <span className="font-mono text-[10px] md:text-[12px] tracking-[0.3em] text-white/50 uppercase">
+                {lang === "fr" ? "Galerie Photo" : "Photo Gallery"}
+              </span>
+            </div>
+            
+            {/* Slide Counter (e.g. 01 / 07) */}
+            <div className="font-mono text-[11px] md:text-[13px] tracking-[0.2em] text-white/80">
+              <span className="text-white font-bold">{currentSlide < 10 ? `0${currentSlide}` : currentSlide}</span>
+              <span className="text-white/30 mx-1.5">/</span>
+              <span className="text-white/40">{project.gallery.length < 10 ? `0${project.gallery.length}` : project.gallery.length}</span>
+            </div>
+          </div>
+
           {/* Track Container (Preserves Authentic Aspect Ratio of Horizontal & Vertical Photos) */}
           <div
             ref={horizontalTrackRef}
-            className="flex gap-8 md:gap-12 px-5 md:px-16 will-change-transform items-center shrink-0 min-w-max"
+            className="flex gap-8 md:gap-14 px-5 md:px-16 will-change-transform items-center shrink-0 min-w-max py-4"
           >
             {project.gallery.map((imgSrc, i) => (
               <div
                 key={i}
-                className="relative shrink-0 h-[65vh] md:h-[75vh] w-auto max-w-[85vw] rounded-xl overflow-hidden bg-black/40 border border-white/10 group shadow-2xl flex items-center justify-center"
+                data-scrolly-card
+                className="relative shrink-0 h-[62vh] md:h-[72vh] w-auto max-w-[85vw] rounded-2xl overflow-hidden bg-[#0d0d0d] border border-white/10 group shadow-[0_30px_80px_rgba(0,0,0,0.8)] flex items-center justify-center transition-all duration-500 hover:border-white/30"
               >
-                <Image
-                  src={imgSrc}
-                  alt={`${project.title} Shot ${i + 1}`}
-                  width={1600}
-                  height={1200}
-                  quality={85}
-                  sizes="(max-width: 768px) 90vw, 70vw"
-                  priority={i < 3}
-                  loading={i < 3 ? "eager" : "lazy"}
-                  onLoad={() => ScrollTrigger.refresh()}
-                  className="h-full w-auto max-w-full object-contain rounded-xl transform-gpu brightness-[1.02] contrast-[1.03] saturate-[1.03]"
-                />
+                <div className="relative h-full w-full overflow-hidden flex items-center justify-center">
+                  <Image
+                    data-scrolly-img
+                    src={imgSrc}
+                    alt={`${project.title} Shot ${i + 1}`}
+                    width={1600}
+                    height={1200}
+                    quality={90}
+                    sizes="(max-width: 768px) 90vw, 70vw"
+                    priority={i < 3}
+                    loading={i < 3 ? "eager" : "lazy"}
+                    onLoad={() => ScrollTrigger.refresh()}
+                    className="h-full w-auto max-w-full object-contain rounded-2xl transform-gpu brightness-[1.02] contrast-[1.03] saturate-[1.03] will-change-transform"
+                  />
+                </div>
+
+                {/* Subtile Hover overlay with image index badge */}
+                <div className="absolute top-4 left-4 z-10 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                  <span className="font-mono text-[9px] md:text-[10px] tracking-[0.2em] text-white/80">
+                    {i + 1 < 10 ? `0${i + 1}` : i + 1}
+                  </span>
+                </div>
               </div>
             ))}
+          </div>
+
+          {/* Awwwards Bottom Progress Line HUD */}
+          <div className="px-5 md:px-16 mt-6 pointer-events-none">
+            <div className="w-full h-[2px] bg-white/10 rounded-full overflow-hidden">
+              <div
+                ref={progressBarRef}
+                className="h-full w-full bg-gradient-to-r from-white/40 via-white to-white origin-left transform-gpu scale-x-0"
+              />
+            </div>
           </div>
         </section>
       )}

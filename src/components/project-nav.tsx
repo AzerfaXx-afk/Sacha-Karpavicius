@@ -182,6 +182,7 @@ export default function ProjectNav({
         onClick={(e) => {
           e.preventDefault();
           onPlayClickSfx();
+          lockScrollForNavigation(2000);
           triggerPageTransition(router, `/project/${prevProject.slug}`);
         }}
         className="group relative w-full md:w-[52%] h-[260px] md:h-full flex flex-col justify-between p-6 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-left"
@@ -213,17 +214,15 @@ export default function ProjectNav({
             </span>
           </div>
 
-          {/* Title & Subtitle + Year */}
-          <div className="space-y-2 md:space-y-3 my-auto">
-            <h3 className="font-syne font-bold text-[6vw] sm:text-[4vw] md:text-[3.6vw] uppercase tracking-tight text-white group-hover:scale-102 transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] leading-none drop-shadow-[0_10px_25px_rgba(0,0,0,0.9)]">
+          {/* Title & Subtitle + Year (POSITIONNÉ EN BAS) */}
+          <div className="space-y-2 md:space-y-3 mt-auto pb-4 md:pb-8">
+            <h3 className="font-syne font-bold text-[5.5vw] sm:text-[3.8vw] md:text-[3vw] uppercase tracking-tight text-white group-hover:scale-102 transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] leading-none drop-shadow-[0_10px_25px_rgba(0,0,0,0.9)]">
               {prevProject.title}
             </h3>
-            <p className="font-inter text-[10px] md:text-[13px] text-white/70 group-hover:text-white tracking-[0.25em] uppercase transition-colors duration-700 font-light drop-shadow-md">
+            <p className="font-inter text-[10px] md:text-[12px] text-white/70 group-hover:text-white tracking-[0.25em] uppercase transition-colors duration-700 font-light drop-shadow-md">
               {getSubLabel(prevProject)}
             </p>
           </div>
-
-          <div />
         </div>
       </Link>
 
@@ -237,6 +236,7 @@ export default function ProjectNav({
         onClick={(e) => {
           e.preventDefault();
           onPlayClickSfx();
+          lockScrollForNavigation(2000);
           triggerPageTransition(router, `/project/${nextProject.slug}`);
         }}
         className="group relative w-full md:w-[52%] md:-ml-[4%] h-[260px] md:h-full flex flex-col justify-between p-6 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-right border-t border-white/10 md:border-t-0"
@@ -269,17 +269,15 @@ export default function ProjectNav({
             </span>
           </div>
 
-          {/* Title & Subtitle + Year */}
-          <div className="space-y-3 my-auto">
-            <h3 className="font-syne font-bold text-[7vw] sm:text-[5vw] md:text-[3.6vw] uppercase tracking-tight text-white group-hover:scale-102 transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] leading-none drop-shadow-[0_10px_25px_rgba(0,0,0,0.9)]">
+          {/* Title & Subtitle + Year (POSITIONNÉ EN BAS) */}
+          <div className="space-y-2 md:space-y-3 mt-auto pb-4 md:pb-8">
+            <h3 className="font-syne font-bold text-[5.5vw] sm:text-[3.8vw] md:text-[3vw] uppercase tracking-tight text-white group-hover:scale-102 transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] leading-none drop-shadow-[0_10px_25px_rgba(0,0,0,0.9)]">
               {nextProject.title}
             </h3>
-            <p className="font-inter text-[11px] md:text-[13px] text-white/70 group-hover:text-white tracking-[0.25em] uppercase transition-colors duration-700 font-light drop-shadow-md">
+            <p className="font-inter text-[11px] md:text-[12px] text-white/70 group-hover:text-white tracking-[0.25em] uppercase transition-colors duration-700 font-light drop-shadow-md">
               {getSubLabel(nextProject)}
             </p>
           </div>
-
-          <div />
         </div>
       </Link>
     </section>
