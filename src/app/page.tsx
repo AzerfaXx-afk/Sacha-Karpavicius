@@ -480,7 +480,9 @@ function VideoCardItem({
     const vid = videoRef.current;
     if (!vid) return;
 
-    // Guaranteed strategic 5 clip timestamps across the video duration
+    vid.muted = true;
+    vid.playsInline = true;
+
     const dur = vid.duration && !isNaN(vid.duration) && vid.duration > 5 ? vid.duration : 40;
     const clips = [
       dur * 0.08,
@@ -491,9 +493,9 @@ function VideoCardItem({
     ];
 
     let clipIdx = 0;
-    try {
-      vid.currentTime = clips[0];
-    } catch (_) {}
+    if (vid.readyState >= 1) {
+      try { vid.currentTime = clips[0]; } catch (_) {}
+    }
 
     vid.play().catch(() => {});
 
@@ -502,9 +504,12 @@ function VideoCardItem({
     // Cycle 5 clips of 3 seconds each in a loop
     intervalRef.current = setInterval(() => {
       clipIdx = (clipIdx + 1) % clips.length;
-      if (videoRef.current) {
+      const currentVid = videoRef.current;
+      if (currentVid) {
         try {
-          videoRef.current.currentTime = clips[clipIdx];
+          if (currentVid.readyState >= 1) {
+            currentVid.currentTime = clips[clipIdx];
+          }
         } catch (_) {}
       }
     }, 3000);
@@ -534,13 +539,13 @@ function VideoCardItem({
       onClick={onClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="group relative cursor-pointer mb-10 md:mb-14"
+      className="group relative cursor-pointer mb-14 md:mb-16"
     >
       {/* Cinema Ambient Backlight Bloom */}
       <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/20 via-white/10 to-blue-600/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
-      {/* Main Compact Widescreen Cinema Media Container */}
-      <div className="relative w-full overflow-hidden bg-[#0d0d0d] rounded-xl border border-white/10 aspect-[16/9] md:aspect-[21/9] max-h-[46vh] md:max-h-[52vh] shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
+      {/* Main Cinema Media Container — Sized so title sits right above bottom contact button */}
+      <div className="relative w-full overflow-hidden bg-[#0d0d0d] rounded-xl border border-white/10 aspect-[16/9] md:aspect-[21/9] min-h-[52vh] md:min-h-[58vh] max-h-[64vh] shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
         {/* Ambient Blurred Background for Cinema Posters */}
         {isPoster && (
           <div className="absolute inset-0 scale-110 blur-3xl opacity-30 group-hover:opacity-60 transition-opacity duration-700 pointer-events-none">
