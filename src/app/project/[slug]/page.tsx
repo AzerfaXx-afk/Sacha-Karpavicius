@@ -258,14 +258,7 @@ export default function ProjectPage() {
     };
   }, [setIsHideUI, resumeAudio]);
 
-  const togglePlayVideo = () => {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.play();
-    } else {
-      videoRef.current.pause();
-    }
-  };
+
 
   if (!project) {
     return (
@@ -286,6 +279,69 @@ export default function ProjectPage() {
       }
     });
   }, [project?.gallery]);
+
+  // Video player controls state
+  const [isVideoMuted, setIsVideoMuted] = useState(true);
+  const [videoTime, setVideoTime] = useState(0);
+  const [videoDur, setVideoDur] = useState(0);
+
+  const togglePlayVideo = () => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    if (vid.paused) {
+      vid.play().catch(() => {});
+      setIsVideoPlaying(true);
+      if (!isVideoMuted) {
+        pauseAudio();
+      }
+    } else {
+      vid.pause();
+      setIsVideoPlaying(false);
+      resumeAudio();
+    }
+  };
+
+  const toggleMuteVideo = () => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    const nextMuted = !isVideoMuted;
+    vid.muted = nextMuted;
+    setIsVideoMuted(nextMuted);
+    if (nextMuted) {
+      resumeAudio();
+    } else {
+      pauseAudio();
+      if (vid.paused) {
+        vid.play().catch(() => {});
+        setIsVideoPlaying(true);
+      }
+    }
+  };
+
+  const toggleFullscreen = () => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    } else {
+      vid.requestFullscreen().catch(() => {});
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    const vid = videoRef.current;
+    if (vid) {
+      setVideoTime(vid.currentTime);
+      setVideoDur(vid.duration || 0);
+    }
+  };
+
+  const formatTime = (secs: number) => {
+    if (isNaN(secs) || secs <= 0) return "00:00";
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
 
   return (
     <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden selection:bg-white selection:text-black">
@@ -317,16 +373,67 @@ export default function ProjectPage() {
         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
           <div ref={heroRef} className="relative w-full h-full">
             {project.videoUrl ? (
-              <video
-                ref={videoRef}
-                src={project.videoUrl}
-                poster={project.coverImage || project.heroImage}
-                autoPlay
-                loop
-                playsInline
-                preload="auto"
-                className="object-cover w-full h-full min-h-full min-w-full"
-              />
+              <>
+                <video
+                  ref={videoRef}
+                  src={project.videoUrl}
+                  poster={project.coverImage || project.heroImage}
+                  autoPlay
+                  loop
+                  muted={isVideoMuted}
+                  playsInline
+                  preload="auto"
+                  onTimeUpdate={handleTimeUpdate}
+                  className="object-cover w-full h-full min-h-full min-w-full cursor-pointer"
+                  onClick={togglePlayVideo}
+                />
+
+                {/* Netflix/Awwwards Video Control HUD Overlay */}
+                <div className={`absolute bottom-6 right-6 md:bottom-10 md:right-12 z-30 flex items-center gap-3 bg-black/70 backdrop-blur-xl border border-white/15 px-4 py-2.5 rounded-full transition-opacity duration-700 pointer-events-auto ${isIdle ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+                  <button
+                    onClick={togglePlayVideo}
+                    className="text-white hover:text-white/70 transition-colors p-1"
+                    title={isVideoPlaying ? "Pause" : "Play"}
+                  >
+                    {isVideoPlaying ? (
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={toggleMuteVideo}
+                    className="text-white hover:text-white/70 transition-colors p-1 flex items-center gap-1.5"
+                    title={isVideoMuted ? "Activer le son" : "Couper le son"}
+                  >
+                    {isVideoMuted ? (
+                      <svg className="w-4 h-4 text-white/60" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                    ) : (
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    )}
+                    <span className="font-mono text-[10px] uppercase text-white/70">
+                      {isVideoMuted ? "MUTE" : "SON"}
+                    </span>
+                  </button>
+
+                  <div className="h-3 w-[1px] bg-white/20" />
+
+                  <span className="font-mono text-[10px] text-white/70">
+                    {formatTime(videoTime)} / {formatTime(videoDur)}
+                  </span>
+
+                  <div className="h-3 w-[1px] bg-white/20" />
+
+                  <button
+                    onClick={toggleFullscreen}
+                    className="text-white hover:text-white/70 transition-colors p-1"
+                    title="Plein écran"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 00-2 2v3m18-5h-3a2 2 0 00-2 2v3m0 10v3a2 2 0 01-2 2h-3m-8 0H5a2 2 0 01-2-2v-3"/></svg>
+                  </button>
+                </div>
+              </>
             ) : (
               <Image
                 src={project.heroImage}
