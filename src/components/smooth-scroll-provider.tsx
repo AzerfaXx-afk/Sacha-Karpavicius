@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { ReactLenis } from "@studio-freight/react-lenis";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -14,6 +15,7 @@ export default function SmoothScrollProvider({
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const lenisRef = useRef<any>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     if (typeof window !== "undefined" && "scrollRestoration" in history) {
@@ -40,6 +42,21 @@ export default function SmoothScrollProvider({
     };
   }, []);
 
+  // Force instant scroll reset to top (0,0) on every SPA route change (Next, Prev, Project, Home)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const lenis = lenisRef.current?.lenis || (window as any).__lenis;
+      if (lenis && typeof lenis.scrollTo === "function") {
+        lenis.scrollTo(0, { immediate: true });
+      }
+    }
+  }, [pathname]);
+
   return (
     <ReactLenis 
       ref={lenisRef}
@@ -60,3 +77,4 @@ export default function SmoothScrollProvider({
     </ReactLenis>
   );
 }
+

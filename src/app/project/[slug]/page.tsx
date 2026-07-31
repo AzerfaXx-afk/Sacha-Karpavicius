@@ -106,7 +106,7 @@ export default function ProjectPage() {
     };
   }, [setIsHideUI, resumeAudio]);
 
-  // Launch video directly on enter with sound, and pause site background music
+  // Launch video directly on enter with sound (and pause background music), OR resume background music for photo projects
   useEffect(() => {
     if (project?.videoUrl && videoRef.current) {
       const vid = videoRef.current;
@@ -126,8 +126,16 @@ export default function ProjectPage() {
             pauseAudio(true);
           }).catch(() => {});
         });
+    } else {
+      // Photo project: background music continues uninterrupted
+      resumeAudio(true);
     }
-  }, [project?.slug, pauseAudio]);
+
+    return () => {
+      // When unmounting project page (going back home or to another project), resume background audio if user wants audio
+      resumeAudio(true);
+    };
+  }, [project?.slug, project?.videoUrl, pauseAudio, resumeAudio]);
 
   // On physical browser reload (F5 / Refresh button directly on project URL), return to homepage
   useEffect(() => {
@@ -298,16 +306,25 @@ export default function ProjectPage() {
     if (!vid) return;
     if (vid.paused) {
       vid.play().catch(() => {});
-      setIsVideoPlaying(true);
-      pauseAudio(true);
       triggerPulse("play");
     } else {
       vid.pause();
-      setIsVideoPlaying(false);
-      resumeAudio(true);
       triggerPulse("pause");
     }
-  }, [pauseAudio, resumeAudio, triggerPulse]);
+  }, [triggerPulse]);
+
+  // Sync fullscreen state changes automatically (including ESC key or native fullscreen exit)
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", handleFsChange);
+    document.addEventListener("webkitfullscreenchange", handleFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFsChange);
+      document.removeEventListener("webkitfullscreenchange", handleFsChange);
+    };
+  }, []);
 
   // Spacebar keyboard shortcut for play/pause
   useEffect(() => {
@@ -329,7 +346,9 @@ export default function ProjectPage() {
     const nextMuted = !isVideoMuted;
     vid.muted = nextMuted;
     setIsVideoMuted(nextMuted);
-    if (!nextMuted) {
+    if (nextMuted) {
+      resumeAudio(true);
+    } else if (!vid.paused) {
       pauseAudio(true);
     }
   };
@@ -412,7 +431,6 @@ export default function ProjectPage() {
               <>
                 <video
                   ref={videoRef}
-                  src={project.videoUrl}
                   poster={project.coverImage || project.heroImage}
                   autoPlay
                   loop
@@ -421,12 +439,32 @@ export default function ProjectPage() {
                   preload="auto"
                   crossOrigin="anonymous"
                   onTimeUpdate={handleTimeUpdate}
+                  onPlay={() => {
+                    setIsVideoPlaying(true);
+                    if (!videoRef.current?.muted) {
+                      pauseAudio(true);
+                    } else {
+                      resumeAudio(true);
+                    }
+                  }}
+                  onPause={() => {
+                    setIsVideoPlaying(false);
+                    resumeAudio(true);
+                  }}
                   onEnded={() => {
                     setIsVideoPlaying(false);
                     resumeAudio(true);
                   }}
                   className="object-cover w-full h-full min-h-full min-w-full cursor-pointer transform-gpu brightness-[1.03] contrast-[1.03] saturate-[1.04] will-change-transform"
-                />
+                >
+                  {project.videoUrl.endsWith(".mp4") && (
+                    <source
+                      src={project.videoUrl.replace(/\.mp4$/, ".webm")}
+                      type="video/webm"
+                    />
+                  )}
+                  <source src={project.videoUrl} type={project.videoUrl.endsWith(".webm") ? "video/webm" : "video/mp4"} />
+                </video>
 
                 {/* Awwwards Center Play/Pause Animated Pulse Feedback */}
                 <div

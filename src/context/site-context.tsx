@@ -181,20 +181,32 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   const resumeAudio = useCallback((fade = true) => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (!userWantsAudioRef.current && !isPlayingRef.current && !hasEnteredSite) return;
+    if (!userWantsAudioRef.current) return;
 
-    userWantsAudioRef.current = true;
     if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
 
     const targetVolume = 0.35;
 
     if (!fade) {
       audio.volume = targetVolume;
-      audio.play().then(() => setIsPlaying(true)).catch(() => {});
+      if (audio.paused) {
+        audio.play().then(() => setIsPlaying(true)).catch(() => {});
+      } else {
+        setIsPlaying(true);
+      }
       return;
     }
 
-    audio.volume = 0;
+    if (!audio.paused && Math.abs(audio.volume - targetVolume) < 0.05) {
+      setIsPlaying(true);
+      return;
+    }
+
+    const startVol = audio.paused ? 0 : audio.volume;
+    if (audio.paused) {
+      audio.volume = 0;
+    }
+
     audio
       .play()
       .then(() => {
@@ -205,7 +217,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
         fadeIntervalRef.current = setInterval(() => {
           const elapsed = Date.now() - startTime;
           const progress = Math.min(1, elapsed / duration);
-          audio.volume = Math.min(targetVolume, targetVolume * progress);
+          audio.volume = Math.min(targetVolume, startVol + (targetVolume - startVol) * progress);
 
           if (progress >= 1) {
             if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
@@ -214,7 +226,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
         }, 30);
       })
       .catch(() => {});
-  }, [hasEnteredSite]);
+  }, []);
 
   const playEntrance = () => {
     wasPlayingBeforeBackgroundRef.current = false;
