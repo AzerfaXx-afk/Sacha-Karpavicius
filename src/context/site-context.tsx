@@ -151,7 +151,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const pauseAudio = (fade = true) => {
+  const pauseAudio = useCallback((fade = true) => {
     if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
     setIsPlaying(false);
     const audio = audioRef.current;
@@ -176,9 +176,9 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
         audio.pause();
       }
     }, 30);
-  };
+  }, []);
 
-  const resumeAudio = (fade = true) => {
+  const resumeAudio = useCallback((fade = true) => {
     const audio = audioRef.current;
     if (!audio) return;
     if (!userWantsAudioRef.current && !isPlayingRef.current && !hasEnteredSite) return;
@@ -214,7 +214,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
         }, 30);
       })
       .catch(() => {});
-  };
+  }, [hasEnteredSite]);
 
   const playEntrance = () => {
     wasPlayingBeforeBackgroundRef.current = false;

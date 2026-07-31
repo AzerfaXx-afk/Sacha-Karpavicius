@@ -282,19 +282,46 @@ export default function ProjectPage() {
     });
   }, [project?.gallery]);
 
-  const togglePlayVideo = () => {
+  const [playPulseState, setPlayPulseState] = useState<"play" | "pause" | null>(null);
+  const pulseTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerPulse = useCallback((type: "play" | "pause") => {
+    setPlayPulseState(type);
+    if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
+    pulseTimerRef.current = setTimeout(() => {
+      setPlayPulseState(null);
+    }, 600);
+  }, []);
+
+  const togglePlayVideo = useCallback(() => {
     const vid = videoRef.current;
     if (!vid) return;
     if (vid.paused) {
       vid.play().catch(() => {});
       setIsVideoPlaying(true);
       pauseAudio(true);
+      triggerPulse("play");
     } else {
       vid.pause();
       setIsVideoPlaying(false);
       resumeAudio(true);
+      triggerPulse("pause");
     }
-  };
+  }, [pauseAudio, resumeAudio, triggerPulse]);
+
+  // Spacebar keyboard shortcut for play/pause
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space" || e.key === " ") {
+        const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+        if (tag === "input" || tag === "textarea") return;
+        e.preventDefault();
+        togglePlayVideo();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [togglePlayVideo]);
 
   const toggleMuteVideo = () => {
     const vid = videoRef.current;
@@ -370,7 +397,15 @@ export default function ProjectPage() {
         </a>
       </div>
 
-      <section ref={heroRef} className="relative w-full h-[100vh] min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505]">
+      <section
+        ref={heroRef}
+        onClick={() => {
+          if (project?.videoUrl) {
+            togglePlayVideo();
+          }
+        }}
+        className="relative w-full h-[100vh] min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] cursor-pointer group select-none"
+      >
         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
           <div className="relative w-full h-full">
             {project.videoUrl ? (
@@ -390,13 +425,37 @@ export default function ProjectPage() {
                     resumeAudio(true);
                   }}
                   className="object-cover w-full h-full min-h-full min-w-full cursor-pointer transform-gpu brightness-[1.02] contrast-[1.02] will-change-transform"
-                  onClick={togglePlayVideo}
                 />
 
+                {/* Awwwards Center Play/Pause Animated Pulse Feedback */}
+                <div
+                  className={`absolute inset-0 z-30 flex items-center justify-center pointer-events-none transition-all duration-500 ease-out ${
+                    playPulseState ? "opacity-100 scale-100" : "opacity-0 scale-75"
+                  }`}
+                >
+                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-black/65 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+                    {playPulseState === "play" ? (
+                      <svg className="w-9 h-9 text-white translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-9 h-9 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+
                 {/* Pure Awwwards Video Control HUD Overlay - Floating Centered Pill Sleekly Positioned Near Bottom */}
-                <div className={`fixed left-1/2 -translate-x-1/2 bottom-8 md:bottom-10 z-[100] flex items-center gap-3.5 bg-black/50 backdrop-blur-2xl border border-white/15 px-4 py-2 rounded-full shadow-[0_10px_35px_rgba(0,0,0,0.7)] transition-all duration-700 pointer-events-auto ${isIdle ? "opacity-75 scale-95 hover:opacity-100 hover:scale-100" : "opacity-100 scale-100"}`}>
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className={`fixed left-1/2 -translate-x-1/2 bottom-8 md:bottom-10 z-[100] flex items-center gap-3.5 bg-black/50 backdrop-blur-2xl border border-white/15 px-4 py-2 rounded-full shadow-[0_10px_35px_rgba(0,0,0,0.7)] transition-all duration-700 pointer-events-auto ${isIdle ? "opacity-75 scale-95 hover:opacity-100 hover:scale-100" : "opacity-100 scale-100"}`}
+                >
                   <button
-                    onClick={togglePlayVideo}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePlayVideo();
+                    }}
                     className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1"
                     title={isVideoPlaying ? "Pause" : "Lecture"}
                   >
@@ -408,14 +467,17 @@ export default function ProjectPage() {
                   </button>
 
                   <button
-                    onClick={toggleMuteVideo}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleMuteVideo();
+                    }}
                     className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1"
                     title={isVideoMuted ? "Activer le son" : "Couper le son"}
                   >
                     {isVideoMuted ? (
                       <svg className="w-4 h-4 text-white/50" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
                     ) : (
-                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                     )}
                   </button>
 
@@ -428,7 +490,10 @@ export default function ProjectPage() {
                   <div className="h-3 w-[1px] bg-white/15" />
 
                   <button
-                    onClick={toggleFullscreen}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFullscreen();
+                    }}
                     className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1"
                     title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
                   >
