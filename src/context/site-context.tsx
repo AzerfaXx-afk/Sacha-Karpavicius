@@ -11,8 +11,8 @@ interface SiteContextType {
   setIsHideUI: (val: boolean) => void;
   isPlaying: boolean;
   toggleAudio: () => void;
-  pauseAudio: () => void;
-  resumeAudio: () => void;
+  pauseAudio: (fade?: boolean) => void;
+  resumeAudio: (fade?: boolean) => void;
   playEntrance: () => void;
   playClickSfx: () => void;
   playHoverSfx: () => void;
@@ -151,30 +151,70 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const pauseAudio = () => {
+  const pauseAudio = (fade = true) => {
     if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
-    if (audioRef.current) {
-      audioRef.current.pause();
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (!fade || audio.paused) {
+      audio.pause();
       setIsPlaying(false);
+      return;
     }
+
+    const startVolume = audio.volume;
+    const startTime = Date.now();
+    const duration = 600;
+
+    fadeIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      audio.volume = Math.max(0, startVolume * (1 - progress));
+
+      if (progress >= 1) {
+        if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+        audio.pause();
+        setIsPlaying(false);
+      }
+    }, 30);
   };
 
-  const resumeAudio = () => {
-    if (!audioRef.current) return;
+  const resumeAudio = (fade = true) => {
+    const audio = audioRef.current;
+    if (!audio) return;
     if (!userWantsAudioRef.current && !isPlayingRef.current && !hasEnteredSite) return;
 
     userWantsAudioRef.current = true;
     if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
-    
-    if (audioRef.current.paused) {
-      audioRef.current.volume = 0.35;
-      audioRef.current
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch(() => {});
-    } else {
-      setIsPlaying(true);
+
+    const targetVolume = 0.35;
+
+    if (!fade) {
+      audio.volume = targetVolume;
+      audio.play().then(() => setIsPlaying(true)).catch(() => {});
+      return;
     }
+
+    audio.volume = 0;
+    audio
+      .play()
+      .then(() => {
+        setIsPlaying(true);
+        const startTime = Date.now();
+        const duration = 600;
+
+        fadeIntervalRef.current = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(1, elapsed / duration);
+          audio.volume = Math.min(targetVolume, targetVolume * progress);
+
+          if (progress >= 1) {
+            if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+            audio.volume = targetVolume;
+          }
+        }, 30);
+      })
+      .catch(() => {});
   };
 
   const playEntrance = () => {

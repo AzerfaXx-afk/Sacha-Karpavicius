@@ -5,7 +5,7 @@ import { useSiteContext } from "@/context/site-context";
 export default function GlobalAudioSignal() {
   const { hasEnteredSite, isHoveringName, isHideUI, isPlaying, toggleAudio } = useSiteContext();
 
-  const showUI = hasEnteredSite || isHoveringName;
+  const showUI = (hasEnteredSite || isHoveringName) && !isHideUI;
 
   return (
     <div

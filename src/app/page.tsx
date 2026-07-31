@@ -489,28 +489,44 @@ function VideoCardItem({
     if (isHovered) {
       vid.muted = true;
       vid.defaultMuted = true;
+
+      // Strategic high-impact timestamps per video (skipping intro black/bars/logos)
+      const getStrategicClips = (duration: number, slug: string) => {
+        const dur = duration && !isNaN(duration) && duration > 5 ? duration : 40;
+        if (slug === "maladaptive") {
+          return [dur * 0.20, dur * 0.40, dur * 0.58, dur * 0.75, dur * 0.88];
+        } else if (slug === "festival-in-and-out" || slug === "nice-queer") {
+          return [dur * 0.22, dur * 0.42, dur * 0.60, dur * 0.78, dur * 0.90];
+        } else if (slug === "au-grand-jour") {
+          return [dur * 0.18, dur * 0.36, dur * 0.54, dur * 0.72, dur * 0.86];
+        }
+        return [dur * 0.20, dur * 0.40, dur * 0.60, dur * 0.80];
+      };
+
+      const dur = vid.duration || 40;
+      const clips = getStrategicClips(dur, project.slug || project.id);
+      let clipIdx = 0;
+
+      // CRITICAL FIX: Jump IMMEDIATELY to the 1st strategic timestamp on hover start
+      try {
+        vid.currentTime = clips[0];
+      } catch (_) {}
+
       vid.play().catch(() => {});
 
-      let clipIdx = 0;
       if (intervalRef.current) clearInterval(intervalRef.current);
 
-      // Cycle 5 clips skipping intro color test bars & countdown leaders
+      // Cycle strategic clips every 2.8s
       intervalRef.current = setInterval(() => {
         const v = videoRef.current;
         if (!v) return;
-        const dur = v.duration && !isNaN(v.duration) && v.duration > 5 ? v.duration : 40;
-        const clips = [
-          dur * 0.18,
-          dur * 0.35,
-          dur * 0.52,
-          dur * 0.68,
-          dur * 0.84,
-        ];
-        clipIdx = (clipIdx + 1) % clips.length;
+        const currentDur = v.duration || 40;
+        const currentClips = getStrategicClips(currentDur, project.slug || project.id);
+        clipIdx = (clipIdx + 1) % currentClips.length;
         try {
-          v.currentTime = clips[clipIdx];
+          v.currentTime = currentClips[clipIdx];
         } catch (_) {}
-      }, 3000);
+      }, 2800);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -518,7 +534,7 @@ function VideoCardItem({
       }
       vid.pause();
     }
-  }, [isHovered, project.videoUrl]);
+  }, [isHovered, project.videoUrl, project.slug, project.id]);
 
   useEffect(() => {
     return () => {
@@ -765,6 +781,7 @@ export default function Home() {
 
   useEffect(() => {
     setIsMounted(true);
+    setIsProjectTransitioning(false);
 
     // Language detection
     if (typeof window !== "undefined" && navigator) {
