@@ -876,6 +876,42 @@ export default function Home() {
     playEntrance();
   }, [setHasEnteredSite, playEntrance]);
 
+  // Inactivity auto-hide UI on homepage (fades navbar, contact badge & audio signal when idle)
+  const homeIdleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    if (!hasEnteredSite && !siteStarted) return;
+
+    const resetHomeIdleTimer = () => {
+      setIsHideUI(false);
+      if (homeIdleTimerRef.current) clearTimeout(homeIdleTimerRef.current);
+      homeIdleTimerRef.current = setTimeout(() => {
+        setIsHideUI(true);
+      }, 3500);
+    };
+
+    resetHomeIdleTimer();
+
+    const handleUserActivity = () => {
+      resetHomeIdleTimer();
+    };
+
+    window.addEventListener("mousemove", handleUserActivity);
+    window.addEventListener("mousedown", handleUserActivity);
+    window.addEventListener("touchstart", handleUserActivity);
+    window.addEventListener("keydown", handleUserActivity);
+    window.addEventListener("scroll", handleUserActivity);
+
+    return () => {
+      window.removeEventListener("mousemove", handleUserActivity);
+      window.removeEventListener("mousedown", handleUserActivity);
+      window.removeEventListener("touchstart", handleUserActivity);
+      window.removeEventListener("keydown", handleUserActivity);
+      window.removeEventListener("scroll", handleUserActivity);
+      if (homeIdleTimerRef.current) clearTimeout(homeIdleTimerRef.current);
+      setIsHideUI(false);
+    };
+  }, [hasEnteredSite, siteStarted, setIsHideUI]);
+
 
 
   // Gyroscope guide icon idle detection

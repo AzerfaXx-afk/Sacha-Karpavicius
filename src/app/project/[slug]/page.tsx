@@ -8,7 +8,6 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Navbar from "@/components/navbar";
 import ProjectNav from "@/components/project-nav";
-import ScrollIndicator from "@/components/scroll-indicator";
 import { projectsData, videoProjectsData, getProjectBySlug } from "@/data/projects";
 import { useSiteContext } from "@/context/site-context";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
@@ -24,9 +23,9 @@ export default function ProjectPage() {
   const { hasEnteredSite, setHasEnteredSite, isPlaying, toggleAudio, pauseAudio, resumeAudio, playClickSfx, playHoverSfx, setIsHideUI } = useSiteContext();
 
   const project = getProjectBySlug(slug) || projectsData[0];
-  const isVideoProject = Boolean(project.isVideo || project.videoUrl);
+  const isVideoProject = Boolean(project?.isVideo || project?.videoUrl);
   const targetDataset = isVideoProject ? videoProjectsData : projectsData;
-  const currentIndex = targetDataset.findIndex((p) => p.slug === project.slug);
+  const currentIndex = targetDataset.findIndex((p) => p.slug === project?.slug);
   const validIndex = currentIndex !== -1 ? currentIndex : 0;
   const nextProject = targetDataset[(validIndex + 1) % targetDataset.length];
   const prevProject = targetDataset[(validIndex - 1 + targetDataset.length) % targetDataset.length];
@@ -37,87 +36,102 @@ export default function ProjectPage() {
   const [isScrollLockedState, setIsScrollLockedState] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(1);
 
+  // Video player controls state — start unmuted on project entry
+  const [isVideoMuted, setIsVideoMuted] = useState(false);
+  const [videoTime, setVideoTime] = useState(0);
+  const [videoDur, setVideoDur] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   const heroRef = useRef<HTMLDivElement>(null);
   const heroImgRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
-  const metaRef = useRef<HTMLDivElement>(null);
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const wasPlayingBeforeVideoRef = useRef(false);
-
 
   // Horizontal Scrollytelling Refs
   const scrollySectionRef = useRef<HTMLDivElement>(null);
   const horizontalTrackRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
 
-  // Inactivity auto-hide UI (Netflix style: hides navbar, contact badge & audio signal only while playing and idle)
-  const resetIdleTimer = useCallback(() => {
-    setIsIdle(false);
-    setIsHideUI(false);
-    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    if (project?.videoUrl && isVideoPlaying) {
-      idleTimerRef.current = setTimeout(() => {
-        setIsIdle(true);
-        setIsHideUI(true);
-      }, 2500); // 2.5s inactivity
+  // Rock-solid Inactivity Idle Timer (hides navbar, contact badge & audio signal after 2.5s mouse inactivity)
+  const isVideoPlayingRef = useRef(isVideoPlaying);
+  useEffect(() => {
+    isVideoPlayingRef.current = isVideoPlaying;
+    if (!isVideoPlaying) {
+      setIsIdle(false);
+      setIsHideUI(false);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     }
-  }, [project?.videoUrl, isVideoPlaying, setIsHideUI]);
+  }, [isVideoPlaying, setIsHideUI]);
 
   useEffect(() => {
     if (!project?.videoUrl) return;
 
-    resetIdleTimer();
+    const startTimer = () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      if (isVideoPlayingRef.current) {
+        idleTimerRef.current = setTimeout(() => {
+          setIsIdle(true);
+          setIsHideUI(true);
+        }, 2500);
+      }
+    };
 
     const handleUserActivity = () => {
-      resetIdleTimer();
+      setIsIdle(false);
+      setIsHideUI(false);
+      startTimer();
     };
+
+    handleUserActivity();
 
     window.addEventListener("mousemove", handleUserActivity);
     window.addEventListener("mousedown", handleUserActivity);
     window.addEventListener("touchstart", handleUserActivity);
     window.addEventListener("keydown", handleUserActivity);
-    window.addEventListener("scroll", handleUserActivity);
 
     return () => {
       window.removeEventListener("mousemove", handleUserActivity);
       window.removeEventListener("mousedown", handleUserActivity);
       window.removeEventListener("touchstart", handleUserActivity);
       window.removeEventListener("keydown", handleUserActivity);
-      window.removeEventListener("scroll", handleUserActivity);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      setIsHideUI(false);
     };
-  }, [project?.videoUrl, resetIdleTimer]);
+  }, [project?.videoUrl, setIsHideUI]);
 
-  // Clean up isHideUI on unmount
+  // Clean up isHideUI & resume site background music on unmount
   useEffect(() => {
     return () => {
       setIsHideUI(false);
+      resumeAudio(true);
     };
-  }, [setIsHideUI]);
+  }, [setIsHideUI, resumeAudio]);
 
-  // Launch video directly on enter & fade background music when video plays
+  // Launch video directly on enter with sound, and pause site background music
   useEffect(() => {
     if (project?.videoUrl && videoRef.current) {
       const vid = videoRef.current;
-      vid.muted = isVideoMuted;
+      vid.muted = false;
+      setIsVideoMuted(false);
       vid.play()
         .then(() => {
           setIsVideoPlaying(true);
           pauseAudio(true);
-          resetIdleTimer();
         })
         .catch(() => {
-          if (videoRef.current) {
-            videoRef.current.play().catch(() => {});
-          }
+          // If browser blocks unmuted autoplay, fallback to muted play
+          vid.muted = true;
+          setIsVideoMuted(true);
+          vid.play().then(() => {
+            setIsVideoPlaying(true);
+            pauseAudio(true);
+          }).catch(() => {});
         });
     }
-  }, [project?.slug]); // Only on project slug change
+  }, [project?.slug, pauseAudio]);
 
-
-
-  // On physical browser reload (F5 / Refresh button directly on project URL), return to homepage for full preloader animation
+  // On physical browser reload (F5 / Refresh button directly on project URL), return to homepage
   useEffect(() => {
     if (typeof window === "undefined") return;
     if ('scrollRestoration' in history) {
@@ -131,9 +145,9 @@ export default function ProjectPage() {
       router.replace("/");
     }
   }, [router]);
+
   useEffect(() => {
     setHasEnteredSite(true);
-    resumeAudio();
 
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -182,7 +196,7 @@ export default function ProjectPage() {
       );
 
       if (
-        project.gallery.length > 0 &&
+        project?.gallery?.length > 0 &&
         scrollySectionRef.current &&
         horizontalTrackRef.current
       ) {
@@ -246,29 +260,19 @@ export default function ProjectPage() {
       clearTimeout(lockTimer);
       ctx.revert();
     };
-  }, [slug, resumeAudio, setHasEnteredSite, setIsHideUI]);
+  }, [project, setHasEnteredSite, setIsHideUI]);
 
+  // Fullscreen state listener
   useEffect(() => {
-    return () => {
-      setIsHideUI(false);
-      if (wasPlayingBeforeVideoRef.current) {
-        wasPlayingBeforeVideoRef.current = false;
-        resumeAudio();
-      }
+    if (typeof document === "undefined") return;
+    const onFsChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
     };
-  }, [setIsHideUI, resumeAudio]);
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
 
-
-
-  if (!project) {
-    return (
-      <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center font-mono">
-        Projet non trouvé.
-      </div>
-    );
-  }
-
-  // Preload & GPU-decode all gallery images into browser cache for 60 FPS stutter-free scrolling
+  // Preload & GPU-decode all gallery images into browser cache
   useEffect(() => {
     if (!project?.gallery || project.gallery.length === 0) return;
     project.gallery.forEach((imgSrc) => {
@@ -279,11 +283,6 @@ export default function ProjectPage() {
       }
     });
   }, [project?.gallery]);
-
-  // Video player controls state
-  const [isVideoMuted, setIsVideoMuted] = useState(true);
-  const [videoTime, setVideoTime] = useState(0);
-  const [videoDur, setVideoDur] = useState(0);
 
   const togglePlayVideo = () => {
     const vid = videoRef.current;
@@ -305,6 +304,9 @@ export default function ProjectPage() {
     const nextMuted = !isVideoMuted;
     vid.muted = nextMuted;
     setIsVideoMuted(nextMuted);
+    if (!nextMuted) {
+      pauseAudio(true);
+    }
   };
 
   const toggleFullscreen = () => {
@@ -335,6 +337,14 @@ export default function ProjectPage() {
     const s = Math.floor(secs % 60);
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
+
+  if (!project) {
+    return (
+      <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center font-mono">
+        Projet non trouvé.
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden selection:bg-white selection:text-black">
@@ -385,8 +395,8 @@ export default function ProjectPage() {
                   onClick={togglePlayVideo}
                 />
 
-                {/* Pure Awwwards Video Control HUD Overlay - Floating Centered Pill */}
-                <div className={`fixed left-1/2 -translate-x-1/2 bottom-6 md:bottom-10 z-[100] flex items-center gap-3.5 bg-black/40 backdrop-blur-2xl border border-white/15 px-4 py-2 rounded-full shadow-[0_10px_35px_rgba(0,0,0,0.6)] transition-all duration-700 pointer-events-auto ${isIdle ? "opacity-0 pointer-events-none translate-y-4" : "opacity-100 translate-y-0"}`}>
+                {/* Pure Awwwards Video Control HUD Overlay - Floating Centered Pill Sleekly Positioned Near Bottom */}
+                <div className={`fixed left-1/2 -translate-x-1/2 bottom-8 md:bottom-10 z-[100] flex items-center gap-3.5 bg-black/50 backdrop-blur-2xl border border-white/15 px-4 py-2 rounded-full shadow-[0_10px_35px_rgba(0,0,0,0.7)] transition-all duration-700 pointer-events-auto ${isIdle ? "opacity-75 scale-95 hover:opacity-100 hover:scale-100" : "opacity-100 scale-100"}`}>
                   <button
                     onClick={togglePlayVideo}
                     className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1"
@@ -422,11 +432,17 @@ export default function ProjectPage() {
                   <button
                     onClick={toggleFullscreen}
                     className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1"
-                    title="Plein écran"
+                    title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                      <path d="M8 3H5a2 2 0 0 0-2 2v3m18-5h-3a2 2 0 0 0-2 2v3m0 10v3a2 2 0 0 1-2 2h-3m-8 0H5a2 2 0 0 1-2-2v-3"/>
-                    </svg>
+                    {isFullscreen ? (
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                      </svg>
+                    )}
                   </button>
                 </div>
               </>
@@ -462,8 +478,6 @@ export default function ProjectPage() {
             )}
           </div>
         </div>
-
-        <ScrollIndicator isLocked={isScrollLockedState} />
       </section>
 
       {/* ═══════════════════ PINNED HORIZONTAL SCROLLYTELLING CAROUSEL (PURE AWWWARDS) ═══════════════════ */}
@@ -523,5 +537,3 @@ export default function ProjectPage() {
     </main>
   );
 }
-
-
