@@ -469,11 +469,11 @@ export default function ProjectPage() {
                 {/* Awwwards Center Play/Pause Animated Pulse Feedback */}
                 <div
                   className={`absolute inset-0 z-30 flex items-center justify-center pointer-events-none transition-all duration-500 ease-out ${
-                    playPulseState ? "opacity-100 scale-100" : "opacity-0 scale-75"
+                    !isVideoPlaying || playPulseState ? "opacity-100 scale-100" : "opacity-0 scale-75"
                   }`}
                 >
-                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-black/65 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.8)]">
-                    {playPulseState === "play" ? (
+                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-black/65 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.8)] transition-transform duration-300 hover:scale-110">
+                    {!isVideoPlaying || playPulseState === "pause" ? (
                       <svg className="w-9 h-9 text-white translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M8 5v14l11-7z" />
                       </svg>
