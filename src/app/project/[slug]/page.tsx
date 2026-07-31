@@ -419,12 +419,13 @@ export default function ProjectPage() {
                   muted={isVideoMuted}
                   playsInline
                   preload="auto"
+                  crossOrigin="anonymous"
                   onTimeUpdate={handleTimeUpdate}
                   onEnded={() => {
                     setIsVideoPlaying(false);
                     resumeAudio(true);
                   }}
-                  className="object-cover w-full h-full min-h-full min-w-full cursor-pointer transform-gpu brightness-[1.02] contrast-[1.02] will-change-transform"
+                  className="object-cover w-full h-full min-h-full min-w-full cursor-pointer transform-gpu brightness-[1.03] contrast-[1.03] saturate-[1.04] will-change-transform"
                 />
 
                 {/* Awwwards Center Play/Pause Animated Pulse Feedback */}
