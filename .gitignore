@@ -40,5 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# large video media files
-# *.mp4
+# large video media raw files
+raw-videos/
+scratch/

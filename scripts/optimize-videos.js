@@ -33,8 +33,8 @@ function encodeVideoMP4(inputFile, outputFile, baseName) {
       .output(outputFile)
       .videoCodec("libx264")
       .outputOptions([
-        "-crf 22",
-        "-preset slow",
+        "-crf 18",
+        "-preset medium",
         "-pix_fmt yuv420p",
         "-movflags +faststart",
         "-vf scale=1920:-2"
