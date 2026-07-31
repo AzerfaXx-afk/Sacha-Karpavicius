@@ -153,12 +153,12 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
 
   const pauseAudio = (fade = true) => {
     if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+    setIsPlaying(false);
     const audio = audioRef.current;
     if (!audio) return;
 
     if (!fade || audio.paused) {
       audio.pause();
-      setIsPlaying(false);
       return;
     }
 
@@ -174,7 +174,6 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
       if (progress >= 1) {
         if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
         audio.pause();
-        setIsPlaying(false);
       }
     }, 30);
   };

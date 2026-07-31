@@ -53,37 +53,36 @@ export default function ProjectPage() {
   const horizontalTrackRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
 
-  // Rock-solid Inactivity Idle Timer (hides navbar, contact badge & audio signal after 2.5s mouse inactivity)
+  // 100% Bulletproof Inactivity Idle Timer (hides navbar, contact badge & audio signal after 2.5s mouse inactivity)
   const isVideoPlayingRef = useRef(isVideoPlaying);
+  const lastActivityRef = useRef<number>(Date.now());
+
   useEffect(() => {
     isVideoPlayingRef.current = isVideoPlaying;
     if (!isVideoPlaying) {
       setIsIdle(false);
       setIsHideUI(false);
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     }
   }, [isVideoPlaying, setIsHideUI]);
 
   useEffect(() => {
     if (!project?.videoUrl) return;
 
-    const startTimer = () => {
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-      if (isVideoPlayingRef.current) {
-        idleTimerRef.current = setTimeout(() => {
-          setIsIdle(true);
-          setIsHideUI(true);
-        }, 2500);
-      }
-    };
+    lastActivityRef.current = Date.now();
 
     const handleUserActivity = () => {
+      lastActivityRef.current = Date.now();
       setIsIdle(false);
       setIsHideUI(false);
-      startTimer();
     };
 
-    handleUserActivity();
+    const checkIdleInterval = setInterval(() => {
+      const elapsed = Date.now() - lastActivityRef.current;
+      if (elapsed >= 2500 && isVideoPlayingRef.current) {
+        setIsIdle(true);
+        setIsHideUI(true);
+      }
+    }, 400);
 
     window.addEventListener("mousemove", handleUserActivity);
     window.addEventListener("mousedown", handleUserActivity);
@@ -91,12 +90,11 @@ export default function ProjectPage() {
     window.addEventListener("keydown", handleUserActivity);
 
     return () => {
+      clearInterval(checkIdleInterval);
       window.removeEventListener("mousemove", handleUserActivity);
       window.removeEventListener("mousedown", handleUserActivity);
       window.removeEventListener("touchstart", handleUserActivity);
       window.removeEventListener("keydown", handleUserActivity);
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-      setIsHideUI(false);
     };
   }, [project?.videoUrl, setIsHideUI]);
 
