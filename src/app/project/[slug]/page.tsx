@@ -485,10 +485,10 @@ export default function ProjectPage() {
                   </div>
                 </div>
 
-                {/* Pure Awwwards Video Control HUD Overlay - Floating Centered Pill Sleekly Positioned Near Bottom */}
+                {/* Pure Awwwards Video Control HUD Overlay - Centered Floating Pill Positioned at Bottom of Video Hero */}
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className={`fixed left-1/2 -translate-x-1/2 bottom-8 md:bottom-10 z-[100] flex items-center gap-3.5 bg-black/50 backdrop-blur-2xl border border-white/15 px-4 py-2 rounded-full shadow-[0_10px_35px_rgba(0,0,0,0.7)] transition-all duration-700 pointer-events-auto ${isIdle ? "opacity-75 scale-95 hover:opacity-100 hover:scale-100" : "opacity-100 scale-100"}`}
+                  className={`absolute left-1/2 -translate-x-1/2 bottom-6 md:bottom-8 z-30 flex items-center gap-3 md:gap-4 bg-black/60 backdrop-blur-2xl border border-white/20 px-4 py-2 md:px-5 md:py-2.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.85)] transition-all duration-700 pointer-events-auto ${isIdle ? "opacity-75 scale-95 hover:opacity-100 hover:scale-100" : "opacity-100 scale-100"}`}
                 >
                   <button
                     onClick={(e) => {
@@ -563,14 +563,14 @@ export default function ProjectPage() {
           </div>
         </div>
 
-        <div className={`relative z-10 w-full px-5 md:px-16 pb-16 md:pb-20 text-left flex flex-col justify-end items-start pointer-events-none transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] ${isIdle ? "translate-y-8 md:translate-y-12" : "translate-y-0"}`}>
+        <div className={`relative z-10 w-full px-5 md:px-16 pb-28 sm:pb-32 md:pb-20 text-left flex flex-col justify-end items-start pointer-events-none transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] ${isIdle ? "translate-y-8 md:translate-y-12" : "translate-y-0"}`}>
           <div ref={titleRef} className="space-y-2 flex flex-col items-start max-w-full pointer-events-auto">
             <div className="flex items-center gap-3">
               <span className="font-mono text-[10px] md:text-[11px] tracking-[0.4em] text-white/70 uppercase font-semibold drop-shadow-md">
                 {project.year}
               </span>
             </div>
-            <h1 className="font-syne font-extrabold text-[5vw] sm:text-[3.5vw] md:text-[2.2vw] leading-[0.95] uppercase tracking-tight text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.95)]">
+            <h1 className="font-syne font-extrabold text-[7.5vw] sm:text-[5vw] md:text-[2.2vw] leading-[0.95] uppercase tracking-tight text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.95)]">
               {project.title}
             </h1>
             {project.descriptionFr && (

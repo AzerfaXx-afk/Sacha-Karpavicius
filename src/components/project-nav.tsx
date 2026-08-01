@@ -119,13 +119,13 @@ export default function ProjectNav({
   return (
     <section
       ref={containerRef}
-      className="relative z-10 w-full h-[55vh] md:h-[65vh] min-h-[420px] bg-[#050505] border-t border-white/10 select-none cursor-none overflow-hidden flex flex-col md:flex-row"
+      className="relative z-10 w-full h-auto md:h-[65vh] md:min-h-[420px] bg-[#050505] border-t border-white/10 select-none md:cursor-none overflow-hidden flex flex-col md:flex-row pb-28 md:pb-0"
       onMouseLeave={() => setHoverSide(null)}
     >
       {/* ═══════════════════ "MOLLE" PENDULUM CURSOR FOLLOWER ═══════════════════ */}
       <div
         ref={cursorRef}
-        className={`fixed top-0 left-0 pointer-events-none z-[99999] will-change-transform transition-opacity duration-300 ${
+        className={`fixed top-0 left-0 pointer-events-none z-[99999] will-change-transform transition-opacity duration-300 hidden md:block ${
           hoverSide ? "opacity-100 scale-100" : "opacity-0 scale-0"
         }`}
       >
@@ -185,7 +185,7 @@ export default function ProjectNav({
           lockScrollForNavigation(2000);
           triggerPageTransition(router, `/project/${prevProject.slug}`);
         }}
-        className="group relative w-full md:w-[52%] h-[260px] md:h-full flex flex-col justify-between p-6 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-left"
+        className="group relative w-full md:w-[52%] h-[240px] sm:h-[280px] md:h-full flex flex-col justify-between p-6 sm:p-8 md:p-16 overflow-hidden cursor-pointer md:cursor-none z-10 shrink-0 pinked-left active:scale-[0.985] transition-transform duration-300 ease-out border-b border-white/10 md:border-b-0"
       >
         {/* Full Vibrant Color Reveal on Hover */}
         {prevProject.coverImage && (
@@ -198,7 +198,7 @@ export default function ProjectNav({
               sizes="(max-width: 768px) 100vw, 50vw"
               quality={90}
               style={{ objectPosition: prevProject.objectPosition ? prevProject.objectPosition.replace("object-[", "").replace("]", "").replace("_", " ") : "center 25%" }}
-              className="object-cover grayscale opacity-50 contrast-110 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 group-hover:saturate-150 transition-all duration-700 ease-[cubic-bezier(0.76,0,0.24,1)]"
+              className="object-cover grayscale-0 opacity-60 md:grayscale md:opacity-50 contrast-110 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 group-hover:saturate-150 transition-all duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] transform-gpu"
             />
             {/* Subtle Vignette Gradient in Idle, clears on hover */}
             <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent group-hover:opacity-30 transition-opacity duration-700" />
@@ -207,19 +207,24 @@ export default function ProjectNav({
 
         {/* Text Content Container */}
         <div className="relative z-10 w-full max-w-[90%] md:max-w-[80%] h-full flex flex-col justify-between pointer-events-none">
-          {/* Top Label */}
-          <div>
-            <span className="font-mono text-[10px] md:text-[12px] tracking-[0.35em] text-white/60 group-hover:text-white uppercase transition-colors duration-700 block drop-shadow-md">
+          {/* Top Label with Mobile Touch Indicator */}
+          <div className="flex items-center justify-between w-full">
+            <span className="font-mono text-[10px] sm:text-[11px] md:text-[12px] tracking-[0.3em] text-white/70 group-hover:text-white uppercase transition-colors duration-500 block drop-shadow-md">
               {lang === "fr" ? "PROJET PRÉCÉDENT" : "PREVIOUS PROJECT"}
+            </span>
+            <span className="md:hidden flex items-center justify-center w-7 h-7 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white group-active:scale-90 transition-transform">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15m0 0l6.75 6.75M4.5 12l6.75-6.75" />
+              </svg>
             </span>
           </div>
 
-          {/* Title & Subtitle + Year (POSITIONNÉ EN BAS) */}
-          <div className="space-y-2 md:space-y-3 mt-auto pb-4 md:pb-8">
-            <h3 className="font-syne font-bold text-[5.5vw] sm:text-[3.8vw] md:text-[3vw] uppercase tracking-tight text-white group-hover:scale-102 transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] leading-none drop-shadow-[0_10px_25px_rgba(0,0,0,0.9)]">
+          {/* Title & Subtitle + Year */}
+          <div className="space-y-1.5 md:space-y-3 mt-auto pb-2 md:pb-8">
+            <h3 className="font-syne font-bold text-[6vw] sm:text-[4vw] md:text-[3vw] uppercase tracking-tight text-white group-hover:scale-102 transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] leading-none drop-shadow-[0_10px_25px_rgba(0,0,0,0.95)]">
               {prevProject.title}
             </h3>
-            <p className="font-inter text-[10px] md:text-[12px] text-white/70 group-hover:text-white tracking-[0.25em] uppercase transition-colors duration-700 font-light drop-shadow-md">
+            <p className="font-inter text-[10px] sm:text-[11px] md:text-[12px] text-white/75 group-hover:text-white tracking-[0.2em] uppercase transition-colors duration-500 font-light drop-shadow-md">
               {getSubLabel(prevProject)}
             </p>
           </div>
@@ -239,9 +244,8 @@ export default function ProjectNav({
           lockScrollForNavigation(2000);
           triggerPageTransition(router, `/project/${nextProject.slug}`);
         }}
-        className="group relative w-full md:w-[52%] md:-ml-[4%] h-[260px] md:h-full flex flex-col justify-between p-6 md:p-16 overflow-hidden cursor-none z-10 shrink-0 pinked-right border-t border-white/10 md:border-t-0"
+        className="group relative w-full md:w-[52%] md:-ml-[4%] h-[240px] sm:h-[280px] md:h-full flex flex-col justify-between p-6 sm:p-8 md:p-16 overflow-hidden cursor-pointer md:cursor-none z-10 shrink-0 pinked-right active:scale-[0.985] transition-transform duration-300 ease-out"
       >
-
         {/* Full Vibrant Color Reveal on Hover */}
         {nextProject.coverImage && (
           <div className="absolute inset-0 z-0 will-change-transform">
@@ -253,7 +257,7 @@ export default function ProjectNav({
               sizes="(max-width: 768px) 100vw, 50vw"
               quality={90}
               style={{ objectPosition: nextProject.objectPosition ? nextProject.objectPosition.replace("object-[", "").replace("]", "").replace("_", " ") : "center 25%" }}
-              className="object-cover grayscale opacity-50 contrast-110 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 group-hover:saturate-150 transition-all duration-700 ease-[cubic-bezier(0.76,0,0.24,1)]"
+              className="object-cover grayscale-0 opacity-60 md:grayscale md:opacity-50 contrast-110 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 group-hover:saturate-150 transition-all duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] transform-gpu"
             />
             {/* Subtle Vignette Gradient in Idle, clears on hover */}
             <div className="absolute inset-0 bg-gradient-to-l from-black/80 via-black/40 to-transparent group-hover:opacity-30 transition-opacity duration-700" />
@@ -261,20 +265,25 @@ export default function ProjectNav({
         )}
 
         {/* Text Content Container */}
-        <div className="relative z-10 w-full max-w-[85%] md:max-w-[80%] ml-auto h-full flex flex-col justify-between items-end text-right pointer-events-none">
-          {/* Top Label */}
-          <div>
-            <span className="font-mono text-[11px] md:text-[12px] tracking-[0.35em] text-white/60 group-hover:text-white uppercase transition-colors duration-700 block drop-shadow-md">
+        <div className="relative z-10 w-full max-w-[90%] md:max-w-[80%] ml-auto h-full flex flex-col justify-between items-end text-right pointer-events-none">
+          {/* Top Label with Mobile Touch Indicator */}
+          <div className="flex items-center justify-between w-full">
+            <span className="md:hidden flex items-center justify-center w-7 h-7 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white group-active:scale-90 transition-transform">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75" />
+              </svg>
+            </span>
+            <span className="font-mono text-[10px] sm:text-[11px] md:text-[12px] tracking-[0.3em] text-white/70 group-hover:text-white uppercase transition-colors duration-500 block drop-shadow-md">
               {lang === "fr" ? "PROJET SUIVANT" : "NEXT PROJECT"}
             </span>
           </div>
 
-          {/* Title & Subtitle + Year (POSITIONNÉ EN BAS) */}
-          <div className="space-y-2 md:space-y-3 mt-auto pb-4 md:pb-8">
-            <h3 className="font-syne font-bold text-[5.5vw] sm:text-[3.8vw] md:text-[3vw] uppercase tracking-tight text-white group-hover:scale-102 transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] leading-none drop-shadow-[0_10px_25px_rgba(0,0,0,0.9)]">
+          {/* Title & Subtitle + Year */}
+          <div className="space-y-1.5 md:space-y-3 mt-auto pb-2 md:pb-8">
+            <h3 className="font-syne font-bold text-[6vw] sm:text-[4vw] md:text-[3vw] uppercase tracking-tight text-white group-hover:scale-102 transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] leading-none drop-shadow-[0_10px_25px_rgba(0,0,0,0.95)]">
               {nextProject.title}
             </h3>
-            <p className="font-inter text-[11px] md:text-[12px] text-white/70 group-hover:text-white tracking-[0.25em] uppercase transition-colors duration-700 font-light drop-shadow-md">
+            <p className="font-inter text-[10px] sm:text-[11px] md:text-[12px] text-white/75 group-hover:text-white tracking-[0.2em] uppercase transition-colors duration-500 font-light drop-shadow-md">
               {getSubLabel(nextProject)}
             </p>
           </div>
