@@ -19,6 +19,7 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
   
   const startY = useRef(0);
   const isScrollingDownRef = useRef(false);
+  const isTouchFromTopRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -43,11 +44,9 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
       const currentScroll = lenisRef.current ? lenisRef.current.scroll : window.scrollY;
       if (currentScroll > 5 || isRefreshing) return;
 
-      // Only allow pull-to-refresh if touch starts in the top 150px of the screen
       const touchY = e.touches[0].clientY;
-      if (touchY > 150) return;
-
       startY.current = touchY;
+      isTouchFromTopRef.current = touchY <= 120;
       isScrollingDownRef.current = false;
       setIsPulling(false);
     };
@@ -55,6 +54,9 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
     const handleTouchMove = (e: TouchEvent) => {
       const isPreloaderActive = typeof document !== "undefined" && !!document.querySelector('[data-preloader="true"]');
       if (isPreloaderActive || isRefreshing) return;
+
+      // If the touch did NOT start near the very top of the page, allow native scrolling freely
+      if (!isTouchFromTopRef.current) return;
 
       const currentScroll = lenisRef.current ? lenisRef.current.scroll : window.scrollY;
       // If we are already determined to be scrolling down the page, ignore
@@ -64,7 +66,7 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
       const diff = currentY - startY.current;
 
       if (diff > 0) {
-        // User is swiping down -> activate Pull-to-Refresh
+        // User is swiping down from top -> activate Pull-to-Refresh
         setIsPulling(true);
         const distance = Math.min(120, Math.pow(diff, 0.82));
         
@@ -73,8 +75,9 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
         }
         setPullDistance(distance);
       } else if (diff < -5) {
-        // User is swiping up to scroll down -> mark it and let browser handle it natively
+        // User is swiping up to scroll down -> release pull state and let browser handle scroll
         isScrollingDownRef.current = true;
+        isTouchFromTopRef.current = false;
         setIsPulling(false);
         setPullDistance(0);
       }
@@ -82,6 +85,7 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
 
     const handleTouchEnd = () => {
       isScrollingDownRef.current = false;
+      isTouchFromTopRef.current = false;
       if (!isPulling || isRefreshing) {
         setIsPulling(false);
         return;
