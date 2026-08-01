@@ -196,26 +196,21 @@ export default function ProjectNav({
               fill
               priority
               sizes="(max-width: 768px) 100vw, 50vw"
-              quality={90}
+              quality={95}
               style={{ objectPosition: prevProject.objectPosition ? prevProject.objectPosition.replace("object-[", "").replace("]", "").replace("_", " ") : "center 25%" }}
-              className="object-cover grayscale-0 opacity-60 md:grayscale md:opacity-50 contrast-110 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 group-hover:saturate-150 transition-all duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] transform-gpu"
+              className="object-cover grayscale-0 opacity-100 md:grayscale md:opacity-50 contrast-105 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 group-hover:saturate-150 transition-all duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] transform-gpu"
             />
             {/* Subtle Vignette Gradient in Idle, clears on hover */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent group-hover:opacity-30 transition-opacity duration-700" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent md:from-black/80 md:via-black/40 group-hover:opacity-30 transition-opacity duration-700" />
           </div>
         )}
 
         {/* Text Content Container */}
         <div className="relative z-10 w-full max-w-[90%] md:max-w-[80%] h-full flex flex-col justify-between pointer-events-none">
-          {/* Top Label with Mobile Touch Indicator */}
-          <div className="flex items-center justify-between w-full">
-            <span className="font-mono text-[10px] sm:text-[11px] md:text-[12px] tracking-[0.3em] text-white/70 group-hover:text-white uppercase transition-colors duration-500 block drop-shadow-md">
+          {/* Top Label */}
+          <div>
+            <span className="font-mono text-[10px] sm:text-[11px] md:text-[12px] tracking-[0.3em] text-white/80 group-hover:text-white uppercase transition-colors duration-500 block drop-shadow-md">
               {lang === "fr" ? "PROJET PRÉCÉDENT" : "PREVIOUS PROJECT"}
-            </span>
-            <span className="md:hidden flex items-center justify-center w-7 h-7 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white group-active:scale-90 transition-transform">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15m0 0l6.75 6.75M4.5 12l6.75-6.75" />
-              </svg>
             </span>
           </div>
 
@@ -224,7 +219,7 @@ export default function ProjectNav({
             <h3 className="font-syne font-bold text-[6vw] sm:text-[4vw] md:text-[3vw] uppercase tracking-tight text-white group-hover:scale-102 transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] leading-none drop-shadow-[0_10px_25px_rgba(0,0,0,0.95)]">
               {prevProject.title}
             </h3>
-            <p className="font-inter text-[10px] sm:text-[11px] md:text-[12px] text-white/75 group-hover:text-white tracking-[0.2em] uppercase transition-colors duration-500 font-light drop-shadow-md">
+            <p className="font-inter text-[10px] sm:text-[11px] md:text-[12px] text-white/85 group-hover:text-white tracking-[0.2em] uppercase transition-colors duration-500 font-light drop-shadow-md">
               {getSubLabel(prevProject)}
             </p>
           </div>
@@ -255,25 +250,20 @@ export default function ProjectNav({
               fill
               priority
               sizes="(max-width: 768px) 100vw, 50vw"
-              quality={90}
+              quality={95}
               style={{ objectPosition: nextProject.objectPosition ? nextProject.objectPosition.replace("object-[", "").replace("]", "").replace("_", " ") : "center 25%" }}
-              className="object-cover grayscale-0 opacity-60 md:grayscale md:opacity-50 contrast-110 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 group-hover:saturate-150 transition-all duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] transform-gpu"
+              className="object-cover grayscale-0 opacity-100 md:grayscale md:opacity-50 contrast-105 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 group-hover:saturate-150 transition-all duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] transform-gpu"
             />
             {/* Subtle Vignette Gradient in Idle, clears on hover */}
-            <div className="absolute inset-0 bg-gradient-to-l from-black/80 via-black/40 to-transparent group-hover:opacity-30 transition-opacity duration-700" />
+            <div className="absolute inset-0 bg-gradient-to-l from-black/70 via-black/30 to-transparent md:from-black/80 md:via-black/40 group-hover:opacity-30 transition-opacity duration-700" />
           </div>
         )}
 
         {/* Text Content Container */}
         <div className="relative z-10 w-full max-w-[90%] md:max-w-[80%] ml-auto h-full flex flex-col justify-between items-end text-right pointer-events-none">
-          {/* Top Label with Mobile Touch Indicator */}
-          <div className="flex items-center justify-between w-full">
-            <span className="md:hidden flex items-center justify-center w-7 h-7 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white group-active:scale-90 transition-transform">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75" />
-              </svg>
-            </span>
-            <span className="font-mono text-[10px] sm:text-[11px] md:text-[12px] tracking-[0.3em] text-white/70 group-hover:text-white uppercase transition-colors duration-500 block drop-shadow-md">
+          {/* Top Label */}
+          <div>
+            <span className="font-mono text-[10px] sm:text-[11px] md:text-[12px] tracking-[0.3em] text-white/80 group-hover:text-white uppercase transition-colors duration-500 block drop-shadow-md">
               {lang === "fr" ? "PROJET SUIVANT" : "NEXT PROJECT"}
             </span>
           </div>
@@ -283,7 +273,7 @@ export default function ProjectNav({
             <h3 className="font-syne font-bold text-[6vw] sm:text-[4vw] md:text-[3vw] uppercase tracking-tight text-white group-hover:scale-102 transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] leading-none drop-shadow-[0_10px_25px_rgba(0,0,0,0.95)]">
               {nextProject.title}
             </h3>
-            <p className="font-inter text-[10px] sm:text-[11px] md:text-[12px] text-white/75 group-hover:text-white tracking-[0.2em] uppercase transition-colors duration-500 font-light drop-shadow-md">
+            <p className="font-inter text-[10px] sm:text-[11px] md:text-[12px] text-white/85 group-hover:text-white tracking-[0.2em] uppercase transition-colors duration-500 font-light drop-shadow-md">
               {getSubLabel(nextProject)}
             </p>
           </div>
