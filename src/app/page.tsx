@@ -1546,15 +1546,15 @@ export default function Home() {
       <section
         ref={heroRef}
         id="hero"
-        className="relative w-full h-screen overflow-hidden bg-[#050505]"
+        className="relative w-full h-screen overflow-hidden bg-[#050505] touch-pan-y"
       >
         <PhysicsCoins containerRef={heroRef} portraitRef={heroImgRef} siteStarted={siteStarted || hasEnteredSite} />
 
         {/* Central Image Container (Awwwards Profile Portrait) */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-6 md:mt-0" style={{ perspective: "1000px" }}>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-6 md:mt-0 touch-pan-y" style={{ perspective: "1000px" }}>
           <div
             ref={heroImgRef}
-            className="relative w-[88vw] max-w-[480px] h-[65vh] md:h-[700px] rounded-2xl overflow-hidden shadow-[0_20px_80px_rgba(0,0,0,0.8)]"
+            className="relative w-[88vw] max-w-[480px] h-[65vh] md:h-[700px] rounded-2xl overflow-hidden shadow-[0_20px_80px_rgba(0,0,0,0.8)] pointer-events-none touch-pan-y"
             style={{
               WebkitMaskImage: "radial-gradient(ellipse 92% 92% at 50% 50%, black 75%, transparent 100%)",
               maskImage: "radial-gradient(ellipse 92% 92% at 50% 50%, black 75%, transparent 100%)"
@@ -1565,12 +1565,12 @@ export default function Home() {
               alt="Sacha Karpavicius - Visual Storyteller"
               fill
               sizes="(max-width: 768px) 90vw, 600px"
-              className="object-cover object-center scale-100 transform-gpu brightness-[1.03] contrast-[1.05]"
+              className="object-cover object-center scale-100 transform-gpu brightness-[1.03] contrast-[1.05] pointer-events-none touch-pan-y"
               priority
               quality={100}
             />
             {/* Pure, smooth bottom gradient fade into #050505 for flawless title legibility */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/30 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/30 to-transparent pointer-events-none touch-pan-y" />
           </div>
         </div>
 

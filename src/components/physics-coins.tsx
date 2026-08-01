@@ -380,21 +380,25 @@ export default function PhysicsCoins({
 
     Matter.World.add(world, coinBodies);
 
-    // 5. Mouse / Touch Drag Constraint with Native Matter.js Mouse Alignment
-    const mouse = Matter.Mouse.create(canvas);
-    mouse.pixelRatio = dpr; // CRITICAL: Aligns Matter.Mouse coordinates with DPR canvas scaling!
+    // 5. Mouse / Touch Drag Constraint with Native Matter.js Mouse Alignment (Desktop only to prevent blocking mobile touch scrolling)
+    let mouse: Matter.Mouse | null = null;
+    let mouseConstraint: Matter.MouseConstraint | null = null;
 
-    const mouseConstraint = Matter.MouseConstraint.create(engine, {
-      mouse,
-      constraint: {
-        stiffness: 0.22,
-        damping: 0.05,
-        render: { visible: false },
-      },
-    });
+    if (!isMobile) {
+      mouse = Matter.Mouse.create(canvas);
+      mouse.pixelRatio = dpr; // CRITICAL: Aligns Matter.Mouse coordinates with DPR canvas scaling!
 
-    Matter.World.add(world, mouseConstraint);
+      mouseConstraint = Matter.MouseConstraint.create(engine, {
+        mouse,
+        constraint: {
+          stiffness: 0.22,
+          damping: 0.05,
+          render: { visible: false },
+        },
+      });
 
+      Matter.World.add(world, mouseConstraint);
+    }
 
     let cursorX = width / 2;
     let cursorY = height / 2;
@@ -455,6 +459,7 @@ export default function PhysicsCoins({
 
 
     const handlePointerMove = (e: MouseEvent | TouchEvent) => {
+      if (isMobile && "touches" in e) return;
       const rect = canvas.getBoundingClientRect();
       const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
       const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
@@ -462,10 +467,11 @@ export default function PhysicsCoins({
       const newY = clientY - rect.top;
       const now = Date.now();
 
-      // Synchronize Matter.Mouse position on move
-      mouse.position.x = newX;
-      mouse.position.y = newY;
-
+      // Synchronize Matter.Mouse position on move if desktop
+      if (mouse) {
+        mouse.position.x = newX;
+        mouse.position.y = newY;
+      }
 
       pointerHistory.push({ x: newX, y: newY, time: now });
       if (pointerHistory.length > 5) pointerHistory.shift();
@@ -485,7 +491,7 @@ export default function PhysicsCoins({
 
 
     const handlePointerUp = () => {
-      if (mouseConstraint.body) {
+      if (mouseConstraint?.body) {
         // Precise Inertia Fling Throwing proportional to cursor movement velocity
         const grabbedCoin = mouseConstraint.body;
         (mouseConstraint as any).constraint.bodyB = null;
@@ -521,12 +527,14 @@ export default function PhysicsCoins({
     };
 
 
-    window.addEventListener("mousedown", handlePointerDown);
-    window.addEventListener("mouseup", handlePointerUp);
-    window.addEventListener("touchstart", handlePointerDown, { passive: true });
-    window.addEventListener("touchend", handlePointerUp);
-    window.addEventListener("mousemove", handlePointerMove);
-    window.addEventListener("touchmove", handlePointerMove, { passive: true });
+    if (!isMobile) {
+      window.addEventListener("mousedown", handlePointerDown);
+      window.addEventListener("mouseup", handlePointerUp);
+      window.addEventListener("touchstart", handlePointerDown, { passive: true });
+      window.addEventListener("touchend", handlePointerUp);
+      window.addEventListener("mousemove", handlePointerMove);
+      window.addEventListener("touchmove", handlePointerMove, { passive: true });
+    }
 
     // Scroll Listener for Awwwards Pop-Out Shrink & Pop-In Entrance Physics
     let scrollY = 0;
@@ -642,8 +650,7 @@ export default function PhysicsCoins({
     };
 
     // Frame update logic
-    Matter.Events.on(engine, "beforeUpdate", () => {
-      const dragged = mouseConstraint.body;
+    Matter.Events.on(engine, "beforeUpdate", () => {      const dragged = mouseConstraint?.body;
 
       // Awwwards Scroll Physics: Upward balloon float & dispersion on scroll
       const scrollProgress = Math.min(1.0, Math.max(0, scrollY / (height * 0.65)));
@@ -667,13 +674,9 @@ export default function PhysicsCoins({
       }
 
       // Centered Spring Drag (Warhol Arts style)
-      if (dragged) {
+      if (dragged && mouseConstraint) {
         (mouseConstraint as any).constraint.pointB = { x: 0, y: 0 };
       }
-
-
-
-
 
       // Autonomous Life Motion & Anti-Stuck System
       coinBodies.forEach((coin) => {
@@ -699,7 +702,7 @@ export default function PhysicsCoins({
       });
 
       // Warhol Arts Open-Hand Cursor active 100% across hero section canvas & container
-      const isGrabbing = mouseConstraint.body || isPointerDown;
+      const isGrabbing = mouseConstraint?.body || isPointerDown;
       const cursorStyle = isGrabbing ? "grabbing" : "grab";
 
       canvas.style.cursor = cursorStyle;
@@ -709,8 +712,6 @@ export default function PhysicsCoins({
       } else if (document.body.style.cursor === "grabbing") {
         document.body.style.cursor = "";
       }
-
-
     });
 
     // 6. Collision Start (Awwwards Rebound FX & Impact Particle Explosion)
@@ -798,62 +799,59 @@ export default function PhysicsCoins({
         ctx.save();
         ctx.strokeStyle = sw.color;
         ctx.globalAlpha = Math.max(0, sw.alpha);
-        ctx.lineWidth = 2.4;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
       }
 
-      // Render Impact Sparks, Stars & Pixel Fragments
+      // Render Particles
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.rotation += p.vRot;
+        p.vy += 0.12; // gravity
         p.life++;
+        p.rotation += p.vRot;
+
+        const progress = p.life / p.maxLife;
+        const alpha = Math.max(0, 1 - progress);
+        const currentSize = p.size * (1 - progress * 0.4);
 
         if (p.life >= p.maxLife) {
           particles.splice(i, 1);
           continue;
         }
 
-        const alpha = Math.max(0, 1 - p.life / p.maxLife);
-        const radius = Math.max(0, p.size * alpha);
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = alpha;
 
-        if (radius > 0) {
-          ctx.save();
-          ctx.fillStyle = p.color;
-          ctx.strokeStyle = p.color;
-          ctx.globalAlpha = alpha;
-          ctx.translate(p.x, p.y);
-          ctx.rotate(p.rotation);
-
-          if (p.type === "star") {
-            drawStar(ctx, 0, 0, radius * 1.8, radius * 0.6);
-            ctx.fill();
-          } else if (p.type === "pixel") {
-            ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
-          } else {
-            ctx.beginPath();
-            ctx.arc(0, 0, radius, 0, Math.PI * 2);
-            ctx.fill();
-          }
-
-          ctx.restore();
+        if (p.type === "star") {
+          drawStar(ctx, 0, 0, currentSize * 1.6, currentSize * 0.7);
+          ctx.fill();
+        } else if (p.type === "pixel") {
+          ctx.fillRect(-currentSize / 2, -currentSize / 2, currentSize, currentSize);
+        } else {
+          ctx.beginPath();
+          ctx.arc(0, 0, currentSize, 0, Math.PI * 2);
+          ctx.fill();
         }
+        ctx.restore();
       }
 
-      // Render Active Vector Awwwards Characters
+      // Render Coins
       coinBodies.forEach((coin) => {
         const data = (coin as any).coinData as CoinData;
-
-        if (data.entryScale <= 0.05) return;
+        if (!data || data.entryOpacity <= 0.01) return;
 
         const pos = coin.position;
         const angle = coin.angle;
         const baseR = data.radius;
-        const isGrabbed = mouseConstraint.body === coin;
+        const isGrabbed = mouseConstraint?.body === coin;
         const isHolding = targetHoldCoin === coin && data.holdProgress > 0;
 
         // Organic rubber squash/stretch easing & Dynamic drag stretch animation
@@ -1309,7 +1307,7 @@ export default function PhysicsCoins({
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 z-15 pointer-events-auto w-full h-full"
+      className="absolute inset-0 z-15 pointer-events-none md:pointer-events-auto w-full h-full touch-pan-y"
     />
   );
 }

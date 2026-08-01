@@ -65,16 +65,16 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
       const currentY = e.touches[0].clientY;
       const diff = currentY - startY.current;
 
-      if (diff > 0) {
+      if (diff > 25) {
         // User is swiping down from top -> activate Pull-to-Refresh
         setIsPulling(true);
-        const distance = Math.min(120, Math.pow(diff, 0.82));
+        const distance = Math.min(120, Math.pow(diff - 25, 0.82));
         
         if (e.cancelable) {
           e.preventDefault();
         }
         setPullDistance(distance);
-      } else if (diff < -5) {
+      } else if (diff < -3) {
         // User is swiping up to scroll down -> release pull state and let browser handle scroll
         isScrollingDownRef.current = true;
         isTouchFromTopRef.current = false;
