@@ -35,20 +35,11 @@ export default function PwaInstallPrompt() {
     const isIosDevice = /iphone|ipad|ipod/.test(ua);
     setIsIos(isIosDevice);
 
-    // Capture beforeinstallprompt for Android/Chrome/Windows
+    // Capture beforeinstallprompt for Android/Chrome/Windows safely
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       const promptEvent = e as BeforeInstallPromptEvent;
       setDeferredPrompt(promptEvent);
-
-      // Auto-trigger native browser install prompt (Image 2) on landing if not previously prompted
-      const prompted = localStorage.getItem("sacha_pwa_prompted");
-      if (!prompted) {
-        setTimeout(() => {
-          promptEvent.prompt();
-          localStorage.setItem("sacha_pwa_prompted", "true");
-        }, 1200);
-      }
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
