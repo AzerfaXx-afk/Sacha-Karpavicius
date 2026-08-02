@@ -565,7 +565,7 @@ function VideoCardItem({
               fill
               sizes="100vw"
               className="object-cover object-center"
-              quality={40}
+              quality={50}
             />
           </div>
         )}
