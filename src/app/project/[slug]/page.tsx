@@ -453,9 +453,9 @@ export default function ProjectPage() {
             toggleFullscreen();
           }
         }}
-        className={`relative w-full h-[100vh] min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] cursor-pointer group select-none ${
-          isFullscreen ? "fixed inset-0 z-[9999] w-screen h-screen" : ""
-        }`}
+        className={`relative w-full h-[100vh] min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] group select-none transition-all duration-500 ${
+          isIdle && isVideoPlaying ? "cursor-none" : "cursor-pointer"
+        } ${isFullscreen ? "fixed inset-0 z-[9999] w-screen h-screen" : ""}`}
       >
         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
           <div className="relative w-full h-full">
@@ -487,7 +487,7 @@ export default function ProjectPage() {
                     setIsVideoPlaying(false);
                     resumeAudio(true);
                   }}
-                  className="object-cover w-full h-full min-h-full min-w-full cursor-pointer transform-gpu brightness-[1.03] contrast-[1.03] saturate-[1.04] will-change-transform"
+                  className="object-cover w-full h-full min-h-full min-w-full transform-gpu brightness-[1.03] contrast-[1.03] saturate-[1.04] will-change-transform"
                 >
                   {project.videoUrl.endsWith(".mp4") && (
                     <source
@@ -517,18 +517,22 @@ export default function ProjectPage() {
                   </div>
                 </div>
 
-                {/* Pure Awwwards Video Control HUD Overlay - Centered Floating Pill Positioned at Bottom of Video Hero */}
+                {/* Netflix-style Cinema Video Control HUD Overlay */}
                 <div
                   onClick={(e) => e.stopPropagation()}
                   onDoubleClick={(e) => e.stopPropagation()}
-                  className={`absolute left-1/2 -translate-x-1/2 bottom-6 md:bottom-8 z-40 flex items-center gap-3 md:gap-4 bg-black/60 backdrop-blur-2xl border border-white/20 px-4 py-2 md:px-5 md:py-2.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.85)] transition-all duration-700 pointer-events-auto ${isIdle && !isFullscreen ? "opacity-75 scale-95 hover:opacity-100 hover:scale-100" : "opacity-100 scale-100"}`}
+                  className={`absolute left-1/2 -translate-x-1/2 bottom-6 md:bottom-8 z-40 flex items-center gap-3 md:gap-4 bg-black/70 backdrop-blur-2xl border border-white/20 px-4 py-2 md:px-5 md:py-2.5 rounded-full shadow-[0_16px_50px_rgba(0,0,0,0.9)] transition-all duration-500 ${
+                    isIdle && isVideoPlaying
+                      ? "opacity-0 scale-95 pointer-events-none translate-y-4"
+                      : "opacity-100 scale-100 pointer-events-auto translate-y-0"
+                  }`}
                 >
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       togglePlayVideo();
                     }}
-                    className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1"
+                    className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1 cursor-pointer"
                     title={isVideoPlaying ? "Pause" : "Lecture"}
                   >
                     {isVideoPlaying ? (
@@ -543,7 +547,7 @@ export default function ProjectPage() {
                       e.stopPropagation();
                       toggleMuteVideo();
                     }}
-                    className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1"
+                    className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1 cursor-pointer"
                     title={isVideoMuted ? "Activer le son" : "Couper le son"}
                   >
                     {isVideoMuted ? (
@@ -555,7 +559,29 @@ export default function ProjectPage() {
 
                   <div className="h-3 w-[1px] bg-white/15" />
 
-                  <span className="font-mono text-[11px] text-white/80 tracking-wider select-none">
+                  {/* Netflix-style Interactive Progress Scrubber */}
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const clickX = e.clientX - rect.left;
+                      const width = rect.width;
+                      if (width > 0 && videoDur > 0 && videoRef.current) {
+                        const newTime = (clickX / width) * videoDur;
+                        videoRef.current.currentTime = newTime;
+                        setVideoTime(newTime);
+                      }
+                    }}
+                    className="relative w-20 sm:w-28 md:w-36 h-1.5 bg-white/20 rounded-full overflow-hidden cursor-pointer group/progress p-0 transition-all duration-300 hover:h-2"
+                    title="Rechercher"
+                  >
+                    <div
+                      className="h-full bg-gradient-to-r from-white/70 via-white to-white rounded-full transition-all duration-100 origin-left"
+                      style={{ width: `${videoDur > 0 ? (videoTime / videoDur) * 100 : 0}%` }}
+                    />
+                  </div>
+
+                  <span className="font-mono text-[10px] md:text-[11px] text-white/80 tracking-wider select-none shrink-0">
                     {formatTime(videoTime)} / {formatTime(videoDur)}
                   </span>
 
@@ -566,7 +592,7 @@ export default function ProjectPage() {
                       e.stopPropagation();
                       toggleFullscreen();
                     }}
-                    className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1"
+                    className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1 cursor-pointer"
                     title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
                   >
                     {isFullscreen ? (
@@ -596,7 +622,11 @@ export default function ProjectPage() {
           </div>
         </div>
 
-        <div className={`relative z-10 w-full px-5 md:px-16 pb-28 sm:pb-32 md:pb-20 text-left flex flex-col justify-end items-start pointer-events-none transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] ${isIdle ? "translate-y-8 md:translate-y-12" : "translate-y-0"}`}>
+        <div className={`relative z-10 w-full px-5 md:px-16 pb-28 sm:pb-32 md:pb-20 text-left flex flex-col justify-end items-start transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${
+          isIdle && isVideoPlaying
+            ? "opacity-0 translate-y-8 pointer-events-none"
+            : "opacity-100 translate-y-0 pointer-events-auto"
+        }`}>
           <div ref={titleRef} className="space-y-2 flex flex-col items-start max-w-full pointer-events-auto">
             <div className="flex items-center gap-3">
               <span className="font-mono text-[10px] md:text-[11px] tracking-[0.4em] text-white/70 uppercase font-semibold drop-shadow-md">
