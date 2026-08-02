@@ -6,6 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: 'SACHA KARPAVICIUS',
     description: 'Portfolio officiel de Sacha Karpavicius — Visual Storyteller, Fashion Photographer & Art Director.',
     start_url: '/',
+    id: '/?source=pwa',
     display: 'standalone',
     orientation: 'portrait-primary',
     background_color: '#050505',

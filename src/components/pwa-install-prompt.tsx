@@ -86,7 +86,7 @@ export default function PwaInstallPrompt() {
   };
 
   // Do not render if standalone app, dismissed, or if UI is hidden
-  if (isStandalone || !showBanner || isHideUI || !hasEnteredSite) {
+  if (isStandalone || !showBanner || isHideUI) {
     return null;
   }
 

@@ -33,13 +33,15 @@ export const metadata: Metadata = {
   title: "SACHA KARPAVICIUS",
   description:
     "High-end portfolio of Sacha Karpavicius — Visual Storyteller, Fashion Photographer & Art Director.",
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: "/logo.png",
+    apple: "/icon-192.png",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Sacha K. App",
+    title: "SACHA KARPAVICIUS",
   },
 };
 
@@ -65,23 +67,13 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                    for (let registration of registrations) {
-                      registration.unregister().then(function() {
-                        console.log('Local Service Worker unregistered to prevent HMR issues.');
-                      });
-                    }
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    console.log('SW registered:', reg.scope);
+                  }).catch(function(err) {
+                    console.log('SW registration failed:', err);
                   });
-                } else {
-                  window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js').then(function(reg) {
-                      console.log('SW registered:', reg.scope);
-                    }).catch(function(err) {
-                      console.log('SW registration failed:', err);
-                    });
-                  });
-                }
+                });
               }
             `
           }}
