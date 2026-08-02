@@ -371,11 +371,12 @@ export default function ProjectPage() {
     }
   }, []);
 
-  // Keyboard shortcuts (Space, K: Play/Pause, F: Fullscreen, M: Mute)
+  // Keyboard shortcuts (Space, K: Play/Pause, F: Fullscreen, M: Mute, Arrows: Seek)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
       if (tag === "input" || tag === "textarea") return;
+      const vid = videoRef.current;
 
       if (e.code === "Space" || e.key === " " || e.key === "k" || e.key === "K") {
         e.preventDefault();
@@ -386,6 +387,16 @@ export default function ProjectPage() {
       } else if (e.key === "m" || e.key === "M") {
         e.preventDefault();
         toggleMuteVideo();
+      } else if (e.key === "ArrowRight") {
+        if (vid) {
+          e.preventDefault();
+          vid.currentTime = Math.min(vid.duration || 0, vid.currentTime + 5);
+        }
+      } else if (e.key === "ArrowLeft") {
+        if (vid) {
+          e.preventDefault();
+          vid.currentTime = Math.max(0, vid.currentTime - 5);
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -519,9 +530,11 @@ export default function ProjectPage() {
 
                 {/* Netflix-style Cinema Video Control HUD Overlay */}
                 <div
-                  onClick={(e) => e.stopPropagation()}
-                  onDoubleClick={(e) => e.stopPropagation()}
-                  className={`absolute left-1/2 -translate-x-1/2 bottom-6 md:bottom-8 z-40 flex items-center gap-3 md:gap-4 bg-black/70 backdrop-blur-2xl border border-white/20 px-4 py-2 md:px-5 md:py-2.5 rounded-full shadow-[0_16px_50px_rgba(0,0,0,0.9)] transition-all duration-500 ${
+                  onClick={(e) => { e.stopPropagation(); }}
+                  onMouseDown={(e) => { e.stopPropagation(); }}
+                  onTouchStart={(e) => { e.stopPropagation(); }}
+                  onDoubleClick={(e) => { e.stopPropagation(); }}
+                  className={`absolute left-1/2 -translate-x-1/2 bottom-6 md:bottom-8 z-40 flex items-center gap-3 md:gap-4 bg-black/75 backdrop-blur-2xl border border-white/20 px-4 py-2 md:px-5 md:py-2.5 rounded-full shadow-[0_16px_50px_rgba(0,0,0,0.9)] transition-all duration-500 ${
                     isIdle && isVideoPlaying
                       ? "opacity-0 scale-95 pointer-events-none translate-y-4"
                       : "opacity-100 scale-100 pointer-events-auto translate-y-0"
@@ -530,10 +543,13 @@ export default function ProjectPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
+                      e.preventDefault();
                       togglePlayVideo();
                     }}
-                    className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1 cursor-pointer"
-                    title={isVideoPlaying ? "Pause" : "Lecture"}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1.5 cursor-pointer flex items-center justify-center"
+                    title={isVideoPlaying ? "Pause (Espace / K)" : "Lecture (Espace / K)"}
                   >
                     {isVideoPlaying ? (
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
@@ -545,10 +561,13 @@ export default function ProjectPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
+                      e.preventDefault();
                       toggleMuteVideo();
                     }}
-                    className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1 cursor-pointer"
-                    title={isVideoMuted ? "Activer le son" : "Couper le son"}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1.5 cursor-pointer flex items-center justify-center"
+                    title={isVideoMuted ? "Activer le son (M)" : "Couper le son (M)"}
                   >
                     {isVideoMuted ? (
                       <svg className="w-4 h-4 text-white/50" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
@@ -563,6 +582,7 @@ export default function ProjectPage() {
                   <div
                     onClick={(e) => {
                       e.stopPropagation();
+                      e.preventDefault();
                       const rect = e.currentTarget.getBoundingClientRect();
                       const clickX = e.clientX - rect.left;
                       const width = rect.width;
@@ -572,8 +592,10 @@ export default function ProjectPage() {
                         setVideoTime(newTime);
                       }
                     }}
-                    className="relative w-20 sm:w-28 md:w-36 h-1.5 bg-white/20 rounded-full overflow-hidden cursor-pointer group/progress p-0 transition-all duration-300 hover:h-2"
-                    title="Rechercher"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    className="relative w-24 sm:w-32 md:w-44 h-1.5 bg-white/20 rounded-full overflow-hidden cursor-pointer group/progress p-0 transition-all duration-300 hover:h-2"
+                    title="Cliquer pour rechercher dans la vidéo"
                   >
                     <div
                       className="h-full bg-gradient-to-r from-white/70 via-white to-white rounded-full transition-all duration-100 origin-left"
@@ -590,10 +612,13 @@ export default function ProjectPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
+                      e.preventDefault();
                       toggleFullscreen();
                     }}
-                    className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1 cursor-pointer"
-                    title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1.5 cursor-pointer flex items-center justify-center"
+                    title={isFullscreen ? "Quitter le plein écran (F)" : "Plein écran (F)"}
                   >
                     {isFullscreen ? (
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
