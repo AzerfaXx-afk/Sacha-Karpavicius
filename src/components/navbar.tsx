@@ -104,7 +104,8 @@ const AnimatedLink = ({
     onClick();
     setTimeout(() => {
       if (pathname !== "/") {
-        router.push("/" + href);
+        sessionStorage.setItem("targetSection", href);
+        triggerPageTransition(router, "/" + href);
       } else {
         const target = document.querySelector(href);
         if (target) {

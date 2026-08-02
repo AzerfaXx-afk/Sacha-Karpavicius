@@ -340,7 +340,7 @@ export default function ProjectPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [togglePlayVideo]);
 
-  const toggleMuteVideo = () => {
+  const toggleMuteVideo = useCallback(() => {
     const vid = videoRef.current;
     if (!vid) return;
     const nextMuted = !isVideoMuted;
@@ -351,21 +351,46 @@ export default function ProjectPage() {
     } else if (!vid.paused) {
       pauseAudio(true);
     }
-  };
+  }, [isVideoMuted, pauseAudio, resumeAudio]);
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
+    const container = heroRef.current;
     const vid = videoRef.current;
-    if (!vid) return;
+    if (!container || !vid) return;
+
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
     } else {
-      if (vid.requestFullscreen) {
-        vid.requestFullscreen().catch(() => {});
+      if (container.requestFullscreen) {
+        container.requestFullscreen().catch(() => {});
+      } else if ((container as any).webkitRequestFullscreen) {
+        (container as any).webkitRequestFullscreen();
       } else if ((vid as any).webkitEnterFullscreen) {
         (vid as any).webkitEnterFullscreen();
       }
     }
-  };
+  }, []);
+
+  // Keyboard shortcuts (Space, K: Play/Pause, F: Fullscreen, M: Mute)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
+
+      if (e.code === "Space" || e.key === " " || e.key === "k" || e.key === "K") {
+        e.preventDefault();
+        togglePlayVideo();
+      } else if (e.key === "f" || e.key === "F") {
+        e.preventDefault();
+        toggleFullscreen();
+      } else if (e.key === "m" || e.key === "M") {
+        e.preventDefault();
+        toggleMuteVideo();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [togglePlayVideo, toggleFullscreen, toggleMuteVideo]);
 
   const handleTimeUpdate = () => {
     const vid = videoRef.current;
@@ -423,7 +448,14 @@ export default function ProjectPage() {
             togglePlayVideo();
           }
         }}
-        className="relative w-full h-[100vh] min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] cursor-pointer group select-none"
+        onDoubleClick={() => {
+          if (project?.videoUrl) {
+            toggleFullscreen();
+          }
+        }}
+        className={`relative w-full h-[100vh] min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] cursor-pointer group select-none ${
+          isFullscreen ? "fixed inset-0 z-[9999] w-screen h-screen" : ""
+        }`}
       >
         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
           <div className="relative w-full h-full">
@@ -488,7 +520,8 @@ export default function ProjectPage() {
                 {/* Pure Awwwards Video Control HUD Overlay - Centered Floating Pill Positioned at Bottom of Video Hero */}
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className={`absolute left-1/2 -translate-x-1/2 bottom-6 md:bottom-8 z-30 flex items-center gap-3 md:gap-4 bg-black/60 backdrop-blur-2xl border border-white/20 px-4 py-2 md:px-5 md:py-2.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.85)] transition-all duration-700 pointer-events-auto ${isIdle ? "opacity-75 scale-95 hover:opacity-100 hover:scale-100" : "opacity-100 scale-100"}`}
+                  onDoubleClick={(e) => e.stopPropagation()}
+                  className={`absolute left-1/2 -translate-x-1/2 bottom-6 md:bottom-8 z-40 flex items-center gap-3 md:gap-4 bg-black/60 backdrop-blur-2xl border border-white/20 px-4 py-2 md:px-5 md:py-2.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.85)] transition-all duration-700 pointer-events-auto ${isIdle && !isFullscreen ? "opacity-75 scale-95 hover:opacity-100 hover:scale-100" : "opacity-100 scale-100"}`}
                 >
                   <button
                     onClick={(e) => {

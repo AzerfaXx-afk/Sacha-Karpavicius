@@ -60,6 +60,10 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      if (sessionStorage.getItem("userWantsAudio") === "true") {
+        userWantsAudioRef.current = true;
+      }
+
       audioRef.current = new Audio("/musique.mp3");
       audioRef.current.loop = true;
       audioRef.current.volume = 0.35;
@@ -142,10 +146,12 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (isPlaying) {
       userWantsAudioRef.current = false;
+      if (typeof window !== "undefined") sessionStorage.setItem("userWantsAudio", "false");
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
       userWantsAudioRef.current = true;
+      if (typeof window !== "undefined") sessionStorage.setItem("userWantsAudio", "true");
       audioRef.current.volume = 0.35;
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     }
@@ -232,6 +238,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
     wasPlayingBeforeBackgroundRef.current = false;
     isAutoPausedRef.current = false;
     userWantsAudioRef.current = true;
+    if (typeof window !== "undefined") sessionStorage.setItem("userWantsAudio", "true");
 
     if (audioRef.current) {
       audioRef.current.volume = 0.35;

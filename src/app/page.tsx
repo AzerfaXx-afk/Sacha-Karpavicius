@@ -793,11 +793,18 @@ export default function Home() {
 
     // Detect SPA In-App Navigation vs Fresh Site Entry / F5 Reload
     if (typeof window !== "undefined") {
+      if ("scrollRestoration" in history) {
+        history.scrollRestoration = "manual";
+      }
+
       const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
       const isReload = navEntries.length > 0 && navEntries[0].type === "reload";
 
       if (isReload) {
         sessionStorage.removeItem("spa_nav");
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
       }
 
       const isSpaNav = sessionStorage.getItem("spa_nav") === "true";
@@ -808,24 +815,37 @@ export default function Home() {
       } else {
         setLoading(true);
         setSiteStarted(false);
+        window.scrollTo(0, 0);
       }
     }
 
-
-    // Handle smooth scroll to #contact if triggered from project page Contact click
+    // Handle smooth scroll to target section (#photos, #videos, #about, #contact) when navigating from another page
     if (typeof window !== "undefined") {
+      const targetSection = sessionStorage.getItem("targetSection") || (window.location.hash ? window.location.hash : null);
       const shouldScrollToContact = sessionStorage.getItem("scrollToContact");
-      if (shouldScrollToContact === "true") {
+      const effectiveTarget = targetSection || (shouldScrollToContact === "true" ? "#contact" : null);
+
+      if (effectiveTarget) {
+        sessionStorage.removeItem("targetSection");
         sessionStorage.removeItem("scrollToContact");
         setLoading(false);
         setSiteStarted(true);
         setHasEnteredSite(true);
         setTimeout(() => {
-          const contactEl = document.getElementById("contact");
-          if (contactEl) {
-            contactEl.scrollIntoView({ behavior: "smooth" });
+          const targetEl = document.querySelector(effectiveTarget);
+          if (targetEl) {
+            const lenis = (window as any).__lenis;
+            if (lenis && typeof lenis.scrollTo === "function") {
+              lenis.scrollTo(targetEl as HTMLElement, {
+                offset: 0,
+                duration: 1.8,
+                easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+              });
+            } else {
+              targetEl.scrollIntoView({ behavior: "smooth" });
+            }
           }
-        }, 350);
+        }, 400);
       }
     }
 
