@@ -4,6 +4,7 @@ import "./globals.css";
 import SmoothScrollProvider from "@/components/smooth-scroll-provider";
 import { SiteProvider } from "@/context/site-context";
 import GlobalAudioSignal from "@/components/global-audio-signal";
+import PwaInstallPrompt from "@/components/pwa-install-prompt";
 
 const syne = Syne({
   variable: "--font-syne",
@@ -35,6 +36,11 @@ export const metadata: Metadata = {
   icons: {
     icon: "/logo.png",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Sacha K. App",
+  },
 };
 
 export default function RootLayout({
@@ -44,7 +50,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="fr"
       className={`${syne.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#0a0a0a] text-white">
@@ -53,6 +59,7 @@ export default function RootLayout({
             <main className="flex-1 flex flex-col">{children}</main>
           </SmoothScrollProvider>
           <GlobalAudioSignal />
+          <PwaInstallPrompt />
         </SiteProvider>
         <script
           dangerouslySetInnerHTML={{

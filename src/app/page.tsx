@@ -245,12 +245,12 @@ const AboutImageCard = ({ isMenuOpen }: { isMenuOpen: boolean }) => {
   return (
     <div
       data-about-img
-      className="w-full max-w-[300px] aspect-[3/4] rounded-lg will-change-transform"
+      className="w-full max-w-[340px] md:max-w-[420px] lg:max-w-[440px] aspect-[3/4] rounded-xl will-change-transform shadow-2xl"
       style={{ perspective: "1000px" }}
     >
       <div
         ref={cardRef}
-        className="relative w-full h-full rounded-lg overflow-hidden border border-white/10 shadow-2xl cursor-pointer group select-none touch-pan-y"
+        className="relative w-full h-full rounded-xl overflow-hidden border border-white/10 shadow-2xl cursor-pointer group select-none touch-pan-y transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:border-white/30 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_40px_rgba(255,255,255,0.15)]"
         style={{ transformStyle: "preserve-3d" }}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
@@ -262,15 +262,15 @@ const AboutImageCard = ({ isMenuOpen }: { isMenuOpen: boolean }) => {
           ref={imgRef}
           src="/1.jpg"
           alt="Sacha Karpavicius Portrait"
-          className="w-full h-full object-cover pointer-events-none"
+          className="w-full h-full object-cover pointer-events-none transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04] group-hover:brightness-110 group-hover:contrast-105 group-hover:saturate-105"
         />
         {/* Shine glare overlay layer */}
         <div
           ref={glareRef}
-          className="absolute w-[150%] h-[150%] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.18)_0%,rgba(255,255,255,0)_70%)] pointer-events-none -translate-x-1/2 -translate-y-1/2 mix-blend-overlay opacity-0"
+          className="absolute w-[160%] h-[160%] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.25)_0%,rgba(255,255,255,0)_70%)] pointer-events-none -translate-x-1/2 -translate-y-1/2 mix-blend-overlay opacity-0 transition-opacity duration-300"
           style={{ left: "50%", top: "50%" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-white/10 opacity-40 group-hover:opacity-20 transition-opacity duration-700 pointer-events-none" />
       </div>
     </div>
   );
@@ -812,6 +812,9 @@ export default function Home() {
         setLoading(false);
         setSiteStarted(true);
         setHasEnteredSite(true);
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
       } else {
         setLoading(true);
         setSiteStarted(false);
@@ -897,40 +900,10 @@ export default function Home() {
   }, [setHasEnteredSite, playEntrance]);
 
   // Inactivity auto-hide UI on homepage (fades navbar, contact badge & audio signal when idle)
-  const homeIdleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Keep UI permanently visible while browsing on home
   useEffect(() => {
-    if (!hasEnteredSite && !siteStarted) return;
-
-    const resetHomeIdleTimer = () => {
-      setIsHideUI(false);
-      if (homeIdleTimerRef.current) clearTimeout(homeIdleTimerRef.current);
-      homeIdleTimerRef.current = setTimeout(() => {
-        setIsHideUI(true);
-      }, 3500);
-    };
-
-    resetHomeIdleTimer();
-
-    const handleUserActivity = () => {
-      resetHomeIdleTimer();
-    };
-
-    window.addEventListener("mousemove", handleUserActivity);
-    window.addEventListener("mousedown", handleUserActivity);
-    window.addEventListener("touchstart", handleUserActivity);
-    window.addEventListener("keydown", handleUserActivity);
-    window.addEventListener("scroll", handleUserActivity);
-
-    return () => {
-      window.removeEventListener("mousemove", handleUserActivity);
-      window.removeEventListener("mousedown", handleUserActivity);
-      window.removeEventListener("touchstart", handleUserActivity);
-      window.removeEventListener("keydown", handleUserActivity);
-      window.removeEventListener("scroll", handleUserActivity);
-      if (homeIdleTimerRef.current) clearTimeout(homeIdleTimerRef.current);
-      setIsHideUI(false);
-    };
-  }, [hasEnteredSite, siteStarted, setIsHideUI]);
+    setIsHideUI(false);
+  }, [setIsHideUI]);
 
 
 
@@ -1645,11 +1618,11 @@ export default function Home() {
 
       </section>
 
-      {/* ═══════════════════ WORKS / PHOTOS SECTION ═══════════════════ */}
-      <section ref={worksRef} id="photos" className="relative bg-[#0a0a0a] pt-20 md:pt-28 pb-20 md:pb-32">
+      {/* ═══════════════════ WORKS / PHOTOS SECTION (01) ═══════════════════ */}
+      <section ref={worksRef} id="photos" className="relative bg-[#0a0a0a] pt-24 md:pt-28 pb-20 md:pb-32">
         {/* Section header */}
-        <div className="px-5 md:px-16 mb-16 md:mb-24">
-          <div data-text-reveal className="flex items-center gap-6 mb-6">
+        <div className="px-5 md:px-16 mb-12 md:mb-16">
+          <div data-text-reveal className="flex items-center gap-6 mb-10 md:mb-14">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
               01
             </span>
@@ -1745,10 +1718,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════ PROJETS VIDÉOS SECTION ═══════════════════ */}
-      <section id="videos" className="relative bg-[#050505] pt-20 md:pt-28 pb-12 border-t border-white/10">
+      {/* ═══════════════════ PROJETS VIDÉOS SECTION (02) ═══════════════════ */}
+      <section id="videos" className="relative bg-[#050505] pt-24 md:pt-28 pb-16 border-t border-white/10">
         <div className="px-5 md:px-16 mb-12 md:mb-16">
-          <div data-text-reveal className="flex items-center gap-6 mb-6">
+          <div data-text-reveal className="flex items-center gap-6 mb-10 md:mb-14">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
               02
             </span>
@@ -1776,75 +1749,87 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════ ABOUT SECTION ═══════════════════ */}
-      <section ref={aboutRef} id="about" className="relative bg-[#0a0a0a] pt-20 md:pt-28 pb-32 md:pb-[50vh] overflow-hidden">
+      {/* ═══════════════════ ABOUT SECTION (03) ═══════════════════ */}
+      <section ref={aboutRef} id="about" className="relative bg-[#0d0d0d] min-h-screen flex flex-col justify-start pt-24 md:pt-28 pb-32 md:pb-48 overflow-hidden border-t border-white/10">
         <div className="px-5 md:px-16">
-          <div data-text-reveal className="flex items-center gap-6 mb-16 md:mb-24">
+          <div data-text-reveal className="flex items-center gap-6 mb-10 md:mb-14">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
               03
             </span>
             <div data-line-reveal className="flex-1 h-[1px] bg-white/10 origin-left" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 items-start">
-            {/* Left: Text Info */}
-            <div className="md:col-span-4 space-y-8" data-text-reveal>
-              <h2 className="font-syne font-bold text-[10vw] md:text-[4vw] leading-[0.95] tracking-tight text-white uppercase">
-                Sacha<br />Karpavicius
-              </h2>
-              <p className="font-inter text-[13px] md:text-[14px] leading-relaxed text-white/50 max-w-md">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-16 items-center pt-6 md:pt-10">
+            {/* Left Column: Typography aligned with site design system (7 Cols) */}
+            <div className="md:col-span-7 space-y-6 md:space-y-8" data-text-reveal>
+              <div>
+                <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase block mb-3">
+                  ART VISUEL & DIRECTION ARTISTIQUE
+                </span>
+                <h2 className="font-syne font-bold text-[10vw] md:text-[4.5vw] leading-[0.95] tracking-tight text-white uppercase">
+                  SACHA<br />KARPAVICIUS
+                </h2>
+              </div>
+
+              {/* Artistic Quote */}
+              <div className="border-l border-white/30 pl-5 py-0.5">
+                <p className="font-inter text-[15px] md:text-[18px] leading-relaxed text-white/80 tracking-tight">
+                  {lang === "fr" 
+                    ? "« Capturer l’essence brute, sculpter la lumière et transformer le mouvement en une poésie visuelle atemporelle. »"
+                    : "« Capturing raw essence, sculpting light, and transforming movement into timeless visual poetry. »"
+                  }
+                </p>
+              </div>
+
+              {/* Short Bio Description */}
+              <p className="font-inter text-[14px] md:text-[15px] leading-relaxed text-white/50 max-w-xl">
                 {lang === "fr" ? (
                   <>
-                    Visual Storyteller basé entre Paris et Milan. Spécialisé dans la photographie de mode, le portrait éditorial et la direction artistique. Chaque image est une invitation à entrer dans un univers singulier, où la lumière et l&apos;ombre racontent une histoire.
+                    Basé entre Paris et Milan, Sacha Karpavicius façonne des univers photographiques et cinématographiques singuliers. Spécialisé dans la photographie de mode, le portrait éditorial et la direction artistique, chaque visuel s&apos;affirme comme une immersion sensorielle d&apos;exception.
                   </>
                 ) : (
                   <>
-                    Visual Storyteller based between Paris and Milan. Specializing in fashion photography, editorial portraiture and art direction. Each image is an invitation to enter a singular universe, where light and shadow tell a story.
+                    Based between Paris and Milan, Sacha Karpavicius shapes singular photographic and cinematic universes. Specializing in fashion photography, editorial portraiture and art direction, each project is crafted as an immersive visual work.
                   </>
                 )}
               </p>
-            </div>
 
-            {/* Center: Interactive Portrait Card */}
-            <div className="md:col-span-4 flex justify-center py-6 md:py-0 md:mt-[20px]" data-text-reveal>
-              <AboutImageCard isMenuOpen={isMenuOpen} />
-            </div>
-
-            {/* Right: Interactive Lists */}
-            <div className="md:col-span-4 space-y-12" data-text-reveal>
-              <div>
-                <h3 className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase mb-4">
-                  Services
-                </h3>
-                <ul className="font-inter text-[13px] md:text-[14px] text-white/70">
-                  <InteractiveListItem text={lang === "fr" ? "Photographie" : "Photography"} onClick={playClickSfx} />
-                  <InteractiveListItem text={lang === "fr" ? "Direction Artistique" : "Art Direction"} onClick={playClickSfx} />
-                  <InteractiveListItem text={lang === "fr" ? "Éditorial de Mode" : "Fashion Editorial"} onClick={playClickSfx} />
-                  <InteractiveListItem text={lang === "fr" ? "Film & Vidéo" : "Film & Motion"} onClick={playClickSfx} />
-                </ul>
+              {/* Visual Metrics & Tags Grid */}
+              <div className="pt-6 grid grid-cols-2 md:grid-cols-3 gap-6 border-t border-white/10 font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-white/40 uppercase">
+                <div>
+                  <span className="block text-white/30 text-[9px] mb-1">LOCALISATION</span>
+                  <span className="text-white font-semibold">PARIS — MILAN</span>
+                </div>
+                <div>
+                  <span className="block text-white/30 text-[9px] mb-1">UNIVERS</span>
+                  <span className="text-white font-semibold">MODE & ÉDITORIAL</span>
+                </div>
+                <div>
+                  <span className="block text-white/30 text-[9px] mb-1">DISCIPLINE</span>
+                  <span className="text-white font-semibold">ARTS VISUELS</span>
+                </div>
               </div>
-              <div>
-                <h3 className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase mb-4">
-                  Clients
-                </h3>
-                <ul className="font-inter text-[13px] md:text-[14px] text-white/70">
-                  <InteractiveListItem text="Vogue — L'Officiel — Numéro" onClick={playClickSfx} />
-                  <InteractiveListItem text="Dior — Chanel — Saint Laurent" onClick={playClickSfx} />
-                  <InteractiveListItem text={lang === "fr" ? "Éditoriaux Indépendants" : "Independent Editorials"} onClick={playClickSfx} />
-                </ul>
+            </div>
+
+            {/* Right Column: Large Portrait Card with Organic Circular LED Aura (5 Cols) */}
+            <div className="md:col-span-5 flex justify-center md:justify-end items-center" data-text-reveal>
+              <div className="relative group flex items-center justify-center">
+                {/* Ultra-Fluid Circular LED Radial Ambient Backlight Aura (Zero rectangular box edges) */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.22)_0%,rgba(217,119,6,0.15)_35%,rgba(168,85,247,0.1)_65%,transparent_85%)] blur-[100px] pointer-events-none opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" />
+                <AboutImageCard isMenuOpen={isMenuOpen} />
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════ CONTACT / FOOTER ═══════════════════ */}
-      <footer ref={contactRef} id="contact" className="relative bg-[#0a0a0a] pt-20 md:pt-28 pb-4 md:pb-12 min-h-screen flex flex-col justify-between overflow-hidden">
+      {/* ═══════════════════ CONTACT / FOOTER (04) ═══════════════════ */}
+      <footer ref={contactRef} id="contact" className="relative bg-[#050505] pt-24 md:pt-28 pb-4 md:pb-12 min-h-[85vh] md:min-h-screen flex flex-col justify-between overflow-hidden border-t border-white/10">
         <div className="px-5 md:px-16 flex-1 flex flex-col justify-between">
           <div>
-            <div data-text-reveal className="flex items-center gap-6 mb-16 md:mb-24">
+            <div data-text-reveal className="flex items-center gap-6 mb-10 md:mb-14">
               <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
-                03
+                04
               </span>
               <div data-line-reveal className="flex-1 h-[1px] bg-white/10 origin-left" />
             </div>

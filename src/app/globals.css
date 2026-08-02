@@ -223,3 +223,29 @@ h1, h2, h3, h4, h5, h6, p, span, a {
 .animate-sound-4 {
   animation: sound 1.0s ease-in-out infinite 0.1s;
 }
+
+/* ---- Fade-in keyframes for PWA modal and banners ---- */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

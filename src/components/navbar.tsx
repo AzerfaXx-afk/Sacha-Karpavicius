@@ -502,6 +502,7 @@ export default function Navbar({
               onPlayClickSfx?.();
               handleLinkClick();
               if (pathname !== "/") {
+                sessionStorage.setItem("spa_nav", "true");
                 triggerPageTransition(router, "/");
               } else {
                 if (lenis) {
@@ -512,9 +513,6 @@ export default function Navbar({
                 } else {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
-                setTimeout(() => {
-                  window.dispatchEvent(new CustomEvent("replay-hero-entrance"));
-                }, 200);
               }
             }}
           >

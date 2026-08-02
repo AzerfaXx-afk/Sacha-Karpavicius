@@ -2,14 +2,22 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Sacha Karpavicius Portfolio',
-    short_name: 'Sacha K.',
-    description: 'High-end portfolio of Sacha Karpavicius — Visual Storyteller, Fashion Photographer & Art Director.',
+    name: 'SACHA KARPAVICIUS',
+    short_name: 'SACHA KARPAVICIUS',
+    description: 'Portfolio officiel de Sacha Karpavicius — Visual Storyteller, Fashion Photographer & Art Director.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#0a0a0a',
-    theme_color: '#0a0a0a',
+    orientation: 'portrait-primary',
+    background_color: '#050505',
+    theme_color: '#050505',
+    categories: ['lifestyle', 'photography', 'portfolio'],
     icons: [
+      {
+        src: '/icon-192.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any',
+      },
       {
         src: '/icon-192.png',
         sizes: '192x192',
@@ -20,8 +28,30 @@ export default function manifest(): MetadataRoute.Manifest {
         src: '/icon-512.png',
         sizes: '512x512',
         type: 'image/png',
+        purpose: 'any',
+      },
+      {
+        src: '/icon-512.png',
+        sizes: '512x512',
+        type: 'image/png',
         purpose: 'maskable',
       },
     ],
+    shortcuts: [
+      {
+        name: 'Photos',
+        short_name: 'Photos',
+        description: 'Voir les projets photos',
+        url: '/#photos',
+        icons: [{ src: '/icon-192.png', sizes: '192x192' }]
+      },
+      {
+        name: 'Vidéos',
+        short_name: 'Vidéos',
+        description: 'Voir les réalisations vidéos',
+        url: '/#videos',
+        icons: [{ src: '/icon-192.png', sizes: '192x192' }]
+      }
+    ]
   };
 }
