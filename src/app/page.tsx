@@ -1239,33 +1239,45 @@ export default function Home() {
     });
   }, []);
 
+  const triggerHeroRevealAnimation = useCallback(() => {
+    if (!heroImgRef.current || !heroTitleRef.current) return;
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+    tl.fromTo(
+      heroImgRef.current,
+      { scale: 1.22, filter: "brightness(0.3)" },
+      { scale: 1.05, filter: "brightness(1)", duration: 2.0, ease: "power3.out" },
+      0
+    ).fromTo(
+      heroTitleRef.current,
+      { y: 55, opacity: 0 },
+      { y: 0, opacity: 1, duration: 1.3, ease: "power4.out" },
+      0.15
+    );
+
+    if (heroSubRef.current) {
+      tl.fromTo(
+        heroSubRef.current,
+        { y: 25, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8 },
+        0.35
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleReplay = () => {
+      triggerHeroRevealAnimation();
+    };
+    window.addEventListener("replay-hero-entrance", handleReplay);
+    return () => window.removeEventListener("replay-hero-entrance", handleReplay);
+  }, [triggerHeroRevealAnimation]);
+
   useEffect(() => {
     if (!siteStarted) return;
     const ctx = gsap.context(() => {
       /* ── Hero reveal ── */
-      const heroTl = gsap.timeline({ defaults: { ease: "power3.out" }, delay: 0.5 });
-
-      heroTl.to(
-        heroImgRef.current,
-        { scale: 1.05, duration: 4.0, ease: "power3.out" },
-        0
-      );
-
-      heroTl.fromTo(
-        heroTitleRef.current,
-        { y: 50, opacity: 0 },
-        { y: 0, opacity: 1, duration: 1.2 },
-        0.2
-      );
-
-      if (heroSubRef.current) {
-        heroTl.fromTo(
-          heroSubRef.current,
-          { y: 20, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.8 },
-          0.4
-        );
-      }
+      triggerHeroRevealAnimation();
 
       /* ── Hero parallax on scroll ── */
       gsap.to(heroRef.current, {

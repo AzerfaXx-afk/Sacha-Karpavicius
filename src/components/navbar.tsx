@@ -506,12 +506,15 @@ export default function Navbar({
               } else {
                 if (lenis) {
                   lenis.scrollTo(0, { 
-                    duration: 1.8,
+                    duration: 1.2,
                     easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
                   });
                 } else {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
+                setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent("replay-hero-entrance"));
+                }, 200);
               }
             }}
           >
