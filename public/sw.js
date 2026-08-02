@@ -1,6 +1,7 @@
 const CACHE_NAME = 'sacha-k-cache-v1';
 const ASSETS = [
   '/',
+  '/manifest.json',
   '/logo.png',
   '/icon-192.png',
   '/icon-512.png',

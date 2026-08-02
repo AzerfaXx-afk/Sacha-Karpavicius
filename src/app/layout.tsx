@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   title: "SACHA KARPAVICIUS",
   description:
     "High-end portfolio of Sacha Karpavicius — Visual Storyteller, Fashion Photographer & Art Director.",
-  manifest: "/manifest.webmanifest",
+  manifest: "/manifest.json",
   icons: {
     icon: "/logo.png",
     apple: "/icon-192.png",
@@ -67,12 +67,10 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
-                    console.log('SW registered:', reg.scope);
-                  }).catch(function(err) {
-                    console.log('SW registration failed:', err);
-                  });
+                navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                  console.log('SW registered:', reg.scope);
+                }).catch(function(err) {
+                  console.log('SW registration failed:', err);
                 });
               }
             `
