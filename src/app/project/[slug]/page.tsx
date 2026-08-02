@@ -292,6 +292,7 @@ export default function ProjectPage() {
 
   const [playPulseState, setPlayPulseState] = useState<"play" | "pause" | null>(null);
   const pulseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [videoVolume, setVideoVolume] = useState<number>(1.0);
 
   const triggerPulse = useCallback((type: "play" | "pause") => {
     setPlayPulseState(type);
@@ -300,6 +301,36 @@ export default function ProjectPage() {
       setPlayPulseState(null);
     }, 600);
   }, []);
+
+  const changeVolume = useCallback((newVol: number) => {
+    const clamped = Math.max(0, Math.min(1, newVol));
+    setVideoVolume(clamped);
+    const vid = videoRef.current;
+    if (vid) {
+      vid.volume = clamped;
+      if (clamped === 0) {
+        vid.muted = true;
+        setIsVideoMuted(true);
+        resumeAudio(true);
+      } else {
+        vid.muted = false;
+        setIsVideoMuted(false);
+        if (!vid.paused) {
+          pauseAudio(true);
+        }
+      }
+    }
+  }, [pauseAudio, resumeAudio]);
+
+  const toggleMuteVideo = useCallback(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    if (isVideoMuted || videoVolume === 0) {
+      changeVolume(1.0);
+    } else {
+      changeVolume(0);
+    }
+  }, [isVideoMuted, videoVolume, changeVolume]);
 
   const togglePlayVideo = useCallback(() => {
     const vid = videoRef.current;
@@ -312,46 +343,6 @@ export default function ProjectPage() {
       triggerPulse("pause");
     }
   }, [triggerPulse]);
-
-  // Sync fullscreen state changes automatically (including ESC key or native fullscreen exit)
-  useEffect(() => {
-    const handleFsChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
-    };
-    document.addEventListener("fullscreenchange", handleFsChange);
-    document.addEventListener("webkitfullscreenchange", handleFsChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFsChange);
-      document.removeEventListener("webkitfullscreenchange", handleFsChange);
-    };
-  }, []);
-
-  // Spacebar keyboard shortcut for play/pause
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space" || e.key === " ") {
-        const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
-        if (tag === "input" || tag === "textarea") return;
-        e.preventDefault();
-        togglePlayVideo();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [togglePlayVideo]);
-
-  const toggleMuteVideo = useCallback(() => {
-    const vid = videoRef.current;
-    if (!vid) return;
-    const nextMuted = !isVideoMuted;
-    vid.muted = nextMuted;
-    setIsVideoMuted(nextMuted);
-    if (nextMuted) {
-      resumeAudio(true);
-    } else if (!vid.paused) {
-      pauseAudio(true);
-    }
-  }, [isVideoMuted, pauseAudio, resumeAudio]);
 
   const toggleFullscreen = useCallback(() => {
     const container = heroRef.current;
@@ -371,14 +362,38 @@ export default function ProjectPage() {
     }
   }, []);
 
-  // Keyboard shortcuts (Space, K: Play/Pause, F: Fullscreen, M: Mute, Arrows: Seek)
+  const handleSeekPointer = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const width = rect.width;
+    if (width > 0 && videoDur > 0 && videoRef.current) {
+      const ratio = Math.max(0, Math.min(1, clickX / width));
+      const newTime = ratio * videoDur;
+      videoRef.current.currentTime = newTime;
+      setVideoTime(newTime);
+    }
+  }, [videoDur]);
+
+  const handleVolumePointer = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const width = rect.width;
+    if (width > 0) {
+      const ratio = Math.max(0, Math.min(1, clickX / width));
+      changeVolume(ratio);
+    }
+  }, [changeVolume]);
+
+  // Keyboard shortcuts (Space: Play/Pause, F: Fullscreen, M: Mute, Arrows: Seek & Volume)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
       if (tag === "input" || tag === "textarea") return;
       const vid = videoRef.current;
 
-      if (e.code === "Space" || e.key === " " || e.key === "k" || e.key === "K") {
+      if (e.code === "Space" || e.key === " ") {
         e.preventDefault();
         togglePlayVideo();
       } else if (e.key === "f" || e.key === "F") {
@@ -397,11 +412,17 @@ export default function ProjectPage() {
           e.preventDefault();
           vid.currentTime = Math.max(0, vid.currentTime - 5);
         }
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        changeVolume(videoVolume + 0.1);
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        changeVolume(videoVolume - 0.1);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [togglePlayVideo, toggleFullscreen, toggleMuteVideo]);
+  }, [togglePlayVideo, toggleFullscreen, toggleMuteVideo, changeVolume, videoVolume]);
 
   const handleTimeUpdate = () => {
     const vid = videoRef.current;
@@ -549,7 +570,7 @@ export default function ProjectPage() {
                     onMouseDown={(e) => e.stopPropagation()}
                     onTouchStart={(e) => e.stopPropagation()}
                     className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1.5 cursor-pointer flex items-center justify-center"
-                    title={isVideoPlaying ? "Pause (Espace / K)" : "Lecture (Espace / K)"}
+                    title={isVideoPlaying ? "Pause (Espace)" : "Lecture (Espace)"}
                   >
                     {isVideoPlaying ? (
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
@@ -558,49 +579,66 @@ export default function ProjectPage() {
                     )}
                   </button>
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      toggleMuteVideo();
-                    }}
+                  {/* Volume Control Group (Icon + Interactive Slider) */}
+                  <div
+                    className="flex items-center gap-2 group/vol"
+                    onClick={(e) => e.stopPropagation()}
                     onMouseDown={(e) => e.stopPropagation()}
                     onTouchStart={(e) => e.stopPropagation()}
-                    className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1.5 cursor-pointer flex items-center justify-center"
-                    title={isVideoMuted ? "Activer le son (M)" : "Couper le son (M)"}
                   >
-                    {isVideoMuted ? (
-                      <svg className="w-4 h-4 text-white/50" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
-                    ) : (
-                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                    )}
-                  </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        toggleMuteVideo();
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1 cursor-pointer flex items-center justify-center"
+                      title={isVideoMuted || videoVolume === 0 ? "Activer le son (M)" : "Couper le son (M)"}
+                    >
+                      {isVideoMuted || videoVolume === 0 ? (
+                        <svg className="w-4 h-4 text-white/50" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                      ) : videoVolume < 0.5 ? (
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/></svg>
+                      ) : (
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                      )}
+                    </button>
+
+                    {/* Interactive Volume Slider */}
+                    <div
+                      onPointerDown={handleVolumePointer}
+                      onPointerMove={(e) => {
+                        if (e.buttons === 1) handleVolumePointer(e);
+                      }}
+                      className="relative w-12 sm:w-16 h-1.5 bg-white/20 rounded-full cursor-pointer overflow-hidden p-0 transition-all duration-300 hover:h-2"
+                      title="Régler le volume vidéo"
+                    >
+                      <div
+                        className="h-full bg-white rounded-full transition-all duration-75 origin-left"
+                        style={{ width: `${isVideoMuted ? 0 : videoVolume * 100}%` }}
+                      />
+                    </div>
+                  </div>
 
                   <div className="h-3 w-[1px] bg-white/15" />
 
-                  {/* Netflix-style Interactive Progress Scrubber */}
+                  {/* Interactive Progress Scrubber with Pointer Seeking & Dragging */}
                   <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const clickX = e.clientX - rect.left;
-                      const width = rect.width;
-                      if (width > 0 && videoDur > 0 && videoRef.current) {
-                        const newTime = (clickX / width) * videoDur;
-                        videoRef.current.currentTime = newTime;
-                        setVideoTime(newTime);
-                      }
+                    onPointerDown={handleSeekPointer}
+                    onPointerMove={(e) => {
+                      if (e.buttons === 1) handleSeekPointer(e);
                     }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onTouchStart={(e) => e.stopPropagation()}
-                    className="relative w-24 sm:w-32 md:w-44 h-1.5 bg-white/20 rounded-full overflow-hidden cursor-pointer group/progress p-0 transition-all duration-300 hover:h-2"
-                    title="Cliquer pour rechercher dans la vidéo"
+                    className="relative w-24 sm:w-36 md:w-48 h-1.5 bg-white/20 rounded-full cursor-pointer group/progress p-0 transition-all duration-300 hover:h-2"
+                    title="Cliquer ou glisser pour rechercher dans la vidéo"
                   >
                     <div
-                      className="h-full bg-gradient-to-r from-white/70 via-white to-white rounded-full transition-all duration-100 origin-left"
+                      className="h-full bg-gradient-to-r from-white/70 via-white to-white rounded-full transition-all duration-75 origin-left relative"
                       style={{ width: `${videoDur > 0 ? (videoTime / videoDur) * 100 : 0}%` }}
-                    />
+                    >
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,1)] opacity-0 group-hover/progress:opacity-100 transition-opacity" />
+                    </div>
                   </div>
 
                   <span className="font-mono text-[10px] md:text-[11px] text-white/80 tracking-wider select-none shrink-0">
