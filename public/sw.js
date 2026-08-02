@@ -1,10 +1,11 @@
-const CACHE_NAME = 'sacha-k-cache-v1';
+const CACHE_NAME = 'sacha-k-v3';
 const ASSETS = [
   '/',
   '/manifest.json',
   '/logo.png',
   '/icon-192.png',
   '/icon-512.png',
+  '/1.jpg',
   '/2.jpg',
   '/3.jpg',
   '/4.jpg',
@@ -18,10 +19,14 @@ const ASSETS = [
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS).catch((err) => {
-        console.warn('Failed to pre-cache some assets:', err);
-      });
+    caches.open(CACHE_NAME).then(async (cache) => {
+      for (const asset of ASSETS) {
+        try {
+          await cache.add(asset);
+        } catch (err) {
+          // Ignore individual asset failure to guarantee SW install success
+        }
+      }
     })
   );
   self.skipWaiting();
@@ -43,47 +48,34 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Only cache GET requests and ignore chrome-extension / third-party URLs
   if (e.request.method !== 'GET' || !e.request.url.startsWith(self.location.origin)) {
     return;
   }
 
-  // Network-First for page navigation requests (ensure HTML updates instantly)
+  // Network-First for HTML navigation
   if (e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request)
         .then((response) => {
           if (response && response.status === 200) {
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(e.request, responseToCache);
-            });
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, copy));
           }
           return response;
         })
-        .catch(() => {
-          return caches.match(e.request).then((cached) => {
-            return cached || caches.match('/');
-          });
-        })
+        .catch(() => caches.match(e.request).then((res) => res || caches.match('/')))
     );
     return;
   }
 
-  // Cache-First for static assets (images, fonts, sounds)
+  // Cache-First for static resources
   e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      
+    caches.match(e.request).then((cached) => {
+      if (cached) return cached;
       return fetch(e.request).then((response) => {
-        // If response is valid, clone and cache it
         if (response && response.status === 200) {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(e.request, responseToCache);
-          });
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, copy));
         }
         return response;
       });

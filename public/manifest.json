@@ -1,9 +1,10 @@
 {
   "name": "SACHA KARPAVICIUS",
-  "short_name": "SACHA KARPAVICIUS",
+  "short_name": "SACHA",
   "description": "Portfolio officiel de Sacha Karpavicius — Visual Storyteller, Fashion Photographer & Art Director.",
   "start_url": "/",
-  "id": "/?source=pwa",
+  "scope": "/",
+  "id": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#050505",
