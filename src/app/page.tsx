@@ -1653,7 +1653,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ WORKS / PHOTOS SECTION (01) ═══════════════════ */}
-      <section ref={worksRef} id="photos" className="relative bg-[#0a0a0a] pt-[48px] md:pt-[50px] pb-20 md:pb-32 border-t border-white/10">
+      <section ref={worksRef} id="photos" className="relative bg-[#0a0a0a] pt-16 md:pt-20 pb-20 md:pb-32 border-t border-white/10">
         {/* Section header */}
         <div className="px-5 md:px-16 mb-8 md:mb-12">
           <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
@@ -1753,7 +1753,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ PROJETS VIDÉOS SECTION (02) ═══════════════════ */}
-      <section id="videos" className="relative bg-[#050505] pt-[48px] md:pt-[50px] pb-16 border-t border-white/10">
+      <section id="videos" className="relative bg-[#050505] pt-16 md:pt-20 pb-16 border-t border-white/10">
         <div className="px-5 md:px-16 mb-8 md:mb-12">
           <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
@@ -1784,7 +1784,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ ABOUT SECTION (03) ═══════════════════ */}
-      <section ref={aboutRef} id="about" className="relative bg-[#0d0d0d] min-h-screen flex flex-col justify-start pt-[48px] md:pt-[50px] pb-32 md:pb-48 overflow-hidden border-t border-white/10">
+      <section ref={aboutRef} id="about" className="relative bg-[#0d0d0d] min-h-screen flex flex-col justify-start pt-16 md:pt-20 pb-32 md:pb-48 overflow-hidden border-t border-white/10">
         <div className="px-5 md:px-16">
           <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
@@ -1861,7 +1861,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ CONTACT / FOOTER (04) ═══════════════════ */}
-      <footer ref={contactRef} id="contact" className="relative bg-[#050505] pt-[48px] md:pt-[50px] pb-4 md:pb-12 min-h-[85vh] md:min-h-screen flex flex-col justify-between overflow-hidden border-t border-white/10">
+      <footer ref={contactRef} id="contact" className="relative bg-[#050505] pt-16 md:pt-20 pb-4 md:pb-12 min-h-[85vh] md:min-h-screen flex flex-col justify-between overflow-hidden border-t border-white/10">
         <div className="px-5 md:px-16 flex-1 flex flex-col justify-between">
           <div>
             <div data-text-reveal className="flex items-center gap-6 mb-10 md:mb-14">
