@@ -3,7 +3,6 @@ const path = require("path");
 const ffmpeg = require("fluent-ffmpeg");
 const ffmpegPath = require("ffmpeg-static");
 
-// Set static FFmpeg binary path automatically (Zero setup required)
 if (ffmpegPath) {
   ffmpeg.setFfmpegPath(ffmpegPath);
 } else {
@@ -14,7 +13,6 @@ if (ffmpegPath) {
 const RAW_DIR = path.join(process.cwd(), "raw-videos");
 const OUTPUT_DIR = path.join(process.cwd(), "public", "Videos");
 
-// Ensure required directories exist
 if (!fs.existsSync(RAW_DIR)) {
   fs.mkdirSync(RAW_DIR, { recursive: true });
 }
@@ -27,30 +25,33 @@ const SUPPORTED_EXTS = [".mov", ".mp4", ".m4v", ".avi", ".mkv", ".webm"];
 
 function encodeVideoMP4(inputFile, outputFile, baseName) {
   return new Promise((resolve) => {
-    console.log(`\n🎬 [1/2] Encodage MP4 H.264 Faststart : ${baseName}.mp4 ...`);
-    
+    console.log(`\n🎬 Encodage Web-Optimized MP4 (<50MB H.264 Faststart) : ${baseName}.mp4 ...`);
+
     ffmpeg(inputFile)
       .output(outputFile)
       .videoCodec("libx264")
       .outputOptions([
-        "-crf 18",
+        "-crf 24",
         "-preset medium",
         "-pix_fmt yuv420p",
         "-movflags +faststart",
-        "-vf scale=1920:-2"
+        "-vf scale=-2:720",
+        "-maxrate 1.8M",
+        "-bufsize 3.6M"
       ])
       .audioCodec("aac")
-      .audioBitrate("160k")
+      .audioBitrate("128k")
       .on("progress", (progress) => {
         const percent = Math.round(progress.percent || 0);
         process.stdout.write(`   ⏳ Progrès MP4 : ${percent}% \r`);
       })
       .on("end", () => {
-        console.log(`\n   ✅ MP4 terminé avec succès -> public/Videos/${baseName}.mp4`);
+        const sizeMb = (fs.statSync(outputFile).size / (1024 * 1024)).toFixed(2);
+        console.log(`\n   ✅ MP4 terminé -> public/Videos/${path.basename(outputFile)} (${sizeMb} MB)`);
         resolve(true);
       })
       .on("error", (err) => {
-        console.error(`\n   ❌ Erreur d'encodage MP4 pour ${baseName}:`, err.message);
+        console.error(`\n   ❌ Erreur MP4 pour ${baseName}:`, err.message);
         resolve(false);
       })
       .run();
@@ -59,46 +60,46 @@ function encodeVideoMP4(inputFile, outputFile, baseName) {
 
 function encodeVideoWebM(inputFile, outputFile, baseName) {
   return new Promise((resolve) => {
-    console.log(`\n🎬 [2/2] Encodage WebM VP9 Ultra-Léger : ${baseName}.webm ...`);
+    console.log(`\n🎬 Encodage Web-Optimized WebM (<30MB VP9) : ${baseName}.webm ...`);
 
     ffmpeg(inputFile)
       .output(outputFile)
       .videoCodec("libvpx-vp9")
       .outputOptions([
-        "-crf 28",
-        "-b:v 0",
+        "-crf 34",
+        "-b:v 1.0M",
         "-pix_fmt yuv420p",
-        "-vf scale=1920:-2"
+        "-vf scale=-2:720"
       ])
       .audioCodec("libopus")
-      .audioBitrate("128k")
+      .audioBitrate("96k")
       .on("progress", (progress) => {
         const percent = Math.round(progress.percent || 0);
         process.stdout.write(`   ⏳ Progrès WebM : ${percent}% \r`);
       })
       .on("end", () => {
-        console.log(`\n   ✅ WebM terminé avec succès -> public/Videos/${baseName}.webm`);
+        const sizeMb = (fs.statSync(outputFile).size / (1024 * 1024)).toFixed(2);
+        console.log(`\n   ✅ WebM terminé -> public/Videos/${path.basename(outputFile)} (${sizeMb} MB)`);
         resolve(true);
       })
       .on("error", (err) => {
-        // Fallback to Vorbis if Opus is not supported on system build
-        console.warn(`\n   ⚠️ Retraitement WebM avec audio Vorbis...`);
         ffmpeg(inputFile)
           .output(outputFile)
           .videoCodec("libvpx-vp9")
-          .outputOptions(["-crf 28", "-b:v 0", "-pix_fmt yuv420p", "-vf scale=1920:-2"])
+          .outputOptions(["-crf 34", "-b:v 1.0M", "-pix_fmt yuv420p", "-vf scale=-2:720"])
           .audioCodec("libvorbis")
-          .audioBitrate("128k")
+          .audioBitrate("96k")
           .on("progress", (progress) => {
             const percent = Math.round(progress.percent || 0);
             process.stdout.write(`   ⏳ Progrès WebM (Vorbis) : ${percent}% \r`);
           })
           .on("end", () => {
-            console.log(`\n   ✅ WebM terminé avec succès -> public/Videos/${baseName}.webm`);
+            const sizeMb = (fs.statSync(outputFile).size / (1024 * 1024)).toFixed(2);
+            console.log(`\n   ✅ WebM terminé -> public/Videos/${path.basename(outputFile)} (${sizeMb} MB)`);
             resolve(true);
           })
           .on("error", (fallbackErr) => {
-            console.error(`\n   ❌ Erreur d'encodage WebM pour ${baseName}:`, fallbackErr.message);
+            console.error(`\n   ❌ Erreur WebM pour ${baseName}:`, fallbackErr.message);
             resolve(false);
           })
           .run();
@@ -109,7 +110,7 @@ function encodeVideoWebM(inputFile, outputFile, baseName) {
 
 async function startBatchEncoding() {
   console.log("=================================================");
-  console.log("🚀 Sacha Karpavicius - Automation Encodage Vidéo");
+  console.log("🚀 Compression Ultra-Legère Web (Cible < 45 MB / Vidéo)");
   console.log("=================================================\n");
 
   const files = fs.readdirSync(RAW_DIR).filter((file) => {
@@ -119,57 +120,40 @@ async function startBatchEncoding() {
 
   if (files.length === 0) {
     console.log(`⚠️ Aucune vidéo brute trouvée dans le dossier "${RAW_DIR}".`);
-    console.log(`👉 Dépose tes fichiers vidéos originaux (.mov, .mp4) dans le dossier "raw-videos" à la racine de ton projet.`);
-    console.log(`👉 Puis relance : npm run optimize:videos\n`);
     return;
   }
 
-  console.log(`📹 ${files.length} vidéo(s) brute(s) trouvée(s) dans raw-videos :\n - ${files.join("\n - ")}\n`);
-
-  let successCount = 0;
+  console.log(`📹 ${files.length} vidéo(s) brute(s) trouvée(s) :\n - ${files.join("\n - ")}\n`);
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
-    const baseName = path.parse(file).name.toLowerCase().trim().replace(/[^a-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "");
+    const rawLower = file.toLowerCase();
     const inputPath = path.join(RAW_DIR, file);
-    const mp4OutputPath = path.join(OUTPUT_DIR, `${baseName}.mp4`);
-    const webmOutputPath = path.join(OUTPUT_DIR, `${baseName}.webm`);
 
-    console.log(`-------------------------------------------------`);
-    console.log(`🎥 Traitement [${i + 1}/${files.length}] : ${file}`);
-    console.log(`-------------------------------------------------`);
-
-    const mp4Ok = await encodeVideoMP4(inputPath, mp4OutputPath, baseName);
-    const webmOk = await encodeVideoWebM(inputPath, webmOutputPath, baseName);
-
-    // Sync stream alias if baseName matches au_grand_jour
-    if (baseName.includes("au_grand_jour") || baseName.includes("au-grand-jour")) {
-      const streamMp4 = path.join(OUTPUT_DIR, "au_grand_jour_stream.mp4");
-      const streamWebm = path.join(OUTPUT_DIR, "au_grand_jour_stream.webm");
-      const altMp4 = path.join(OUTPUT_DIR, "au-grand-jour.mp4");
-      try {
-        if (fs.existsSync(mp4OutputPath)) {
-          fs.copyFileSync(mp4OutputPath, streamMp4);
-          fs.copyFileSync(mp4OutputPath, altMp4);
-          console.log(`   🔗 Copie synchronisée : public/Videos/au_grand_jour_stream.mp4`);
-        }
-        if (fs.existsSync(webmOutputPath)) {
-          fs.copyFileSync(webmOutputPath, streamWebm);
-          console.log(`   🔗 Copie synchronisée : public/Videos/au_grand_jour_stream.webm`);
-        }
-      } catch (err) {
-        console.warn(`   ⚠️ Erreur lors de la synchronisation des alias stream:`, err.message);
-      }
+    let streamName = "";
+    if (rawLower.includes("au_grand_jour") || rawLower.includes("au grand jour")) {
+      streamName = "au_grand_jour_stream";
+    } else if (rawLower.includes("maladaptive")) {
+      streamName = "maladaptive_stream";
+    } else if (rawLower.includes("nice_queer") || rawLower.includes("nice queer")) {
+      streamName = "nice_queer_stream";
+    } else {
+      streamName = path.parse(file).name.toLowerCase().trim().replace(/[^a-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "");
     }
 
-    if (mp4Ok || webmOk) {
-      successCount++;
-    }
+    const mp4OutputPath = path.join(OUTPUT_DIR, `${streamName}.mp4`);
+    const webmOutputPath = path.join(OUTPUT_DIR, `${streamName}.webm`);
+
+    console.log(`-------------------------------------------------`);
+    console.log(`🎥 Traitement [${i + 1}/${files.length}] : ${file} -> ${streamName}`);
+    console.log(`-------------------------------------------------`);
+
+    await encodeVideoMP4(inputPath, mp4OutputPath, streamName);
+    await encodeVideoWebM(inputPath, webmOutputPath, streamName);
   }
 
   console.log("\n=================================================");
-  console.log(`✨ Encodage terminé ! ${successCount}/${files.length} vidéo(s) traitée(s) avec succès.`);
-  console.log(`📁 Fichiers exportés dans : public/Videos/`);
+  console.log(`✨ Compression terminée ! Fichiers légers prêts pour Git push et streaming fluide.`);
   console.log("=================================================\n");
 }
 
