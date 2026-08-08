@@ -92,11 +92,11 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
       lenis.on("scroll", onScroll);
     }
 
-    // Proximity hover detection near right edge (rightmost 80px on desktop)
+    // Proximity hover detection near right edge (rightmost 90px on desktop)
     const onMouseMove = (e: MouseEvent) => {
       if (window.innerWidth < 768) return;
       const distanceToRight = window.innerWidth - e.clientX;
-      setIsHovered(distanceToRight <= 80);
+      setIsHovered(distanceToRight <= 90);
     };
     window.addEventListener("mousemove", onMouseMove, { passive: true });
 
@@ -265,7 +265,7 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
 
   if (!isHomePage) return null;
 
-  const rightMargin = isMobile ? 12 : 48;
+  const rightMargin = isMobile ? 42 : 58;
   const topMargin = isMobile ? 70 : 62;
   const bottomMargin = isMobile ? 80 : 62;
 
@@ -373,9 +373,9 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
           <div
             style={{
               position: "absolute",
-              left: 18,
+              left: 12,
               top: "50%",
-              transform: `translateY(-50%) scale(${isDragging || isFlinging ? 1.12 : isHovered ? 1.04 : 1})`,
+              transform: `translateY(-50%) scale(${isDragging || isFlinging ? 1.1 : isHovered ? 1.03 : 1})`,
               opacity: isDragging || isHovered || isFlinging ? 1 : 0,
               pointerEvents: "none",
               transition: "opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -389,7 +389,7 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
             <span
               style={{
                 fontFamily: "'Syne', var(--font-syne), 'Inter', sans-serif",
-                fontSize: isMobile ? 12 : 14,
+                fontSize: isMobile ? 11 : 13,
                 fontWeight: 800,
                 color: "#ffffff",
                 letterSpacing: "-0.02em",
@@ -403,7 +403,7 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
             <span
               style={{
                 fontFamily: "var(--font-mono), monospace",
-                fontSize: 9,
+                fontSize: 8,
                 color: "rgba(255, 255, 255, 0.6)",
                 fontWeight: 500,
                 marginLeft: 1,
