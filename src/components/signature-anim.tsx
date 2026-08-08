@@ -12,19 +12,19 @@ interface SignatureAnimProps {
   className?: string;
 }
 
-// Separate stroke paths for the 'S' and 'K' monogram initials of Sacha Karpavicius
+// Refined stroke paths matching Sacha Karpavicius's authentic 'S' and 'K' monogram handwriting:
 const PATH_S =
-  "M 60,65 C 45,85 38,115 35,142 C 32,172 58,192 82,185 C 105,178 110,148 75,120";
+  "M 65,70 C 48,90 38,118 35,145 C 32,174 56,192 82,185 C 105,178 110,148 75,118";
 
 const PATH_K =
-  "M 75,120 C 73,75 72,40 74,18 C 76,4 86,6 88,22 C 90,46 82,85 76,102 C 82,85 120,68 140,82 C 155,92 135,115 75,118 C 110,118 180,122 230,128 C 260,132 278,138 288,142";
+  "M 75,118 C 73,72 72,38 74,16 C 76,4 86,6 88,22 C 90,46 82,85 76,102 C 82,85 120,66 142,80 C 158,90 138,114 75,116 C 110,116 180,120 230,126 C 260,130 278,136 288,140";
 
 export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const strokeGroupRef = useRef<SVGGElement>(null);
   const pathSRef = useRef<SVGPathElement>(null);
   const pathKRef = useRef<SVGPathElement>(null);
   const penTipRef = useRef<SVGCircleElement>(null);
-  const labelRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
 
   useEffect(() => {
@@ -32,24 +32,20 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
       !containerRef.current ||
       !pathSRef.current ||
       !pathKRef.current ||
-      !penTipRef.current
+      !penTipRef.current ||
+      !strokeGroupRef.current
     )
       return;
 
     const pathS = pathSRef.current;
     const pathK = pathKRef.current;
     const penTip = penTipRef.current;
+    const strokeGroup = strokeGroupRef.current;
 
     const lenS = pathS.getTotalLength() || 240;
     const lenK = pathK.getTotalLength() || 590;
 
-    // Initial state
-    gsap.set(pathS, { strokeDasharray: lenS, strokeDashoffset: lenS, opacity: 1 });
-    gsap.set(pathK, { strokeDasharray: lenK, strokeDashoffset: lenK, opacity: 1 });
-    gsap.set(penTip, { opacity: 0 });
-    if (labelRef.current) gsap.set(labelRef.current, { opacity: 0, y: 6 });
-
-    const updatePenTipPath = (path: SVGPathElement, totalLen: number, progress: number) => {
+    const updatePenTip = (path: SVGPathElement, totalLen: number, progress: number) => {
       if (!path || !penTip) return;
       try {
         const pointLen = Math.max(0, Math.min(totalLen, totalLen * progress));
@@ -74,19 +70,20 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
 
       timelineRef.current = tl;
 
-      // 1. Reset state
-      tl.set(pathS, { strokeDashoffset: lenS });
-      tl.set(pathK, { strokeDashoffset: lenK });
+      // 1. Reset state for new cycle
+      tl.set(pathS, { strokeDasharray: lenS, strokeDashoffset: lenS });
+      tl.set(pathK, { strokeDasharray: lenK, strokeDashoffset: lenK });
+      tl.set(strokeGroup, { opacity: 1, clipPath: "inset(0 0% 0 0)" });
       tl.set(penTip, { opacity: 0 });
-      if (labelRef.current) tl.set(labelRef.current, { opacity: 0, y: 6 });
 
-      // 2. Draw 'S' stroke (1.1s)
+      // 2. Fade in pen tip at start of 'S'
       tl.to(penTip, {
         opacity: 1,
         duration: 0.15,
-        onStart: () => updatePenTipPath(pathS, lenS, 0),
+        onStart: () => updatePenTip(pathS, lenS, 0),
       });
 
+      // 3. Draw 'S' stroke in real-time (1.1s)
       const sObj = { progress: 0 };
       tl.to(pathS, { strokeDashoffset: 0, duration: 1.1, ease: "power2.inOut" }, "-=0.1");
       tl.to(
@@ -95,12 +92,12 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
           progress: 1,
           duration: 1.1,
           ease: "power2.inOut",
-          onUpdate: () => updatePenTipPath(pathS, lenS, sObj.progress),
+          onUpdate: () => updatePenTip(pathS, lenS, sObj.progress),
         },
         "<"
       );
 
-      // 3. Seamless transition to 'K' stroke (2.0s)
+      // 4. Draw 'K' stroke in real-time seamlessly (2.0s)
       const kObj = { progress: 0 };
       tl.to(pathK, { strokeDashoffset: 0, duration: 2.0, ease: "power2.inOut" });
       tl.to(
@@ -109,60 +106,26 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
           progress: 1,
           duration: 2.0,
           ease: "power2.inOut",
-          onUpdate: () => updatePenTipPath(pathK, lenK, kObj.progress),
+          onUpdate: () => updatePenTip(pathK, lenK, kObj.progress),
         },
         "<"
       );
 
-      // 4. Fade out pen tip and fade in micro-label
-      tl.to(penTip, { opacity: 0, duration: 0.3, ease: "power2.out" });
-      if (labelRef.current) {
-        tl.to(labelRef.current, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, "-=0.2");
-      }
+      // 5. Fade out pen tip
+      tl.to(penTip, { opacity: 0, duration: 0.35, ease: "power2.out" });
 
-      // 5. Hold fully visible (4.5s)
+      // 6. Hold fully visible signature (4.5s)
       tl.to({}, { duration: 4.5 });
 
-      // 6. Fade out micro-label
-      if (labelRef.current) {
-        tl.to(labelRef.current, { opacity: 0, duration: 0.3, ease: "power2.in" });
-      }
-
-      // 7. Erase strokes in reverse (1.6s)
-      tl.to(penTip, {
-        opacity: 1,
-        duration: 0.15,
-        onStart: () => updatePenTipPath(pathK, lenK, 1),
+      // 7. Natural Erase Phase: Forward Dissolve/Wipe in writing direction (1.4s)
+      tl.to(strokeGroup, {
+        opacity: 0,
+        duration: 1.2,
+        ease: "power2.inOut",
       });
 
-      const eraseKObj = { progress: 1 };
-      tl.to(pathK, { strokeDashoffset: -lenK, duration: 1.2, ease: "power2.inOut" }, "-=0.1");
-      tl.to(
-        eraseKObj,
-        {
-          progress: 0,
-          duration: 1.2,
-          ease: "power2.inOut",
-          onUpdate: () => updatePenTipPath(pathK, lenK, eraseKObj.progress),
-        },
-        "<"
-      );
-
-      const eraseSObj = { progress: 1 };
-      tl.to(pathS, { strokeDashoffset: -lenS, duration: 0.7, ease: "power2.inOut" });
-      tl.to(
-        eraseSObj,
-        {
-          progress: 0,
-          duration: 0.7,
-          ease: "power2.inOut",
-          onUpdate: () => updatePenTipPath(pathS, lenS, eraseSObj.progress),
-        },
-        "<"
-      );
-
-      tl.to(penTip, { opacity: 0, duration: 0.2, ease: "power2.out" });
-      tl.to({}, { duration: 0.5 });
+      // 8. Brief pause before loop restarts
+      tl.to({}, { duration: 0.6 });
     }, containerRef);
 
     return () => ctx.revert();
@@ -179,9 +142,9 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
       ref={containerRef}
       onClick={handleReplay}
       className={`relative flex flex-col items-start select-none cursor-pointer group ${className}`}
-      title="Cliquer pour re-tracer le monogramme SK"
+      title="Cliquer pour re-tracer la signature"
     >
-      {/* Real-time Monogram Pen Canvas (S + K Layered Animation) */}
+      {/* Sacha Karpavicius Monogram Canvas — Pure Real-Time Pen Animation */}
       <div className="relative h-[160px] sm:h-[200px] md:h-[250px] w-auto aspect-[300/210] flex items-center justify-center">
         <svg
           version="1.1"
@@ -191,7 +154,8 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
           className="w-full h-full filter drop-shadow-[0_0_12px_rgba(255,255,255,0.65)] group-hover:drop-shadow-[0_0_22px_rgba(255,255,255,1)] transition-all duration-500"
         >
           <defs>
-            <filter id="pen-glow-sk" x="-50%" y="-50%" width="200%" height="200%">
+            {/* Glowing neon filter for pen tip dot */}
+            <filter id="pen-glow-sk-v2" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="3" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
@@ -200,48 +164,42 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
             </filter>
           </defs>
 
-          {/* Stroke Layer 1: Initial 'S' Gesture */}
-          <path
-            ref={pathSRef}
-            d={PATH_S}
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth="2.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          {/* Stroke Layer Group: 'S' + 'K' Strokes with Natural Dissolve Fade */}
+          <g ref={strokeGroupRef}>
+            {/* Stroke Layer 1: 'S' Monogram Initial */}
+            <path
+              ref={pathSRef}
+              d={PATH_S}
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth="2.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
 
-          {/* Stroke Layer 2: Monogram 'K' Gesture & Sweep Flourish */}
-          <path
-            ref={pathKRef}
-            d={PATH_K}
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth="2.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+            {/* Stroke Layer 2: 'K' Monogram Initial & Sweep Flourish */}
+            <path
+              ref={pathKRef}
+              d={PATH_K}
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth="2.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </g>
 
           {/* Glowing Neon Pen Tip Dot */}
           <circle
             ref={penTipRef}
-            cx="60"
-            cy="65"
+            cx="65"
+            cy="70"
             r="3.5"
             fill="#ffffff"
-            filter="url(#pen-glow-sk)"
+            filter="url(#pen-glow-sk-v2)"
             className="drop-shadow-[0_0_10px_rgba(255,255,255,1)]"
           />
         </svg>
-      </div>
-
-      {/* Awwwards Micro-Label Monogram Caption */}
-      <div
-        ref={labelRef}
-        className="mt-1 flex items-center gap-2 font-mono text-[9px] md:text-[10px] tracking-[0.3em] text-white/50 uppercase"
-      >
-        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-        <span>[ S.K ] — MONOGRAMME OFFICIEL</span>
       </div>
     </div>
   );
