@@ -25,7 +25,7 @@ const SUPPORTED_EXTS = [".mov", ".mp4", ".m4v", ".avi", ".mkv", ".webm"];
 
 function encodeVideoMP4(inputFile, outputFile, baseName) {
   return new Promise((resolve) => {
-    console.log(`\n🎬 Encodage Web-Optimized MP4 (<50MB H.264 Faststart) : ${baseName}.mp4 ...`);
+    console.log(`\n🎬 Encodage MP4 Stream Optimisé (<45MB H.264 Faststart) : ${baseName}.mp4 ...`);
 
     ffmpeg(inputFile)
       .output(outputFile)
@@ -36,8 +36,8 @@ function encodeVideoMP4(inputFile, outputFile, baseName) {
         "-pix_fmt yuv420p",
         "-movflags +faststart",
         "-vf scale=-2:720",
-        "-maxrate 1.8M",
-        "-bufsize 3.6M"
+        "-maxrate 1.5M",
+        "-bufsize 3.0M"
       ])
       .audioCodec("aac")
       .audioBitrate("128k")
@@ -60,7 +60,7 @@ function encodeVideoMP4(inputFile, outputFile, baseName) {
 
 function encodeVideoWebM(inputFile, outputFile, baseName) {
   return new Promise((resolve) => {
-    console.log(`\n🎬 Encodage Web-Optimized WebM (<30MB VP9) : ${baseName}.webm ...`);
+    console.log(`\n🎬 Encodage WebM Stream Optimisé (<25MB VP9) : ${baseName}.webm ...`);
 
     ffmpeg(inputFile)
       .output(outputFile)
@@ -110,7 +110,7 @@ function encodeVideoWebM(inputFile, outputFile, baseName) {
 
 async function startBatchEncoding() {
   console.log("=================================================");
-  console.log("🚀 Compression Ultra-Legère Web (Cible < 45 MB / Vidéo)");
+  console.log("🚀 Compression Stream Vidéo Ultra-Légère (< 45 MB)");
   console.log("=================================================\n");
 
   const files = fs.readdirSync(RAW_DIR).filter((file) => {
@@ -122,8 +122,6 @@ async function startBatchEncoding() {
     console.log(`⚠️ Aucune vidéo brute trouvée dans le dossier "${RAW_DIR}".`);
     return;
   }
-
-  console.log(`📹 ${files.length} vidéo(s) brute(s) trouvée(s) :\n - ${files.join("\n - ")}\n`);
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
@@ -153,7 +151,7 @@ async function startBatchEncoding() {
   }
 
   console.log("\n=================================================");
-  console.log(`✨ Compression terminée ! Fichiers légers prêts pour Git push et streaming fluide.`);
+  console.log(`✨ Compression terminée ! Fichiers ultra-légers (< 45 MB) sans avertissement GitHub.`);
   console.log("=================================================\n");
 }
 
