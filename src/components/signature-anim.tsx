@@ -12,12 +12,13 @@ interface SignatureAnimProps {
   className?: string;
 }
 
-// Authentic continuous stroke: Perfect S shape + Untouched Perfect 'k':
-// 1. 'S': Top bar starts right (120,65) -> clean upper arch (24,70) -> smooth diagonal waist (75,140) -> round lower bowl (45,190) returning to stem base (75,130).
-// 2. 'k' (UNTOUCHED): Unbroken transition straight up needle stem (74,16), apex loop (88,22), down stem (76,98).
-// 3. Grosse boucle du 'k' (158,72) wrapping top of S, returning to stem (76,115), and long flourish leg (288,140).
-const SACHA_PERFECT_S_UNTOUCHED_K_PATH =
-  "M 120,65 C 100,58 60,58 42,62 C 24,70 20,88 38,102 C 56,114 85,122 75,140 C 60,158 25,172 45,190 C 72,200 98,182 75,130 C 74,90 73,42 74,16 C 76,4 86,6 88,22 C 90,46 82,85 76,98 C 82,78 128,58 158,72 C 172,85 145,112 76,115 C 115,116 180,120 230,126 C 260,130 278,136 288,140";
+// Authentic continuous stroke matching Sacha's exact handwriting instructions & geometry:
+// 1. Top of 'S' starts inside K's grosse boucle at (125,90) [well below needle top] -> ondules left across stem at Y=84
+// 2. Upper S belly (38,120) -> slants down-right (78,155) -> reviens left into bottom S bowl (48,198) -> returns to stem axis (75,140)
+// 3. "Monte derrière": Ascends straight up along vertical stem axis X=74 behind S loops into needle top (74,16), apex loop (88,22), down stem (76,102)
+// 4. Grosse boucle du 'k' (160,85) englobing the top of S, returning to stem (76,115), and long flourish leg (288,140)
+const SACHA_CORRECT_BEHIND_SIGNATURE_PATH =
+  "M 125,90 C 105,82 65,80 45,84 C 25,92 20,108 38,120 C 56,130 95,138 78,155 C 60,172 25,186 48,198 C 72,206 96,188 75,140 C 74,95 73,42 74,16 C 76,4 86,6 88,22 C 90,46 82,85 76,102 C 82,85 130,68 160,85 C 172,98 145,112 76,115 C 115,116 180,120 230,126 C 260,130 278,136 288,140";
 
 export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -29,7 +30,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
 
     const path = pathRef.current;
     const penTip = penTipRef.current;
-    const totalLength = path.getTotalLength() || 983;
+    const totalLength = path.getTotalLength() || 984;
 
     const updatePenTip = (progress: number) => {
       if (!path || !penTip) return;
@@ -59,7 +60,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
       tl.set(penTip, { opacity: 0 });
 
       // --- REAL-TIME WRITE PHASE ---
-      // 2. Fade in glowing pen tip at start of 'S' top bar (120, 65)
+      // 2. Fade in glowing pen tip inside K's grosse boucle at start of 'S' (125, 90)
       tl.to(penTip, {
         opacity: 1,
         duration: 0.15,
@@ -121,7 +122,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
       ref={containerRef}
       className={`relative flex flex-col items-start select-none pointer-events-none cursor-default ${className}`}
     >
-      {/* Sacha Karpavicius Perfect Signature Canvas — Perfect Cursive S & Untouched Parfait 'k' */}
+      {/* Sacha Karpavicius Perfect Signature Canvas — Haut du S dans la Grosse Boucle & Remontée du 'k' Derrière la Tige */}
       <div className="relative h-[160px] sm:h-[200px] md:h-[250px] w-auto aspect-[300/210] flex items-center justify-center">
         <svg
           version="1.1"
@@ -131,7 +132,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
           className="w-full h-full filter drop-shadow-[0_0_12px_rgba(255,255,255,0.65)]"
         >
           <defs>
-            <filter id="pen-glow-sacha-perfect-s" x="-50%" y="-50%" width="200%" height="200%">
+            <filter id="pen-glow-sacha-behind" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="3" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
@@ -141,10 +142,10 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
           </defs>
 
           {/* Continuous Single Unbroken Stroke:
-              Perfect Cursive S -> unbroken transition straight up into tall needle stem of 'k' -> petite boucle -> grosse boucle englobant S -> long flourish leg */}
+              S top starts in grosse boucle -> ondules left -> slants right -> bottom bowl -> ascends DERRIERE along vertical stem axis -> needle top -> grosse boucle englobing S top -> flourish leg */}
           <path
             ref={pathRef}
-            d={SACHA_PERFECT_S_UNTOUCHED_K_PATH}
+            d={SACHA_CORRECT_BEHIND_SIGNATURE_PATH}
             fill="none"
             stroke="#ffffff"
             strokeWidth="2.8"
@@ -155,11 +156,11 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
           {/* Glowing Neon Pen Tip Dot */}
           <circle
             ref={penTipRef}
-            cx="120"
-            cy="65"
+            cx="125"
+            cy="90"
             r="3.5"
             fill="#ffffff"
-            filter="url(#pen-glow-sacha-perfect-s)"
+            filter="url(#pen-glow-sacha-behind)"
             className="drop-shadow-[0_0_10px_rgba(255,255,255,1)]"
           />
         </svg>
