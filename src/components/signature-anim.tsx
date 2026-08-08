@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -24,7 +24,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
     const path = pathRef.current;
     const pathLength = path.getTotalLength();
 
-    // Set initial stroke state: completely hidden, stroke ready
+    // Initial state: hidden stroke
     gsap.set(path, {
       strokeDasharray: pathLength,
       strokeDashoffset: pathLength,
@@ -32,7 +32,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
     });
 
     const ctx = gsap.context(() => {
-      // Single clean reveal timeline triggered when scrolled into view
+      // Reveal timeline on ScrollTrigger
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: containerRef.current,
@@ -43,11 +43,10 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
 
       timelineRef.current = tl;
 
-      // Reset state before animation begins
       tl.set(path, { strokeDashoffset: pathLength })
         .set(penTipRef.current, { opacity: 1, scale: 1 });
 
-      // Step 1: Realistic Pen Writing Animation of Sacha's exact handwritten signature
+      // Step 1: Smooth pen drawing of Sacha's signature
       tl.to(path, {
         strokeDashoffset: 0,
         duration: 2.8,
@@ -64,7 +63,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
         },
       });
 
-      // Step 2: Fade out pen tip gracefully, leaving signature 100% visible permanently!
+      // Step 2: Pen tip fades out, signature stays 100% visible permanently
       tl.to(penTipRef.current, {
         opacity: 0,
         scale: 0,
@@ -88,7 +87,8 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
     const replayTl = gsap.timeline();
     timelineRef.current = replayTl;
 
-    replayTl.set(path, { strokeDashoffset: pathLength })
+    replayTl
+      .set(path, { strokeDashoffset: pathLength })
       .set(penTipRef.current, { opacity: 1, scale: 1 })
       .to(path, {
         strokeDashoffset: 0,
@@ -117,19 +117,10 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
     <div 
       ref={containerRef} 
       onClick={handleReplay}
-      className={`relative flex flex-col items-start cursor-pointer group select-none ${className}`}
+      className={`relative inline-block cursor-pointer group select-none ${className}`}
       title="Cliquer pour re-tracer la signature"
     >
-      <div className="flex items-center gap-2 mb-1">
-        <span className="font-mono text-[9px] tracking-[0.25em] text-white/40 group-hover:text-white transition-colors duration-300 uppercase block">
-          SIGNATURE OFFICIELLE
-        </span>
-        <span className="text-[9px] font-mono text-white/20 group-hover:text-white/60 transition-colors duration-300">
-          (RE-JOUER ↺)
-        </span>
-      </div>
-
-      <div className="relative w-[240px] sm:w-[280px] md:w-[320px] h-[120px] sm:h-[140px] overflow-visible">
+      <div className="relative w-[220px] sm:w-[260px] md:w-[300px] h-[120px] sm:h-[140px] md:h-[150px] overflow-visible">
         <svg
           viewBox="80 10 310 260"
           fill="none"
@@ -141,7 +132,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
             ref={pathRef}
             d="M 140 180 C 138 135, 145 60, 150 25 C 152 14, 142 12, 134 35 C 124 68, 118 115, 114 175 C 112 148, 140 92, 185 85 C 225 78, 238 112, 195 138 C 160 152, 98 152, 94 182 C 90 220, 140 265, 205 248 C 240 235, 238 198, 168 180 C 195 180, 290 188, 385 230"
             stroke="white"
-            strokeWidth="3.6"
+            strokeWidth="3.4"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
