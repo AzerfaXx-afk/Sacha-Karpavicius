@@ -368,11 +368,11 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
             pointerEvents: "none",
           }}
         >
-          {/* Floating Pure Awwwards Typography Percentage (No Box / Square) */}
+          {/* Floating Pure Awwwards Typography Percentage on the RIGHT of the line (No Box / Square) */}
           <div
             style={{
               position: "absolute",
-              right: 18,
+              left: 18,
               top: "50%",
               transform: `translateY(-50%) scale(${isDragging || isFlinging ? 1.12 : isHovered ? 1.04 : 1})`,
               opacity: isDragging || isHovered || isFlinging ? 1 : 0,
