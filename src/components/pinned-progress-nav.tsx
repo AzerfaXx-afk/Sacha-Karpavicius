@@ -21,8 +21,16 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
 
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isFlinging, setIsFlinging] = useState(false);
   const [scrollPercent, setScrollPercent] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Velocity & Inertia physics refs
+  const lastPointerYRef = useRef<number>(0);
+  const lastPointerTimeRef = useRef<number>(0);
+  const velocityRef = useRef<number>(0);
+  const flingRafRef = useRef<number | null>(null);
+  const currentProgressRef = useRef<number>(0);
 
   // Strictly only display on homepage
   const isHomePage = pathname === "/";
@@ -40,6 +48,7 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
   // Update progress visuals synchronously
   const updateProgressVisuals = useCallback((progress: number) => {
     const clamped = Math.min(1, Math.max(0, progress));
+    currentProgressRef.current = clamped;
     setScrollPercent(Math.round(clamped * 100));
 
     if (fillRef.current) {
@@ -61,7 +70,7 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
     let rafId: number;
 
     const updateProgress = () => {
-      if (isDragging) return; // Ignore window scroll updates while user is actively scrubbing
+      if (isDragging || isFlinging) return; // Ignore window scroll updates while user is scrubbing/flinging
       const scrollY = window.scrollY || document.documentElement.scrollTop;
       const docH = document.documentElement.scrollHeight - window.innerHeight;
       const progress = docH > 0 ? scrollY / docH : 0;
@@ -98,7 +107,7 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
         lenis.off("scroll", onScroll);
       }
     };
-  }, [isHomePage, isDragging, updateProgressVisuals]);
+  }, [isHomePage, isDragging, isFlinging, updateProgressVisuals]);
 
   // Handle Scrub / Drag calculation
   const handleScrub = useCallback((clientY: number) => {
@@ -121,6 +130,72 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
     }
   }, [updateProgressVisuals]);
 
+  // Launch / Fling Inertia Loop
+  const startFlingInertia = useCallback(() => {
+    if (!containerRef.current) return;
+    if (flingRafRef.current) cancelAnimationFrame(flingRafRef.current);
+
+    setIsFlinging(true);
+    let lastTime = performance.now();
+
+    const step = (now: number) => {
+      const dt = Math.min(32, now - lastTime);
+      lastTime = now;
+
+      if (!containerRef.current) {
+        setIsFlinging(false);
+        return;
+      }
+
+      const rect = containerRef.current.getBoundingClientRect();
+      const trackHeight = rect.height;
+      if (trackHeight <= 0) {
+        setIsFlinging(false);
+        return;
+      }
+
+      // Move current progress based on velocity
+      let currentProgress = currentProgressRef.current + (velocityRef.current * dt) / trackHeight;
+
+      // Handle boundaries with subtle bounce damping
+      if (currentProgress < 0) {
+        currentProgress = 0;
+        velocityRef.current = -velocityRef.current * 0.25; // Subtle classy bounce off top
+        triggerHaptic("light");
+      } else if (currentProgress > 1) {
+        currentProgress = 1;
+        velocityRef.current = -velocityRef.current * 0.25; // Subtle classy bounce off bottom
+        triggerHaptic("light");
+      }
+
+      // Smooth, natural friction decay (~0.89 per 16ms frame)
+      velocityRef.current *= Math.pow(0.89, dt / 16);
+
+      // Apply visuals & update scroll position
+      updateProgressVisuals(currentProgress);
+      const docH = document.documentElement.scrollHeight - window.innerHeight;
+      const targetY = currentProgress * docH;
+
+      const lenis = (window as any).__lenis;
+      if (lenis && typeof lenis.scrollTo === "function") {
+        lenis.scrollTo(targetY, { immediate: true });
+      } else {
+        window.scrollTo({ top: targetY, behavior: "instant" });
+      }
+
+      // Continue loop until velocity is negligible
+      if (Math.abs(velocityRef.current) > 0.004) {
+        flingRafRef.current = requestAnimationFrame(step);
+      } else {
+        velocityRef.current = 0;
+        setIsFlinging(false);
+        flingRafRef.current = null;
+      }
+    };
+
+    flingRafRef.current = requestAnimationFrame(step);
+  }, [updateProgressVisuals]);
+
   // Pointer Event Handlers for Mouse & Touch Scrubbing
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -128,7 +203,17 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch (_) {}
 
+    if (flingRafRef.current) {
+      cancelAnimationFrame(flingRafRef.current);
+      flingRafRef.current = null;
+    }
+
+    setIsFlinging(false);
     setIsDragging(true);
+    lastPointerYRef.current = e.clientY;
+    lastPointerTimeRef.current = performance.now();
+    velocityRef.current = 0;
+
     triggerHaptic("selection");
     handleScrub(e.clientY);
   };
@@ -136,6 +221,20 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDragging) return;
     e.stopPropagation();
+
+    const now = performance.now();
+    const dt = Math.max(1, now - lastPointerTimeRef.current);
+    const dy = e.clientY - lastPointerYRef.current;
+    
+    // Instant velocity in px/ms
+    const instVel = dy / dt;
+    // Exponential smoothing & clamp max velocity for classy, non-exaggerated fling
+    const smoothedVel = velocityRef.current * 0.4 + instVel * 0.6;
+    velocityRef.current = Math.min(1.2, Math.max(-1.2, smoothedVel));
+
+    lastPointerYRef.current = e.clientY;
+    lastPointerTimeRef.current = now;
+
     handleScrub(e.clientY);
   };
 
@@ -144,8 +243,23 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
     } catch (_) {}
+
     setIsDragging(false);
-    triggerHaptic("light");
+
+    const now = performance.now();
+    const timeSinceLastMove = now - lastPointerTimeRef.current;
+
+    // If pointer stopped moving for > 70ms before release, kill velocity (no accidental fling)
+    if (timeSinceLastMove > 70) {
+      velocityRef.current = 0;
+      triggerHaptic("light");
+    } else if (Math.abs(velocityRef.current) > 0.08) {
+      // Launch / fling glowing orb with silky, natural momentum!
+      triggerHaptic("medium");
+      startFlingInertia();
+    } else {
+      triggerHaptic("light");
+    }
   };
 
   if (!isHomePage) return null;
@@ -188,7 +302,7 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
           bottom: 0,
           left: "50%",
           transform: "translateX(-50%)",
-          width: isDragging ? 4 : isHovered ? 3 : 2,
+          width: isDragging || isFlinging ? 4 : isHovered ? 3 : 2,
           transition: "width 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
@@ -217,7 +331,7 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
             width: "100%",
             height: "100%",
             borderRadius: 9999,
-            background: isDragging || isHovered
+            background: isDragging || isFlinging || isHovered
               ? "linear-gradient(to bottom, rgba(255,255,255,0.7), rgba(255,255,255,0.98), #ffffff)"
               : "linear-gradient(to bottom, rgba(255,255,255,0.4), rgba(255,255,255,0.85), rgba(255,255,255,1))",
             transformOrigin: "top center",
@@ -225,53 +339,77 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
             willChange: "transform",
             maskImage: "linear-gradient(to bottom, transparent 0%, white 3%, white 97%, transparent 100%)",
             WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, white 3%, white 97%, transparent 100%)",
-            boxShadow: isDragging || isHovered ? "0 0 12px rgba(255, 255, 255, 0.7)" : "none",
+            boxShadow: isDragging || isFlinging || isHovered ? "0 0 14px rgba(255, 255, 255, 0.8)" : "none",
             transition: "box-shadow 0.3s ease",
           }}
         />
 
-        {/* Awwwards glowing lead dot at exact scroll head */}
+        {/* Awwwards glowing lead dot / luminescent orb at exact scroll head */}
         <div
           ref={headRef}
           style={{
             position: "absolute",
             top: -3,
             left: "50%",
-            width: isDragging ? 8 : isHovered ? 6 : 5,
-            height: isDragging ? 8 : isHovered ? 6 : 5,
-            marginLeft: isDragging ? -4 : isHovered ? -3 : -2.5,
+            width: isDragging || isFlinging ? 9 : isHovered ? 7 : 5,
+            height: isDragging || isFlinging ? 9 : isHovered ? 7 : 5,
+            marginLeft: isDragging || isFlinging ? -4.5 : isHovered ? -3.5 : -2.5,
             borderRadius: "50%",
             backgroundColor: "#ffffff",
-            boxShadow: isDragging
-              ? "0 0 16px 4px rgba(255, 255, 255, 1), 0 0 8px rgba(255, 255, 255, 1)"
+            boxShadow: isDragging || isFlinging
+              ? "0 0 20px 5px rgba(255, 255, 255, 1), 0 0 10px rgba(255, 255, 255, 1)"
+              : isHovered
+              ? "0 0 14px 3px rgba(255, 255, 255, 0.9), 0 0 6px rgba(255, 255, 255, 1)"
               : "0 0 10px 2px rgba(255, 255, 255, 0.85), 0 0 4px rgba(255, 255, 255, 1)",
             transform: "translateY(0px)",
             opacity: 0,
             willChange: "transform, opacity",
-            transition: "width 0.2s ease, height 0.2s ease, margin 0.2s ease, opacity 0.2s ease",
+            transition: "width 0.2s ease, height 0.2s ease, margin 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease",
             pointerEvents: "none",
           }}
         >
-          {/* Floating Drag Percentage HUD Badge */}
+          {/* Floating Pure Awwwards Typography Percentage (No Box / Square) */}
           <div
             style={{
               position: "absolute",
               right: 18,
               top: "50%",
-              transform: "translateY(-50%)",
-              opacity: isDragging || isHovered ? 1 : 0,
+              transform: `translateY(-50%) scale(${isDragging || isFlinging ? 1.12 : isHovered ? 1.04 : 1})`,
+              opacity: isDragging || isHovered || isFlinging ? 1 : 0,
               pointerEvents: "none",
-              transition: "opacity 0.25s ease, transform 0.25s ease",
-              backgroundColor: "rgba(10, 10, 10, 0.85)",
-              backdropFilter: "blur(12px)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              borderRadius: 4,
-              padding: "2px 6px",
+              transition: "opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+              display: "flex",
+              alignItems: "baseline",
+              gap: "1px",
+              userSelect: "none",
               whiteSpace: "nowrap",
             }}
           >
-            <span style={{ fontFamily: "monospace", fontSize: 10, color: "#ffffff", letterSpacing: "0.05em" }}>
-              {scrollPercent}%
+            <span
+              style={{
+                fontFamily: "'Syne', var(--font-syne), 'Inter', sans-serif",
+                fontSize: isMobile ? 12 : 14,
+                fontWeight: 800,
+                color: "#ffffff",
+                letterSpacing: "-0.02em",
+                textShadow: "0 0 14px rgba(255, 255, 255, 0.7), 0 0 4px rgba(255, 255, 255, 0.9)",
+                fontVariantNumeric: "tabular-nums",
+                lineHeight: 1,
+              }}
+            >
+              {scrollPercent.toString().padStart(2, "0")}
+            </span>
+            <span
+              style={{
+                fontFamily: "var(--font-mono), monospace",
+                fontSize: 9,
+                color: "rgba(255, 255, 255, 0.6)",
+                fontWeight: 500,
+                marginLeft: 1,
+                textShadow: "0 0 8px rgba(255, 255, 255, 0.4)",
+              }}
+            >
+              %
             </span>
           </div>
         </div>
@@ -279,3 +417,4 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
     </div>
   );
 }
+
