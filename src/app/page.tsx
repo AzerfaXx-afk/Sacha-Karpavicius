@@ -14,6 +14,8 @@ import { useSiteContext } from "@/context/site-context";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
 
 import PhysicsCoins from "@/components/physics-coins";
+import PinnedProgressNav from "@/components/pinned-progress-nav";
+import SignatureAnim from "@/components/signature-anim";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -1349,6 +1351,38 @@ export default function Home() {
           }
         );
       });
+
+      /* ── Short-Distance Magnetic Section Alignment (Desktop) ── */
+      if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+        const targetEls = document.querySelectorAll<HTMLElement>("#photos, #videos, #about, #contact");
+        if (targetEls.length > 0) {
+          ScrollTrigger.create({
+            snap: {
+              snapTo: (progress: number) => {
+                const docH = document.documentElement.scrollHeight - window.innerHeight;
+                if (docH <= 0) return progress;
+                const scrollY = progress * docH;
+                const positions = Array.from(targetEls).map((el) => el.offsetTop);
+                
+                // Find nearest section top
+                const closest = positions.reduce((prev, curr) =>
+                  Math.abs(curr - scrollY) < Math.abs(prev - scrollY) ? curr : prev
+                );
+                
+                // Only snap if within 120px of section header (short distance alignment)
+                if (Math.abs(closest - scrollY) <= 120) {
+                  return closest / docH;
+                }
+                
+                return progress; // Free exploration everywhere else
+              },
+              duration: { min: 0.3, max: 0.6 },
+              delay: 0.1,
+              ease: "power2.out",
+            },
+          });
+        }
+      }
     });
 
     return () => {
@@ -1441,6 +1475,7 @@ export default function Home() {
   return (
     <>
       <CustomCursor />
+      <PinnedProgressNav lang={lang} showUI={!loading && (hasEnteredSite || siteStarted || isHoveringName) && !isHideUI} />
       {/* Preloader */}
       {loading && <Preloader onComplete={onPreloaderComplete} onStart={handleStartSite} onHoverChange={setIsHoveringName} lang={lang} />}
 
@@ -1809,6 +1844,9 @@ export default function Home() {
                   <span className="text-white font-semibold">ARTS VISUELS</span>
                 </div>
               </div>
+
+              {/* Animated SVG Signature */}
+              <SignatureAnim className="pt-6 border-t border-white/10" />
             </div>
 
             {/* Right Column: Large Portrait Card with Organic Circular LED Aura (5 Cols) */}

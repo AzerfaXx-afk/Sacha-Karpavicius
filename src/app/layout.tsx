@@ -53,9 +53,10 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
+      suppressHydrationWarning
       className={`${syne.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#0a0a0a] text-white">
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-[#0a0a0a] text-white">
         <SiteProvider>
           <SmoothScrollProvider>
             <main className="flex-1 flex flex-col">{children}</main>
