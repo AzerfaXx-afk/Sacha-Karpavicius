@@ -12,38 +12,36 @@ interface SignatureAnimProps {
   className?: string;
 }
 
-// Refined stroke paths matching Sacha Karpavicius's authentic 'S' and 'K' monogram handwriting:
+// Refined stroke paths:
+// PATH_S: Cursive 'S' initial (starts near center stem, arches up-left, sweeps down into bottom loop)
+// PATH_K: 'K' initial & sweep flourish (needle stem up, upper-right lobe, sweep flourish right)
 const PATH_S =
-  "M 65,70 C 48,90 38,118 35,145 C 32,174 56,192 82,185 C 105,178 110,148 75,118";
+  "M 75,90 C 58,75 42,82 38,98 C 34,120 32,150 48,178 C 62,192 84,188 85,168 C 86,148 78,125 75,118";
 
 const PATH_K =
   "M 75,118 C 73,72 72,38 74,16 C 76,4 86,6 88,22 C 90,46 82,85 76,102 C 82,85 120,66 142,80 C 158,90 138,114 75,116 C 110,116 180,120 230,126 C 260,130 278,136 288,140";
 
 export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const strokeGroupRef = useRef<SVGGElement>(null);
   const pathSRef = useRef<SVGPathElement>(null);
   const pathKRef = useRef<SVGPathElement>(null);
   const penTipRef = useRef<SVGCircleElement>(null);
-  const timelineRef = useRef<gsap.core.Timeline | null>(null);
 
   useEffect(() => {
     if (
       !containerRef.current ||
       !pathSRef.current ||
       !pathKRef.current ||
-      !penTipRef.current ||
-      !strokeGroupRef.current
+      !penTipRef.current
     )
       return;
 
     const pathS = pathSRef.current;
     const pathK = pathKRef.current;
     const penTip = penTipRef.current;
-    const strokeGroup = strokeGroupRef.current;
 
-    const lenS = pathS.getTotalLength() || 240;
-    const lenK = pathK.getTotalLength() || 590;
+    const lenS = pathS.getTotalLength() || 231;
+    const lenK = pathK.getTotalLength() || 595;
 
     const updatePenTip = (path: SVGPathElement, totalLen: number, progress: number) => {
       if (!path || !penTip) return;
@@ -68,94 +66,112 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
         },
       });
 
-      timelineRef.current = tl;
-
-      // 1. Reset state for new cycle
+      // 1. Initial State Setup
       tl.set(pathS, { strokeDasharray: lenS, strokeDashoffset: lenS });
       tl.set(pathK, { strokeDasharray: lenK, strokeDashoffset: lenK });
-      tl.set(strokeGroup, { opacity: 1, clipPath: "inset(0 0% 0 0)" });
       tl.set(penTip, { opacity: 0 });
 
-      // 2. Fade in pen tip at start of 'S'
+      // --- WRITE PHASE ---
+      // 2. Draw 'S' stroke in real-time (1.2s)
       tl.to(penTip, {
         opacity: 1,
         duration: 0.15,
         onStart: () => updatePenTip(pathS, lenS, 0),
       });
 
-      // 3. Draw 'S' stroke in real-time (1.1s)
-      const sObj = { progress: 0 };
-      tl.to(pathS, { strokeDashoffset: 0, duration: 1.1, ease: "power2.inOut" }, "-=0.1");
+      const sWriteObj = { progress: 0 };
+      tl.to(pathS, { strokeDashoffset: 0, duration: 1.2, ease: "power2.inOut" }, "-=0.1");
       tl.to(
-        sObj,
+        sWriteObj,
         {
           progress: 1,
-          duration: 1.1,
+          duration: 1.2,
           ease: "power2.inOut",
-          onUpdate: () => updatePenTip(pathS, lenS, sObj.progress),
+          onUpdate: () => updatePenTip(pathS, lenS, sWriteObj.progress),
         },
         "<"
       );
 
-      // 4. Draw 'K' stroke in real-time seamlessly (2.0s)
-      const kObj = { progress: 0 };
+      // 3. Draw 'K' stroke in real-time seamlessly (2.0s)
+      const kWriteObj = { progress: 0 };
       tl.to(pathK, { strokeDashoffset: 0, duration: 2.0, ease: "power2.inOut" });
       tl.to(
-        kObj,
+        kWriteObj,
         {
           progress: 1,
           duration: 2.0,
           ease: "power2.inOut",
-          onUpdate: () => updatePenTip(pathK, lenK, kObj.progress),
+          onUpdate: () => updatePenTip(pathK, lenK, kWriteObj.progress),
         },
         "<"
       );
 
-      // 5. Fade out pen tip
+      // 4. Fade out pen tip at end of writing
       tl.to(penTip, { opacity: 0, duration: 0.35, ease: "power2.out" });
 
-      // 6. Hold fully visible signature (4.5s)
+      // --- HOLD PHASE (4.5s) ---
       tl.to({}, { duration: 4.5 });
 
-      // 7. Natural Erase Phase: Forward Dissolve/Wipe in writing direction (1.4s)
-      tl.to(strokeGroup, {
-        opacity: 0,
-        duration: 1.2,
-        ease: "power2.inOut",
+      // --- REVERSE ERASE PHASE ---
+      // 5. Fade in pen tip at end of 'K' flourish to start reverse un-writing
+      tl.to(penTip, {
+        opacity: 1,
+        duration: 0.15,
+        onStart: () => updatePenTip(pathK, lenK, 1),
       });
 
-      // 8. Brief pause before loop restarts
-      tl.to({}, { duration: 0.6 });
+      // 6. Un-draw 'K' stroke in exact reverse with trailing pen tip (1.8s)
+      const kEraseObj = { progress: 1 };
+      tl.to(pathK, { strokeDashoffset: lenK, duration: 1.8, ease: "power2.inOut" }, "-=0.1");
+      tl.to(
+        kEraseObj,
+        {
+          progress: 0,
+          duration: 1.8,
+          ease: "power2.inOut",
+          onUpdate: () => updatePenTip(pathK, lenK, kEraseObj.progress),
+        },
+        "<"
+      );
+
+      // 7. Un-draw 'S' stroke in exact reverse with trailing pen tip (1.0s)
+      const sEraseObj = { progress: 1 };
+      tl.to(pathS, { strokeDashoffset: lenS, duration: 1.0, ease: "power2.inOut" });
+      tl.to(
+        sEraseObj,
+        {
+          progress: 0,
+          duration: 1.0,
+          ease: "power2.inOut",
+          onUpdate: () => updatePenTip(pathS, lenS, sEraseObj.progress),
+        },
+        "<"
+      );
+
+      // 8. Fade out pen tip after reverse erase
+      tl.to(penTip, { opacity: 0, duration: 0.25, ease: "power2.out" });
+      tl.to({}, { duration: 0.5 });
     }, containerRef);
 
     return () => ctx.revert();
   }, []);
 
-  const handleReplay = () => {
-    if (timelineRef.current) {
-      timelineRef.current.restart(true);
-    }
-  };
-
   return (
     <div
       ref={containerRef}
-      onClick={handleReplay}
-      className={`relative flex flex-col items-start select-none cursor-pointer group ${className}`}
-      title="Cliquer pour re-tracer la signature"
+      className={`relative flex flex-col items-start select-none pointer-events-none cursor-default ${className}`}
     >
-      {/* Sacha Karpavicius Monogram Canvas — Pure Real-Time Pen Animation */}
+      {/* Sacha Karpavicius Monogram Canvas — Non-Clickable Real-Time Pen & Reverse Erase Animation */}
       <div className="relative h-[160px] sm:h-[200px] md:h-[250px] w-auto aspect-[300/210] flex items-center justify-center">
         <svg
           version="1.1"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 300 210"
           preserveAspectRatio="xMidYMid meet"
-          className="w-full h-full filter drop-shadow-[0_0_12px_rgba(255,255,255,0.65)] group-hover:drop-shadow-[0_0_22px_rgba(255,255,255,1)] transition-all duration-500"
+          className="w-full h-full filter drop-shadow-[0_0_12px_rgba(255,255,255,0.65)]"
         >
           <defs>
-            {/* Glowing neon filter for pen tip dot */}
-            <filter id="pen-glow-sk-v2" x="-50%" y="-50%" width="200%" height="200%">
+            <filter id="pen-glow-sk-v3" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="3" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
@@ -164,39 +180,36 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
             </filter>
           </defs>
 
-          {/* Stroke Layer Group: 'S' + 'K' Strokes with Natural Dissolve Fade */}
-          <g ref={strokeGroupRef}>
-            {/* Stroke Layer 1: 'S' Monogram Initial */}
-            <path
-              ref={pathSRef}
-              d={PATH_S}
-              fill="none"
-              stroke="#ffffff"
-              strokeWidth="2.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+          {/* Stroke Layer 1: Cursive 'S' Initial Gesture */}
+          <path
+            ref={pathSRef}
+            d={PATH_S}
+            fill="none"
+            stroke="#ffffff"
+            strokeWidth="2.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
 
-            {/* Stroke Layer 2: 'K' Monogram Initial & Sweep Flourish */}
-            <path
-              ref={pathKRef}
-              d={PATH_K}
-              fill="none"
-              stroke="#ffffff"
-              strokeWidth="2.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </g>
+          {/* Stroke Layer 2: Monogram 'K' Initial & Sweep Flourish */}
+          <path
+            ref={pathKRef}
+            d={PATH_K}
+            fill="none"
+            stroke="#ffffff"
+            strokeWidth="2.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
 
           {/* Glowing Neon Pen Tip Dot */}
           <circle
             ref={penTipRef}
-            cx="65"
-            cy="70"
+            cx="75"
+            cy="90"
             r="3.5"
             fill="#ffffff"
-            filter="url(#pen-glow-sk-v2)"
+            filter="url(#pen-glow-sk-v3)"
             className="drop-shadow-[0_0_10px_rgba(255,255,255,1)]"
           />
         </svg>
