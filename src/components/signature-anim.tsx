@@ -12,9 +12,10 @@ interface SignatureAnimProps {
   className?: string;
 }
 
-// Single continuous stroke path matching Sacha's signature gesture
-const PATH_DATA =
-  "M 65,115 C 60,85 62,45 72,22 C 80,4 96,6 98,24 C 102,48 85,82 72,104 C 55,130 36,136 26,148 C 14,162 24,184 48,184 C 74,184 94,162 88,138 C 82,118 60,114 50,114 C 70,112 140,115 190,117 C 230,118 265,115 285,113";
+// Authentic stroke path following Sacha Karpavicius's actual handwriting gesture:
+// 1. Upstroke & needle loop top  2. Upper-right lobe  3. Lower-left loop  4. Rightward sweep flourish
+const SACHA_SIGNATURE_PATH =
+  "M 75,115 C 73,80 72,45 74,22 C 76,8 86,10 88,26 C 90,50 82,85 76,105 C 85,90 115,70 135,82 C 150,92 135,112 85,114 C 60,116 38,125 35,148 C 32,175 60,192 82,185 C 105,178 112,150 82,120 C 100,120 160,122 210,128 C 240,132 265,138 285,142";
 
 export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -27,7 +28,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
 
     const path = pathRef.current;
     const penTip = penTipRef.current;
-    const totalLength = path.getTotalLength();
+    const totalLength = path.getTotalLength() || 780;
 
     // Set initial dasharray and hidden offset
     gsap.set(path, {
@@ -45,7 +46,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
         penTip.setAttribute("cx", pt.x.toString());
         penTip.setAttribute("cy", pt.y.toString());
       } catch {
-        // Fallback for browsers before mount completes
+        // Fallback for pre-render
       }
     };
 
@@ -66,20 +67,20 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
       tl.set(path, { strokeDashoffset: totalLength });
       tl.set(penTip, { opacity: 0 });
 
-      // 2. Fade in pen tip at start position
+      // 2. Fade in glowing pen tip at start position
       tl.to(penTip, {
         opacity: 1,
         duration: 0.2,
         onStart: () => updatePenTip(0),
       });
 
-      // 3. Draw signature in real-time stroke by stroke (2.6s)
+      // 3. Draw Sacha's signature stroke in real-time (2.8s)
       const drawObj = { progress: 0 };
       tl.to(
         path,
         {
           strokeDashoffset: 0,
-          duration: 2.6,
+          duration: 2.8,
           ease: "power2.inOut",
         },
         "-=0.1"
@@ -88,20 +89,20 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
         drawObj,
         {
           progress: 1,
-          duration: 2.6,
+          duration: 2.8,
           ease: "power2.inOut",
           onUpdate: () => updatePenTip(drawObj.progress),
         },
         "<"
       );
 
-      // 4. Fade out pen tip when drawing completes
+      // 4. Fade out pen tip when stroke completes
       tl.to(penTip, { opacity: 0, duration: 0.35, ease: "power2.out" });
 
       // 5. Hold fully drawn signature visible (4.0s)
       tl.to({}, { duration: 4.0 });
 
-      // 6. Fade in pen tip at the end position for erasing
+      // 6. Fade in pen tip at end position for erasing
       tl.to(penTip, {
         opacity: 1,
         duration: 0.2,
@@ -153,18 +154,18 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
       className={`relative flex flex-col items-start select-none cursor-pointer group ${className}`}
       title="Cliquer pour re-tracer la signature"
     >
-      {/* Real-time Pen Writing Canvas — Awwwards Real-Time Pen Animation */}
-      <div className="relative h-[140px] sm:h-[180px] md:h-[220px] w-auto aspect-[300/200] flex items-center justify-center">
+      {/* Sacha Karpavicius Authentic Real-Time Pen Animation Canvas */}
+      <div className="relative h-[160px] sm:h-[200px] md:h-[250px] w-auto aspect-[300/210] flex items-center justify-center">
         <svg
           version="1.1"
           xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 300 200"
+          viewBox="0 0 300 210"
           preserveAspectRatio="xMidYMid meet"
           className="w-full h-full filter drop-shadow-[0_0_12px_rgba(255,255,255,0.65)] group-hover:drop-shadow-[0_0_20px_rgba(255,255,255,1)] transition-all duration-500"
         >
           <defs>
             {/* Glowing neon filter for pen tip dot */}
-            <filter id="pen-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <filter id="pen-glow-sacha" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="3" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
@@ -173,10 +174,10 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
             </filter>
           </defs>
 
-          {/* Real-Time Handwritten Pen Stroke */}
+          {/* Sacha's Real-Time Handwritten Pen Stroke */}
           <path
             ref={pathRef}
-            d={PATH_DATA}
+            d={SACHA_SIGNATURE_PATH}
             fill="none"
             stroke="#ffffff"
             strokeWidth="2.8"
@@ -187,11 +188,11 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
           {/* Glowing Neon Pen Tip Dot */}
           <circle
             ref={penTipRef}
-            cx="65"
+            cx="75"
             cy="115"
             r="3.5"
             fill="#ffffff"
-            filter="url(#pen-glow)"
+            filter="url(#pen-glow-sacha)"
             className="drop-shadow-[0_0_10px_rgba(255,255,255,1)]"
           />
         </svg>
