@@ -46,6 +46,20 @@ body {
   user-select: none;
 }
 
+/* ---- 4K Ultra-Crisp Photo & Video Rendering ---- */
+img, video {
+  image-rendering: -webkit-optimize-contrast;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* GPU Hardware Acceleration for ultra-smooth 60/120fps motion */
+.gpu-smooth {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
 /* ---- Scrollbar hide ---- */
 ::-webkit-scrollbar { display: none; }
 * { scrollbar-width: none; -ms-overflow-style: none; }

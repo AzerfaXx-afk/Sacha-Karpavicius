@@ -59,7 +59,8 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
       const trackHeight = containerRef.current.clientHeight;
       const currentY = clamped * trackHeight;
       headRef.current.style.transform = `translateY(${currentY}px)`;
-      headRef.current.style.opacity = clamped > 0.002 ? "1" : "0";
+      // Hide glowing orb at 0% (top) AND at 100% (bottom)
+      headRef.current.style.opacity = clamped > 0.002 && clamped < 0.998 ? "1" : "0";
     }
   }, []);
 

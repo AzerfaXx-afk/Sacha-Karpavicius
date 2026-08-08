@@ -5,7 +5,6 @@ import SmoothScrollProvider from "@/components/smooth-scroll-provider";
 import { SiteProvider } from "@/context/site-context";
 import GlobalAudioSignal from "@/components/global-audio-signal";
 import PwaInstallPrompt from "@/components/pwa-install-prompt";
-import PostProcessing from "@/components/post-processing";
 
 const syne = Syne({
   variable: "--font-syne",
@@ -64,7 +63,6 @@ export default function RootLayout({
           </SmoothScrollProvider>
           <GlobalAudioSignal />
           <PwaInstallPrompt />
-          <PostProcessing />
         </SiteProvider>
         <script
           dangerouslySetInnerHTML={{
