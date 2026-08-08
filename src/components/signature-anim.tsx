@@ -17,7 +17,6 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
   const pathRef = useRef<SVGPathElement>(null);
   const penTipRef = useRef<SVGGElement>(null);
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
-  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     if (!pathRef.current || !containerRef.current) return;
@@ -25,7 +24,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
     const path = pathRef.current;
     const pathLength = path.getTotalLength();
 
-    // Set initial dasharray & dashoffset
+    // Set initial stroke state: completely hidden, stroke ready
     gsap.set(path, {
       strokeDasharray: pathLength,
       strokeDashoffset: pathLength,
@@ -33,27 +32,25 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
     });
 
     const ctx = gsap.context(() => {
-      // Timeline: Write -> Hold -> Progressive erase -> Repeat
+      // Single clean reveal timeline triggered when scrolled into view
       const tl = gsap.timeline({
-        repeat: -1,
-        repeatDelay: 1.2,
         scrollTrigger: {
           trigger: containerRef.current,
           start: "top 85%",
-          toggleActions: "play pause resume reset",
+          toggleActions: "play none none none",
         },
       });
 
       timelineRef.current = tl;
 
-      // Reset state for loop restart
+      // Reset state before animation begins
       tl.set(path, { strokeDashoffset: pathLength })
         .set(penTipRef.current, { opacity: 1, scale: 1 });
 
       // Step 1: Realistic Pen Writing Animation of Sacha's exact handwritten signature
       tl.to(path, {
         strokeDashoffset: 0,
-        duration: 3.2,
+        duration: 2.8,
         ease: "power2.inOut",
         onUpdate: function () {
           if (penTipRef.current && path) {
@@ -67,22 +64,12 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
         },
       });
 
-      // Step 2: Fade out pen tip gracefully
+      // Step 2: Fade out pen tip gracefully, leaving signature 100% visible permanently!
       tl.to(penTipRef.current, {
         opacity: 0,
         scale: 0,
-        duration: 0.35,
+        duration: 0.4,
         ease: "power2.out",
-      });
-
-      // Step 3: Hold signature completely visible
-      tl.to({}, { duration: 6.5 });
-
-      // Step 4: Progressive Erase
-      tl.to(path, {
-        strokeDashoffset: pathLength,
-        duration: 2.0,
-        ease: "power2.inOut",
       });
     }, containerRef);
 
@@ -90,21 +77,50 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
   }, []);
 
   const handleReplay = () => {
+    if (!pathRef.current) return;
+    const path = pathRef.current;
+    const pathLength = path.getTotalLength();
+
     if (timelineRef.current) {
-      timelineRef.current.restart(true);
+      timelineRef.current.kill();
     }
+
+    const replayTl = gsap.timeline();
+    timelineRef.current = replayTl;
+
+    replayTl.set(path, { strokeDashoffset: pathLength })
+      .set(penTipRef.current, { opacity: 1, scale: 1 })
+      .to(path, {
+        strokeDashoffset: 0,
+        duration: 2.4,
+        ease: "power2.inOut",
+        onUpdate: function () {
+          if (penTipRef.current && path) {
+            const progress = this.progress();
+            const point = path.getPointAtLength(progress * pathLength);
+            penTipRef.current.setAttribute(
+              "transform",
+              `translate(${point.x}, ${point.y})`
+            );
+          }
+        },
+      })
+      .to(penTipRef.current, {
+        opacity: 0,
+        scale: 0,
+        duration: 0.35,
+        ease: "power2.out",
+      });
   };
 
   return (
     <div 
       ref={containerRef} 
       onClick={handleReplay}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       className={`relative flex flex-col items-start cursor-pointer group select-none ${className}`}
       title="Cliquer pour re-tracer la signature"
     >
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-1">
         <span className="font-mono text-[9px] tracking-[0.25em] text-white/40 group-hover:text-white transition-colors duration-300 uppercase block">
           SIGNATURE OFFICIELLE
         </span>
@@ -113,19 +129,19 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
         </span>
       </div>
 
-      <div className="relative w-[230px] sm:w-[270px] md:w-[310px] h-[170px] sm:h-[200px] overflow-visible">
+      <div className="relative w-[240px] sm:w-[280px] md:w-[320px] h-[120px] sm:h-[140px] overflow-visible">
         <svg
-          viewBox="70 0 320 270"
+          viewBox="80 10 310 260"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full drop-shadow-[0_0_16px_rgba(255,255,255,0.65)] group-hover:drop-shadow-[0_0_26px_rgba(255,255,255,0.95)] transition-all duration-500"
+          className="w-full h-full drop-shadow-[0_0_18px_rgba(255,255,255,0.7)] group-hover:drop-shadow-[0_0_28px_rgba(255,255,255,1)] transition-all duration-500"
         >
           {/* Authentic Handwritten Signature Path of Sacha Karpavicius */}
           <path
             ref={pathRef}
             d="M 140 180 C 138 135, 145 60, 150 25 C 152 14, 142 12, 134 35 C 124 68, 118 115, 114 175 C 112 148, 140 92, 185 85 C 225 78, 238 112, 195 138 C 160 152, 98 152, 94 182 C 90 220, 140 265, 205 248 C 240 235, 238 198, 168 180 C 195 180, 290 188, 385 230"
             stroke="white"
-            strokeWidth="3.4"
+            strokeWidth="3.6"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -133,7 +149,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
           {/* Realistic Pen Nib Spark / Writing Tip */}
           <g ref={penTipRef} style={{ opacity: 0 }}>
             {/* Ink glow halo */}
-            <circle r="10" className="fill-white/35 blur-[2px]" />
+            <circle r="10" className="fill-white/40 blur-[2px]" />
             {/* Pen tip core */}
             <circle r="4.5" className="fill-white shadow-[0_0_16px_rgba(255,255,255,1)]" />
             {/* Tiny ink spark */}
