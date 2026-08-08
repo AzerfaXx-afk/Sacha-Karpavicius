@@ -32,24 +32,27 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
     });
 
     const ctx = gsap.context(() => {
-      // Reveal timeline on ScrollTrigger
+      // Endless Awwwards loop timeline: Draw -> Hold -> Erase -> Repeat
       const tl = gsap.timeline({
+        repeat: -1,
+        repeatDelay: 0.8,
         scrollTrigger: {
           trigger: containerRef.current,
           start: "top 85%",
-          toggleActions: "play none none none",
+          toggleActions: "play pause resume reset",
         },
       });
 
       timelineRef.current = tl;
 
+      // Loop iteration reset
       tl.set(path, { strokeDashoffset: pathLength })
         .set(penTipRef.current, { opacity: 1, scale: 1 });
 
-      // Step 1: Smooth pen drawing of Sacha's signature
+      // Step 1: Smooth pen drawing of Sacha's exact signature
       tl.to(path, {
         strokeDashoffset: 0,
-        duration: 2.8,
+        duration: 2.6,
         ease: "power2.inOut",
         onUpdate: function () {
           if (penTipRef.current && path) {
@@ -63,54 +66,35 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
         },
       });
 
-      // Step 2: Pen tip fades out, signature stays 100% visible permanently
+      // Step 2: Pen tip spark fades out
       tl.to(penTipRef.current, {
         opacity: 0,
         scale: 0,
-        duration: 0.4,
+        duration: 0.35,
         ease: "power2.out",
       });
+
+      // Step 3: Hold signature 100% visible and glowing
+      tl.to({}, { duration: 4.8 });
+
+      // Step 4: Progressive smooth erase stroke
+      tl.to(path, {
+        strokeDashoffset: pathLength,
+        duration: 1.8,
+        ease: "power2.inOut",
+      });
+
+      // Step 5: Brief pause at blank state before repeating
+      tl.to({}, { duration: 0.8 });
     }, containerRef);
 
     return () => ctx.revert();
   }, []);
 
   const handleReplay = () => {
-    if (!pathRef.current) return;
-    const path = pathRef.current;
-    const pathLength = path.getTotalLength();
-
     if (timelineRef.current) {
-      timelineRef.current.kill();
+      timelineRef.current.restart(true);
     }
-
-    const replayTl = gsap.timeline();
-    timelineRef.current = replayTl;
-
-    replayTl
-      .set(path, { strokeDashoffset: pathLength })
-      .set(penTipRef.current, { opacity: 1, scale: 1 })
-      .to(path, {
-        strokeDashoffset: 0,
-        duration: 2.4,
-        ease: "power2.inOut",
-        onUpdate: function () {
-          if (penTipRef.current && path) {
-            const progress = this.progress();
-            const point = path.getPointAtLength(progress * pathLength);
-            penTipRef.current.setAttribute(
-              "transform",
-              `translate(${point.x}, ${point.y})`
-            );
-          }
-        },
-      })
-      .to(penTipRef.current, {
-        opacity: 0,
-        scale: 0,
-        duration: 0.35,
-        ease: "power2.out",
-      });
   };
 
   return (
@@ -130,7 +114,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
           {/* Authentic Handwritten Signature Path of Sacha Karpavicius */}
           <path
             ref={pathRef}
-            d="M 140 180 C 138 135, 145 60, 150 25 C 152 14, 142 12, 134 35 C 124 68, 118 115, 114 175 C 112 148, 140 92, 185 85 C 225 78, 238 112, 195 138 C 160 152, 98 152, 94 182 C 90 220, 140 265, 205 248 C 240 235, 238 198, 168 180 C 195 180, 290 188, 385 230"
+            d="M 145 170 C 147 115, 150 55, 152 28 C 153 16, 142 16, 134 38 C 126 75, 118 120, 112 172 C 114 142, 145 88, 192 82 C 228 78, 240 110, 198 136 C 162 150, 96 148, 92 178 C 88 218, 138 262, 202 246 C 238 232, 235 195, 165 178 C 192 178, 285 185, 385 226"
             stroke="white"
             strokeWidth="3.4"
             strokeLinecap="round"
