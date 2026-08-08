@@ -12,12 +12,12 @@ interface SignatureAnimProps {
   className?: string;
 }
 
-// Authentic continuous stroke matching Sacha's paper signature:
-// 1. Top of 'S' starts inside K's upper-right loop at (125,75)
-// 2. Curves up-left across stem (50,75), forms upper S belly (58,125), and lower S loop (52,185)
-// 3. Transitions continuously without lifting pen up tall needle k stem (74,16), down stem, upper K loop (145,80), and sweep flourish leg (288,140)
-const SACHA_PERFECT_SIGNATURE_PATH =
-  "M 125,75 C 105,58 70,62 50,75 C 32,88 38,112 58,125 C 38,145 32,175 52,185 C 72,192 92,175 75,125 C 74,90 73,42 74,16 C 76,4 86,6 88,22 C 90,46 82,85 76,102 C 82,85 125,65 145,80 C 158,92 140,114 76,115 C 115,116 180,120 230,126 C 260,130 278,136 288,140";
+// Authentic continuous stroke matching Sacha's Image 2 handwriting reference:
+// 1. Starts high right at (150,65) -> top arch curves up-left to (32,75) -> upper belly to waist (42,130) -> lower belly loop (42,192) -> returns to stem base (78,135).
+// 2. Without lifting pen ("sans lever le crayon"), shoots up tall needle stem of 'k' (74,16), loops at apex (88,22), descends stem (76,102).
+// 3. Forms upper-right loop of 'k' (145,80) and concludes with long horizontal flourish leg (288,140).
+const SACHA_IMAGE2_SIGNATURE_PATH =
+  "M 150,65 C 120,48 60,50 32,75 C 18,92 22,118 42,130 C 25,145 22,175 42,192 C 62,202 85,188 78,135 C 75,90 73,42 74,16 C 76,4 86,6 88,22 C 90,46 82,85 76,102 C 82,85 125,65 145,80 C 158,92 140,114 76,115 C 115,116 180,120 230,126 C 260,130 278,136 288,140";
 
 export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -29,7 +29,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
 
     const path = pathRef.current;
     const penTip = penTipRef.current;
-    const totalLength = path.getTotalLength() || 896;
+    const totalLength = path.getTotalLength() || 960;
 
     const updatePenTip = (progress: number) => {
       if (!path || !penTip) return;
@@ -59,7 +59,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
       tl.set(penTip, { opacity: 0 });
 
       // --- REAL-TIME WRITE PHASE ---
-      // 2. Fade in glowing pen tip inside K's upper loop (start of S)
+      // 2. Fade in glowing pen tip at start of 'S' (high right: 150, 65)
       tl.to(penTip, {
         opacity: 1,
         duration: 0.15,
@@ -87,7 +87,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
       tl.to({}, { duration: 4.5 });
 
       // --- EXACT REVERSE ERASE PHASE ---
-      // 5. Fade in pen tip at end of flourish leg to begin exact reverse pen un-writing
+      // 5. Fade in pen tip at end of flourish leg for reverse pen un-writing
       tl.to(penTip, {
         opacity: 1,
         duration: 0.15,
@@ -121,7 +121,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
       ref={containerRef}
       className={`relative flex flex-col items-start select-none pointer-events-none cursor-default ${className}`}
     >
-      {/* Sacha Karpavicius Perfect Signature Canvas — Continuous Unbroken Pen Stroke & Exact Reverse Pen Un-Writing */}
+      {/* Sacha Karpavicius Exact Image-Matched Signature Canvas — Continuous Stroke & Exact Reverse Pen Un-Writing */}
       <div className="relative h-[160px] sm:h-[200px] md:h-[250px] w-auto aspect-[300/210] flex items-center justify-center">
         <svg
           version="1.1"
@@ -131,7 +131,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
           className="w-full h-full filter drop-shadow-[0_0_12px_rgba(255,255,255,0.65)]"
         >
           <defs>
-            <filter id="pen-glow-sacha-perfect" x="-50%" y="-50%" width="200%" height="200%">
+            <filter id="pen-glow-sacha-image2" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="3" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
@@ -140,11 +140,10 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
             </filter>
           </defs>
 
-          {/* Continuous Single Unbroken Stroke matching Sacha's exact paper handwriting:
-              S starts inside K's upper loop -> cursive S shape -> unbroken transition to K needle stem -> upper loop -> long leg */}
+          {/* Continuous Single Unbroken Stroke matching Sacha's exact Image 2 handwriting reference */}
           <path
             ref={pathRef}
-            d={SACHA_PERFECT_SIGNATURE_PATH}
+            d={SACHA_IMAGE2_SIGNATURE_PATH}
             fill="none"
             stroke="#ffffff"
             strokeWidth="2.8"
@@ -155,11 +154,11 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
           {/* Glowing Neon Pen Tip Dot */}
           <circle
             ref={penTipRef}
-            cx="125"
-            cy="75"
+            cx="150"
+            cy="65"
             r="3.5"
             fill="#ffffff"
-            filter="url(#pen-glow-sacha-perfect)"
+            filter="url(#pen-glow-sacha-image2)"
             className="drop-shadow-[0_0_10px_rgba(255,255,255,1)]"
           />
         </svg>
