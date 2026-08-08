@@ -1266,17 +1266,20 @@ export default function Home() {
         },
       });
 
-      /* ── About image parallax ── */
-      gsap.to("[data-about-img]", {
-        yPercent: -12,
-        ease: "none",
-        scrollTrigger: {
-          trigger: aboutRef.current,
-          start: "top bottom",
-          end: "bottom top",
-          scrub: true,
-        },
-      });
+      /* ── About image parallax (Starts at 0 when section is aligned at top top) ── */
+      gsap.fromTo("[data-about-img]",
+        { y: 0 },
+        {
+          y: -40,
+          ease: "none",
+          scrollTrigger: {
+            trigger: aboutRef.current,
+            start: "top top",
+            end: "bottom top",
+            scrub: true,
+          },
+        }
+      );
 
       /* ── Works image parallax ── */
       document.querySelectorAll("[data-parallax-img]").forEach((img) => {
@@ -1794,7 +1797,7 @@ export default function Home() {
             <div data-line-reveal className="flex-1 h-[1px] bg-white/10 origin-left" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-16 items-center pt-6 md:pt-10">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-16 items-center">
             {/* Left Column: Typography aligned with site design system (7 Cols) */}
             <div className="md:col-span-7 space-y-6 md:space-y-8" data-text-reveal>
               <div>
