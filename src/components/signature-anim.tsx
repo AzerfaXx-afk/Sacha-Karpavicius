@@ -12,41 +12,28 @@ interface SignatureAnimProps {
   className?: string;
 }
 
-// Refined stroke paths:
-// PATH_S: Cursive 'S' initial (starts near center stem, arches up-left, sweeps down into bottom loop)
-// PATH_K: 'K' initial & sweep flourish (needle stem up, upper-right lobe, sweep flourish right)
-const PATH_S =
-  "M 75,90 C 58,75 42,82 38,98 C 34,120 32,150 48,178 C 62,192 84,188 85,168 C 86,148 78,125 75,118";
-
-const PATH_K =
-  "M 75,118 C 73,72 72,38 74,16 C 76,4 86,6 88,22 C 90,46 82,85 76,102 C 82,85 120,66 142,80 C 158,90 138,114 75,116 C 110,116 180,120 230,126 C 260,130 278,136 288,140";
+// Single continuous unbroken handwritten stroke:
+// Starts top of 'S' -> loops down into bottom 'S' curve -> transitions without lifting pen into lowercase 'k'
+// (shoots up tall needle stem -> upper small loop -> long sweeping leg flourish)
+const CONTINUOUS_SIGNATURE_PATH =
+  "M 42,75 C 54,62 70,68 72,82 C 72,95 48,110 38,135 C 30,162 55,188 80,182 C 102,175 106,145 75,120 C 73,75 72,38 74,16 C 76,4 86,6 88,22 C 90,46 82,85 76,102 C 82,85 115,65 135,78 C 148,88 135,108 80,114 C 115,115 180,120 230,126 C 260,130 278,136 288,140";
 
 export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const pathSRef = useRef<SVGPathElement>(null);
-  const pathKRef = useRef<SVGPathElement>(null);
+  const pathRef = useRef<SVGPathElement>(null);
   const penTipRef = useRef<SVGCircleElement>(null);
 
   useEffect(() => {
-    if (
-      !containerRef.current ||
-      !pathSRef.current ||
-      !pathKRef.current ||
-      !penTipRef.current
-    )
-      return;
+    if (!containerRef.current || !pathRef.current || !penTipRef.current) return;
 
-    const pathS = pathSRef.current;
-    const pathK = pathKRef.current;
+    const path = pathRef.current;
     const penTip = penTipRef.current;
+    const totalLength = path.getTotalLength() || 830;
 
-    const lenS = pathS.getTotalLength() || 231;
-    const lenK = pathK.getTotalLength() || 595;
-
-    const updatePenTip = (path: SVGPathElement, totalLen: number, progress: number) => {
+    const updatePenTip = (progress: number) => {
       if (!path || !penTip) return;
       try {
-        const pointLen = Math.max(0, Math.min(totalLen, totalLen * progress));
+        const pointLen = Math.max(0, Math.min(totalLength, totalLength * progress));
         const pt = path.getPointAtLength(pointLen);
         penTip.setAttribute("cx", pt.x.toString());
         penTip.setAttribute("cy", pt.y.toString());
@@ -67,88 +54,60 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
       });
 
       // 1. Initial State Setup
-      tl.set(pathS, { strokeDasharray: lenS, strokeDashoffset: lenS });
-      tl.set(pathK, { strokeDasharray: lenK, strokeDashoffset: lenK });
+      tl.set(path, { strokeDasharray: totalLength, strokeDashoffset: totalLength });
       tl.set(penTip, { opacity: 0 });
 
       // --- WRITE PHASE ---
-      // 2. Draw 'S' stroke in real-time (1.2s)
+      // 2. Fade in pen tip at start of 'S' (top left)
       tl.to(penTip, {
         opacity: 1,
         duration: 0.15,
-        onStart: () => updatePenTip(pathS, lenS, 0),
+        onStart: () => updatePenTip(0),
       });
 
-      const sWriteObj = { progress: 0 };
-      tl.to(pathS, { strokeDashoffset: 0, duration: 1.2, ease: "power2.inOut" }, "-=0.1");
+      // 3. Draw entire continuous stroke in real-time without lifting pen (3.0s)
+      const drawObj = { progress: 0 };
+      tl.to(path, { strokeDashoffset: 0, duration: 3.0, ease: "power2.inOut" }, "-=0.1");
       tl.to(
-        sWriteObj,
+        drawObj,
         {
           progress: 1,
-          duration: 1.2,
+          duration: 3.0,
           ease: "power2.inOut",
-          onUpdate: () => updatePenTip(pathS, lenS, sWriteObj.progress),
+          onUpdate: () => updatePenTip(drawObj.progress),
         },
         "<"
       );
 
-      // 3. Draw 'K' stroke in real-time seamlessly (2.0s)
-      const kWriteObj = { progress: 0 };
-      tl.to(pathK, { strokeDashoffset: 0, duration: 2.0, ease: "power2.inOut" });
-      tl.to(
-        kWriteObj,
-        {
-          progress: 1,
-          duration: 2.0,
-          ease: "power2.inOut",
-          onUpdate: () => updatePenTip(pathK, lenK, kWriteObj.progress),
-        },
-        "<"
-      );
-
-      // 4. Fade out pen tip at end of writing
+      // 4. Fade out pen tip at end of sweep leg
       tl.to(penTip, { opacity: 0, duration: 0.35, ease: "power2.out" });
 
       // --- HOLD PHASE (4.5s) ---
       tl.to({}, { duration: 4.5 });
 
       // --- REVERSE ERASE PHASE ---
-      // 5. Fade in pen tip at end of 'K' flourish to start reverse un-writing
+      // 5. Fade in pen tip at end of sweep leg to begin exact reverse un-writing
       tl.to(penTip, {
         opacity: 1,
         duration: 0.15,
-        onStart: () => updatePenTip(pathK, lenK, 1),
+        onStart: () => updatePenTip(1),
       });
 
-      // 6. Un-draw 'K' stroke in exact reverse with trailing pen tip (1.8s)
-      const kEraseObj = { progress: 1 };
-      tl.to(pathK, { strokeDashoffset: lenK, duration: 1.8, ease: "power2.inOut" }, "-=0.1");
+      // 6. Un-draw continuous stroke in exact reverse with trailing pen tip (2.2s)
+      const eraseObj = { progress: 1 };
+      tl.to(path, { strokeDashoffset: totalLength, duration: 2.2, ease: "power2.inOut" }, "-=0.1");
       tl.to(
-        kEraseObj,
+        eraseObj,
         {
           progress: 0,
-          duration: 1.8,
+          duration: 2.2,
           ease: "power2.inOut",
-          onUpdate: () => updatePenTip(pathK, lenK, kEraseObj.progress),
+          onUpdate: () => updatePenTip(eraseObj.progress),
         },
         "<"
       );
 
-      // 7. Un-draw 'S' stroke in exact reverse with trailing pen tip (1.0s)
-      const sEraseObj = { progress: 1 };
-      tl.to(pathS, { strokeDashoffset: lenS, duration: 1.0, ease: "power2.inOut" });
-      tl.to(
-        sEraseObj,
-        {
-          progress: 0,
-          duration: 1.0,
-          ease: "power2.inOut",
-          onUpdate: () => updatePenTip(pathS, lenS, sEraseObj.progress),
-        },
-        "<"
-      );
-
-      // 8. Fade out pen tip after reverse erase
+      // 7. Fade out pen tip after reverse erase
       tl.to(penTip, { opacity: 0, duration: 0.25, ease: "power2.out" });
       tl.to({}, { duration: 0.5 });
     }, containerRef);
@@ -161,7 +120,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
       ref={containerRef}
       className={`relative flex flex-col items-start select-none pointer-events-none cursor-default ${className}`}
     >
-      {/* Sacha Karpavicius Monogram Canvas — Non-Clickable Real-Time Pen & Reverse Erase Animation */}
+      {/* Sacha Karpavicius Signature Canvas — Continuous Unbroken Pen Stroke & Exact Reverse Erase */}
       <div className="relative h-[160px] sm:h-[200px] md:h-[250px] w-auto aspect-[300/210] flex items-center justify-center">
         <svg
           version="1.1"
@@ -171,7 +130,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
           className="w-full h-full filter drop-shadow-[0_0_12px_rgba(255,255,255,0.65)]"
         >
           <defs>
-            <filter id="pen-glow-sk-v3" x="-50%" y="-50%" width="200%" height="200%">
+            <filter id="pen-glow-sacha-continuous" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="3" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
@@ -180,21 +139,10 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
             </filter>
           </defs>
 
-          {/* Stroke Layer 1: Cursive 'S' Initial Gesture */}
+          {/* Continuous Single Unbroken Stroke: S -> k -> leg */}
           <path
-            ref={pathSRef}
-            d={PATH_S}
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth="2.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {/* Stroke Layer 2: Monogram 'K' Initial & Sweep Flourish */}
-          <path
-            ref={pathKRef}
-            d={PATH_K}
+            ref={pathRef}
+            d={CONTINUOUS_SIGNATURE_PATH}
             fill="none"
             stroke="#ffffff"
             strokeWidth="2.8"
@@ -205,11 +153,11 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
           {/* Glowing Neon Pen Tip Dot */}
           <circle
             ref={penTipRef}
-            cx="75"
-            cy="90"
+            cx="42"
+            cy="75"
             r="3.5"
             fill="#ffffff"
-            filter="url(#pen-glow-sk-v3)"
+            filter="url(#pen-glow-sacha-continuous)"
             className="drop-shadow-[0_0_10px_rgba(255,255,255,1)]"
           />
         </svg>
