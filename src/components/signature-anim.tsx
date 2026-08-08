@@ -14,28 +14,23 @@ interface SignatureAnimProps {
 
 export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const pathRef = useRef<SVGPathElement>(null);
-  const penTipRef = useRef<SVGGElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const maskRectRef = useRef<SVGRectElement>(null);
+  const glowRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
 
   useEffect(() => {
-    if (!pathRef.current || !containerRef.current) return;
+    if (!svgRef.current || !containerRef.current || !maskRectRef.current) return;
 
-    const path = pathRef.current;
-    const pathLength = path.getTotalLength();
+    const maskRect = maskRectRef.current;
 
-    // Initial state: hidden stroke
-    gsap.set(path, {
-      strokeDasharray: pathLength,
-      strokeDashoffset: pathLength,
-      opacity: 1,
-    });
+    // Initially mask is at width 0 → signature hidden
+    gsap.set(maskRect, { attr: { width: 0 } });
 
     const ctx = gsap.context(() => {
-      // Endless Awwwards loop timeline: Draw -> Hold -> Erase -> Repeat
       const tl = gsap.timeline({
         repeat: -1,
-        repeatDelay: 0.8,
+        repeatDelay: 1.0,
         scrollTrigger: {
           trigger: containerRef.current,
           start: "top 85%",
@@ -45,47 +40,51 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
 
       timelineRef.current = tl;
 
-      // Loop iteration reset
-      tl.set(path, { strokeDashoffset: pathLength })
-        .set(penTipRef.current, { opacity: 1, scale: 1 });
+      // Reset mask to 0 width
+      tl.set(maskRect, { attr: { width: 0 } });
 
-      // Step 1: Smooth pen drawing of Sacha's exact signature
-      tl.to(path, {
-        strokeDashoffset: 0,
-        duration: 2.6,
+      // Step 1: Progressive reveal — wipe mask from left to right
+      tl.to(maskRect, {
+        attr: { width: 865 },
+        duration: 2.8,
         ease: "power2.inOut",
-        onUpdate: function () {
-          if (penTipRef.current && path) {
-            const progress = this.progress();
-            const point = path.getPointAtLength(progress * pathLength);
-            penTipRef.current.setAttribute(
-              "transform",
-              `translate(${point.x}, ${point.y})`
-            );
-          }
-        },
       });
 
-      // Step 2: Pen tip spark fades out
-      tl.to(penTipRef.current, {
-        opacity: 0,
-        scale: 0,
-        duration: 0.35,
-        ease: "power2.out",
-      });
+      // Step 2: Subtle glow pulse
+      if (glowRef.current) {
+        tl.to(glowRef.current, {
+          opacity: 0.7,
+          duration: 0.4,
+          ease: "power2.out",
+        });
+        tl.to(glowRef.current, {
+          opacity: 0.25,
+          duration: 0.5,
+          ease: "power2.inOut",
+        });
+      }
 
-      // Step 3: Hold signature 100% visible and glowing
-      tl.to({}, { duration: 4.8 });
+      // Step 3: Hold signature visible
+      tl.to({}, { duration: 4.5 });
 
-      // Step 4: Progressive smooth erase stroke
-      tl.to(path, {
-        strokeDashoffset: pathLength,
+      // Step 4: Progressive erase
+      tl.to(maskRect, {
+        attr: { width: 0 },
         duration: 1.8,
         ease: "power2.inOut",
       });
 
-      // Step 5: Brief pause at blank state before repeating
-      tl.to({}, { duration: 0.8 });
+      // Step 5: Fade glow
+      if (glowRef.current) {
+        tl.to(glowRef.current, {
+          opacity: 0,
+          duration: 0.3,
+          ease: "power2.out",
+        }, "-=1.0");
+      }
+
+      // Step 6: Pause before loop
+      tl.to({}, { duration: 0.6 });
     }, containerRef);
 
     return () => ctx.revert();
@@ -98,37 +97,59 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
   };
 
   return (
-    <div 
-      ref={containerRef} 
+    <div
+      ref={containerRef}
       onClick={handleReplay}
       className={`relative inline-block cursor-pointer group select-none ${className}`}
-      title="Cliquer pour re-tracer la signature"
     >
-      <div className="relative w-[220px] sm:w-[260px] md:w-[300px] h-[120px] sm:h-[140px] md:h-[150px] overflow-visible">
-        <svg
-          viewBox="80 10 310 260"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full drop-shadow-[0_0_18px_rgba(255,255,255,0.7)] group-hover:drop-shadow-[0_0_28px_rgba(255,255,255,1)] transition-all duration-500"
-        >
-          {/* Authentic Handwritten Signature Path of Sacha Karpavicius */}
-          <path
-            ref={pathRef}
-            d="M 145 170 C 147 115, 150 55, 152 28 C 153 16, 142 16, 134 38 C 126 75, 118 120, 112 172 C 114 142, 145 88, 192 82 C 228 78, 240 110, 198 136 C 162 150, 96 148, 92 178 C 88 218, 138 262, 202 246 C 238 232, 235 195, 165 178 C 192 178, 285 185, 385 226"
-            stroke="white"
-            strokeWidth="3.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+      {/* Ambient glow */}
+      <div
+        ref={glowRef}
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.12)_0%,transparent_70%)] blur-[18px] pointer-events-none opacity-0"
+      />
 
-          {/* Realistic Pen Nib Spark / Writing Tip */}
-          <g ref={penTipRef} style={{ opacity: 0 }}>
-            {/* Ink glow halo */}
-            <circle r="10" className="fill-white/40 blur-[2px]" />
-            {/* Pen tip core */}
-            <circle r="4.5" className="fill-white shadow-[0_0_16px_rgba(255,255,255,1)]" />
-            {/* Tiny ink spark */}
-            <circle r="2" className="fill-white opacity-95" />
+      <div className="relative w-[200px] sm:w-[240px] md:w-[280px] h-[90px] sm:h-[105px] md:h-[115px] overflow-hidden">
+        <svg
+          ref={svgRef}
+          version="1.0"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 200 865 1200"
+          preserveAspectRatio="xMidYMid meet"
+          className="w-full h-full drop-shadow-[0_0_14px_rgba(255,255,255,0.6)] group-hover:drop-shadow-[0_0_22px_rgba(255,255,255,0.95)] transition-all duration-500"
+        >
+          <defs>
+            <mask id="sig-reveal-mask">
+              <rect
+                ref={maskRectRef}
+                x="0"
+                y="0"
+                width="0"
+                height="1874"
+                fill="white"
+              />
+            </mask>
+          </defs>
+
+          {/* Sacha's authentic vectorized signature — scan artifacts removed */}
+          <g
+            transform="translate(0.000000,1874.000000) scale(0.100000,-0.100000)"
+            fill="white"
+            stroke="none"
+            mask="url(#sig-reveal-mask)"
+          >
+            {/* Small detail mark top */}
+            <path d="M5731 14994 c0 -11 3 -14 6 -6 3 7 2 16 -1 19 -3 4 -6 -2 -5 -13z"/>
+            {/* Small mark left */}
+            <path d="M0 12840 c0 -20 81 -37 203 -44 37 -2 70 -6 73 -9 8 -8 34 3 34 13 0 8 -44 17 -120 23 -20 2 -40 6 -46 10 -16 10 -144 16 -144 7z"/>
+            <path d="M370 12788 c0 -4 7 -8 15 -8 8 0 15 4 15 8 0 5 -7 9 -15 9 -8 0 -15 -4 -15 -9z"/>
+            {/* Main signature body */}
+            <path d="M2750 10585 c-11 -14 -34 -169 -60 -420 -6 -60 -13 -308 -16 -549 -2 -242 -6 -441 -8 -444 -3 -2 -50 -27 -105 -55 -140 -72 -229 -137 -328 -239 -102 -105 -142 -164 -160 -238 -30 -129 -4 -196 114 -288 48 -38 199 -112 228 -112 20 0 19 -15 -10 -134 -13 -56 -29 -142 -35 -192 -6 -49 -12 -105 -14 -124 -27 -222 -28 -305 -7 -435 23 -144 50 -228 93 -293 15 -24 28 -47 28 -53 0 -5 31 -40 68 -79 118 -120 265 -185 485 -215 67 -9 141 -20 165 -24 23 -5 45 -5 47 0 3 4 24 5 48 2 23 -3 56 -6 72 -7 46 -1 226 14 236 20 5 3 50 11 101 19 92 15 162 32 248 62 60 21 214 95 218 105 2 4 10 8 17 8 15 0 63 39 112 90 41 43 109 180 118 237 9 57 -18 157 -57 213 -18 25 -35 47 -38 50 -3 3 -16 21 -27 40 -12 19 -39 52 -60 72 -42 40 -173 138 -185 138 -5 0 -32 16 -61 35 -28 19 -81 46 -117 60 -36 14 -103 42 -150 62 -47 19 -105 43 -130 53 -63 26 -413 135 -480 150 -30 7 -86 22 -124 33 -38 11 -112 30 -165 43 -185 45 -296 76 -309 87 -20 16 4 27 62 27 40 0 52 -4 68 -25 11 -14 27 -25 36 -25 17 0 72 60 72 79 0 7 8 7 24 1 13 -5 26 -7 28 -5 2 3 48 9 101 15 53 6 104 13 114 14 128 25 797 25 1103 1 134 -11 202 -17 325 -30 77 -8 190 -19 250 -25 178 -18 227 -24 365 -45 19 -3 51 -7 70 -10 151 -19 398 -63 480 -85 41 -10 90 -22 108 -25 19 -3 73 -16 122 -30 49 -14 98 -25 108 -25 11 0 25 -7 32 -15 9 -11 15 -12 20 -5 8 13 66 0 185 -42 44 -16 85 -30 90 -32 6 -2 21 -7 35 -13 14 -6 43 -16 65 -23 22 -7 49 -16 60 -20 11 -4 45 -15 75 -24 30 -10 64 -22 75 -27 20 -9 183 -69 260 -96 22 -7 49 -17 60 -22 11 -5 36 -14 55 -21 36 -13 77 -30 145 -60 64 -28 218 -87 247 -94 37 -8 175 -76 225 -110 38 -25 63 -28 63 -7 0 31 -91 89 -220 140 -47 18 -98 39 -115 46 -16 7 -59 25 -95 40 -36 14 -80 33 -99 42 -42 19 -224 86 -431 159 -85 30 -171 61 -190 69 -145 57 -378 133 -445 145 -46 8 -223 50 -355 85 -84 22 -414 83 -510 94 -243 29 -327 40 -350 45 -14 3 -74 11 -135 16 -265 24 -342 32 -370 35 -16 2 -84 7 -150 11 -66 3 -123 8 -126 10 -7 4 -416 17 -549 17 -132 0 -384 -11 -411 -18 -26 -6 -55 -9 -189 -19 -47 -4 -101 -9 -121 -11 l-37 -5 -1 59 -1 59 58 33 c83 48 88 51 187 103 50 26 97 54 105 61 8 7 56 37 105 66 78 46 254 161 435 286 30 21 75 51 100 66 25 15 65 43 90 62 25 19 77 56 115 81 85 57 285 256 314 312 31 60 27 88 -17 132 -28 28 -56 43 -111 60 -67 20 -90 21 -225 17 -83 -3 -185 -10 -227 -16 -115 -17 -323 -74 -422 -115 -178 -76 -358 -220 -466 -374 -13 -18 -25 -32 -27 -30 -7 7 32 123 40 120 10 -4 26 18 26 37 0 11 -3 11 -16 0 -17 -14 -17 -15 6 86 5 22 17 78 26 125 16 80 33 132 34 103 0 -25 20 -13 20 12 0 16 -6 25 -16 25 -12 0 -15 6 -10 23 22 75 35 179 36 297 1 74 5 154 9 177 5 23 5 40 1 38 -4 -3 -13 23 -19 58 -14 70 -36 136 -76 220 -29 61 -35 66 -55 42z m75 -272 c12 -38 17 -87 17 -170 0 -111 -17 -328 -28 -344 -2 -4 -11 -54 -19 -112 -8 -57 -24 -141 -35 -188 -11 -46 -20 -96 -20 -111 0 -16 -4 -28 -8 -28 -5 0 -7 134 -5 298 2 279 6 365 18 437 2 17 5 57 5 90 1 88 9 125 26 118 11 -4 14 5 14 38 0 52 11 43 35 -28z m1101 -605 c4 -4 13 -3 21 3 9 9 17 8 28 -1 8 -6 18 -9 24 -6 13 8 109 -11 148 -30 18 -8 39 -27 47 -42 12 -24 12 -31 -5 -64 -30 -58 -244 -269 -334 -328 -44 -30 -82 -57 -85 -61 -8 -11 -130 -93 -179 -120 -69 -38 -83 -47 -90 -56 -10 -14 -84 -69 -116 -86 -16 -9 -41 -28 -54 -42 -13 -14 -35 -28 -49 -32 -28 -7 -145 -74 -232 -133 -60 -41 -311 -172 -317 -166 -4 4 -8 426 -4 518 1 37 8 64 19 77 33 39 403 129 457 112 6 -2 20 -5 32 -6 33 -5 83 -28 83 -40 0 -5 5 -3 10 5 8 13 13 12 37 -6 15 -12 30 -30 32 -40 2 -10 9 -23 17 -27 8 -4 14 -19 14 -33 0 -15 4 -23 11 -19 11 7 3 64 -12 80 -5 5 -9 16 -9 23 0 18 -64 82 -82 83 -7 0 -24 3 -38 6 -70 16 -235 5 -345 -23 -33 -8 -67 -17 -75 -18 -8 -2 -26 -8 -40 -13 -14 -6 -27 -9 -29 -7 -3 3 59 83 90 114 8 9 22 25 30 36 21 28 99 87 99 74 0 -5 7 -10 15 -10 9 0 15 9 15 25 0 14 5 25 11 25 6 0 8 -8 5 -17 -4 -10 8 -1 26 19 18 21 45 40 61 44 15 3 27 11 27 16 0 6 6 8 13 5 7 -3 19 4 25 14 7 10 17 19 23 19 5 0 29 9 53 19 23 11 52 18 63 15 11 -3 36 4 57 17 34 20 133 47 196 55 14 1 25 3 25 4 0 1 23 4 50 6 28 2 79 7 115 11 81 10 106 10 116 1z m-1266 -615 c0 -16 -25 -108 -91 -333 -10 -36 -30 -111 -43 -167 -13 -55 -28 -109 -34 -120 -5 -10 -12 -33 -16 -51 -3 -19 -20 -47 -37 -63 -22 -21 -29 -34 -24 -49 3 -11 4 -20 2 -20 -23 0 -154 64 -199 97 -66 50 -96 94 -104 157 -6 42 -5 46 11 40 16 -7 17 -3 11 40 -7 44 -5 52 27 99 72 109 216 245 306 291 28 15 35 15 42 4 6 -9 9 -7 9 8 0 16 15 30 58 53 66 35 82 38 82 14z m19 -500 c1 -74 -1 -83 -20 -94 -32 -17 -39 3 -34 96 3 44 5 94 6 110 2 38 17 141 27 180 7 31 18 -120 21 -292z m-106 -87 c0 -43 -15 -76 -35 -76 -12 0 -3 59 14 103 14 36 20 28 21 -27z m102 -108 c-9 -64 -11 -67 -32 -45 -13 13 -14 20 -5 29 7 7 12 22 12 33 0 23 8 35 23 35 5 0 6 -22 2 -52z m-99 -51 c11 -11 -19 -8 -36 3 -12 8 -10 9 7 7 12 -2 26 -6 29 -10z m-25 -143 c24 -9 82 -26 129 -39 47 -13 110 -31 140 -40 30 -9 73 -20 95 -25 89 -19 294 -77 415 -117 41 -13 104 -33 140 -42 73 -21 116 -36 175 -62 312 -140 351 -161 469 -252 32 -26 61 -47 65 -49 16 -7 120 -142 147 -191 25 -44 29 -63 29 -127 0 -70 -3 -80 -43 -150 -54 -93 -62 -101 -141 -158 -92 -66 -208 -120 -336 -157 -33 -10 -66 -22 -73 -28 -10 -8 -16 -7 -22 2 -4 8 -13 11 -19 7 -13 -8 -107 -25 -171 -31 -25 -3 -70 -7 -100 -10 -66 -6 -294 -6 -330 0 -14 2 -65 11 -115 19 -128 22 -246 63 -330 113 -16 10 -64 52 -105 93 -79 80 -127 157 -153 250 -19 67 -50 294 -43 318 2 9 7 64 11 122 7 115 30 312 44 375 19 84 44 180 48 188 6 11 26 9 74 -9z"/>
+            {/* Small detail marks */}
+            <path d="M2428 8963 c7 -3 16 -2 19 1 4 3 -2 6 -13 5 -11 0 -14 -3 -6 -6z"/>
+            <path d="M2420 7835 c0 -8 2 -15 4 -15 2 0 6 7 10 15 3 8 1 15 -4 15 -6 0 -10 -7 -10 -15z"/>
+            <path d="M2405 7669 c-4 -12 -2 -26 4 -32 8 -8 11 -2 11 21 0 37 -6 41 -15 11z"/>
+            <path d="M2400 7531 c0 -6 5 -13 10 -16 6 -3 10 1 10 9 0 9 -4 16 -10 16 -5 0 -10 -4 -10 -9z"/>
+            <path d="M2895 9890 c3 -5 8 -10 11 -10 2 0 4 5 4 10 0 6 -5 10 -11 10 -5 0 -7 -4 -4 -10z"/>
           </g>
         </svg>
       </div>
