@@ -13,12 +13,12 @@ interface SignatureAnimProps {
 }
 
 // Authentic continuous stroke matching Sacha's exact paper signature reference:
-// 1. 'S' (PARFAIT & CONSERVÉ 100% INTACT): Starts inside K's loop at (120,75) -> top bar left (45,76) -> upper arch (25,84) -> slants far right (120,143) -> bottom bowl to far left (30,163).
-// 2. 'k' NEEDLE STEM: From far left (30,163), shoots straight up tall needle stem (74,16), apex loop (88,22), down stem straight to CREUX DU S (75,115).
-// 3. 'k' GROSSE BOUCLE: Arches high and wide up-right to (160,65) -> (175,78), completely embedding top bar of S inside its main loop, returning directly to CREUX DU S junction (75,115).
+// 1. 'S' (APPROVED & KEPT 100% INTACT): Starts inside K's loop at (120,75) -> top bar left (45,76) -> upper arch (25,84) -> slants far right (120,143) -> bottom bowl to far left (30,163).
+// 2. 'k' PETITE BOUCLE RESSERRÉE: From far left (30,163), shoots up sleek tight needle stem (75,16), narrow apex loop (84,20), down stem to (75,108).
+// 3. 'k' GROSSE BOUCLE RAPPROCHÉE DU CREUX DU S: Arches high and wide up-right to (158,70) wrapping around S top bar (120,75), returning right against CREUX DU S junction (75,112).
 // 4. Long horizontal flourish leg sweeping right from CREUX DU S junction (288,140).
-const SACHA_CREUX_S_PATH =
-  "M 120,75 C 98,72 60,70 45,76 C 25,84 20,102 40,116 C 60,128 100,130 120,143 C 132,158 105,190 70,193 C 45,194 28,183 30,163 C 32,135 65,70 74,16 C 76,4 86,6 88,22 C 90,46 82,85 75,115 C 75,115 125,58 160,65 C 175,78 140,110 75,115 C 115,116 180,120 230,126 C 260,130 278,136 288,140";
+const SACHA_TIGHT_NEEDLE_CREUX_PATH =
+  "M 120,75 C 98,72 60,70 45,76 C 25,84 20,102 40,116 C 60,128 100,130 120,143 C 132,158 105,190 70,193 C 45,194 28,183 30,163 C 32,135 68,70 75,16 C 77,6 83,8 84,20 C 85,42 78,85 75,108 C 82,90 125,58 158,70 C 172,82 142,108 75,112 C 115,114 180,120 230,126 C 260,130 278,136 288,140";
 
 export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -30,7 +30,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
 
     const path = pathRef.current;
     const penTip = penTipRef.current;
-    const totalLength = path.getTotalLength() || 1058;
+    const totalLength = path.getTotalLength() || 1035;
 
     const updatePenTip = (progress: number) => {
       if (!path || !penTip) return;
@@ -122,7 +122,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
       ref={containerRef}
       className={`relative flex flex-col items-start select-none pointer-events-none cursor-default ${className}`}
     >
-      {/* Sacha Karpavicius Perfect Signature Canvas — S Parfait Conservé Intact & Boucle du K Collée au Creux du S */}
+      {/* Sacha Karpavicius Perfect Signature Canvas — Petite Boucle Resserrée & Grosse Boucle Rapprochée du Creux du S */}
       <div className="relative h-[160px] sm:h-[200px] md:h-[250px] w-auto aspect-[300/210] flex items-center justify-center">
         <svg
           version="1.1"
@@ -132,7 +132,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
           className="w-full h-full filter drop-shadow-[0_0_12px_rgba(255,255,255,0.65)]"
         >
           <defs>
-            <filter id="pen-glow-sacha-creux" x="-50%" y="-50%" width="200%" height="200%">
+            <filter id="pen-glow-sacha-tight" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="3" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
@@ -142,10 +142,10 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
           </defs>
 
           {/* Continuous Single Unbroken Stroke:
-              S top starts in K grosse boucle -> ondules left -> slants FAR RIGHT -> round bottom bowl to far left -> shoots straight UP needle stem -> apex -> grosse boucle hugging CREUX DU S -> flourish leg */}
+              S top starts in K grosse boucle -> ondules left -> slants FAR RIGHT -> round bottom bowl to far left -> shoots up tight needle stem -> narrow apex loop -> grosse boucle hugging CREUX DU S -> flourish leg */}
           <path
             ref={pathRef}
-            d={SACHA_CREUX_S_PATH}
+            d={SACHA_TIGHT_NEEDLE_CREUX_PATH}
             fill="none"
             stroke="#ffffff"
             strokeWidth="2.8"
@@ -160,7 +160,7 @@ export default function SignatureAnim({ className = "" }: SignatureAnimProps) {
             cy="75"
             r="3.5"
             fill="#ffffff"
-            filter="url(#pen-glow-sacha-creux)"
+            filter="url(#pen-glow-sacha-tight)"
             className="drop-shadow-[0_0_10px_rgba(255,255,255,1)]"
           />
         </svg>
