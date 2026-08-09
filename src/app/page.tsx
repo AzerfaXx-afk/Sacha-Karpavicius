@@ -471,8 +471,8 @@ function VideoCardItem({
   playHoverSfx?: () => void;
 }) {
   const [isHovered, setIsHovered] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isPoster = project.coverImage.toLowerCase().includes("affiche");
 
   const handleMouseEnter = () => {
@@ -482,6 +482,7 @@ function VideoCardItem({
 
   const handleMouseLeave = () => {
     setIsHovered(false);
+    setIsVideoReady(false);
   };
 
   useEffect(() => {
@@ -491,58 +492,23 @@ function VideoCardItem({
     if (isHovered) {
       vid.muted = true;
       vid.defaultMuted = true;
-
-      // Strategic high-impact timestamps per video (skipping intro black/bars/logos)
-      const getStrategicClips = (duration: number, slug: string) => {
-        const dur = duration && !isNaN(duration) && duration > 5 ? duration : 40;
-        if (slug === "maladaptive") {
-          return [dur * 0.20, dur * 0.40, dur * 0.58, dur * 0.75, dur * 0.88];
-        } else if (slug === "festival-in-and-out" || slug === "nice-queer") {
-          return [dur * 0.22, dur * 0.42, dur * 0.60, dur * 0.78, dur * 0.90];
-        } else if (slug === "au-grand-jour") {
-          return [dur * 0.18, dur * 0.36, dur * 0.54, dur * 0.72, dur * 0.86];
-        }
-        return [dur * 0.20, dur * 0.40, dur * 0.60, dur * 0.80];
-      };
-
-      const dur = vid.duration || 40;
-      const clips = getStrategicClips(dur, project.slug || project.id);
-      let clipIdx = 0;
-
-      // CRITICAL FIX: Jump IMMEDIATELY to the 1st strategic timestamp on hover start
-      try {
-        vid.currentTime = clips[0];
-      } catch (_) {}
-
-      vid.play().catch(() => {});
-
-      if (intervalRef.current) clearInterval(intervalRef.current);
-
-      // Cycle strategic clips every 2.8s
-      intervalRef.current = setInterval(() => {
-        const v = videoRef.current;
-        if (!v) return;
-        const currentDur = v.duration || 40;
-        const currentClips = getStrategicClips(currentDur, project.slug || project.id);
-        clipIdx = (clipIdx + 1) % currentClips.length;
-        try {
-          v.currentTime = currentClips[clipIdx];
-        } catch (_) {}
-      }, 2800);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+      
+      // Start playing smoothly
+      const playPromise = vid.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsVideoReady(true);
+          })
+          .catch(() => {
+            setIsVideoReady(false);
+          });
       }
+    } else {
+      setIsVideoReady(false);
       vid.pause();
     }
-  }, [isHovered, project.videoUrl, project.slug, project.id]);
-
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
+  }, [isHovered, project.videoUrl]);
 
   return (
     <div
@@ -556,7 +522,7 @@ function VideoCardItem({
       {/* Cinema Ambient Backlight Bloom */}
       <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/20 via-white/10 to-blue-600/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
-      {/* Main Cinema Media Container — Sized so title sits comfortably above bottom contact button */}
+      {/* Main Cinema Media Container */}
       <div className="relative w-full overflow-hidden bg-[#0d0d0d] rounded-xl border border-white/10 aspect-[16/9] md:aspect-[21/9] min-h-[44vh] md:min-h-[50vh] max-h-[54vh] shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
         {/* Ambient Blurred Background for Cinema Posters */}
         {isPoster && (
@@ -598,9 +564,15 @@ function VideoCardItem({
             loop
             muted
             playsInline
-            preload="auto"
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-400 ease-in-out z-10 pointer-events-none ${
-              isHovered ? "opacity-100" : "opacity-0"
+            preload="metadata"
+            onCanPlay={() => {
+              if (isHovered) setIsVideoReady(true);
+            }}
+            onPlaying={() => {
+              if (isHovered) setIsVideoReady(true);
+            }}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${
+              isHovered && isVideoReady ? "opacity-100" : "opacity-0"
             }`}
           />
         )}
