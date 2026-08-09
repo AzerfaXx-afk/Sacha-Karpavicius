@@ -840,9 +840,10 @@ export default function Home() {
           const targetEl = document.querySelector(effectiveTarget);
           if (targetEl) {
             const lenis = (window as any).__lenis;
+            const targetOffset = typeof window !== "undefined" && window.innerWidth >= 768 ? -56 : -44;
             if (lenis && typeof lenis.scrollTo === "function") {
               lenis.scrollTo(targetEl as HTMLElement, {
-                offset: 0,
+                offset: targetOffset,
                 duration: 1.8,
                 easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
               });
@@ -1354,38 +1355,6 @@ export default function Home() {
           }
         );
       });
-
-      /* ── Short-Distance Magnetic Section Alignment (Desktop) ── */
-      if (typeof window !== "undefined" && window.innerWidth >= 1024) {
-        const targetEls = document.querySelectorAll<HTMLElement>("#photos, #videos, #about, #contact");
-        if (targetEls.length > 0) {
-          ScrollTrigger.create({
-            snap: {
-              snapTo: (progress: number) => {
-                const docH = document.documentElement.scrollHeight - window.innerHeight;
-                if (docH <= 0) return progress;
-                const scrollY = progress * docH;
-                const positions = Array.from(targetEls).map((el) => el.offsetTop);
-                
-                // Find nearest section top
-                const closest = positions.reduce((prev, curr) =>
-                  Math.abs(curr - scrollY) < Math.abs(prev - scrollY) ? curr : prev
-                );
-                
-                // Only snap if within 120px of section header (short distance alignment)
-                if (Math.abs(closest - scrollY) <= 120) {
-                  return closest / docH;
-                }
-                
-                return progress; // Free exploration everywhere else
-              },
-              duration: { min: 0.3, max: 0.6 },
-              delay: 0.1,
-              ease: "power2.out",
-            },
-          });
-        }
-      }
     });
 
     return () => {
@@ -1653,7 +1622,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ WORKS / PHOTOS SECTION (01) ═══════════════════ */}
-      <section ref={worksRef} id="photos" className="relative bg-[#0a0a0a] pt-16 md:pt-20 pb-20 md:pb-32 border-t border-white/10">
+      <section ref={worksRef} id="photos" className="relative bg-[#0a0a0a] pt-16 md:pt-20 pb-20 md:pb-32 border-t border-white/10 scroll-mt-[44px] md:scroll-mt-[56px]">
         {/* Section header */}
         <div className="px-5 md:px-16 mb-8 md:mb-12">
           <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
@@ -1753,7 +1722,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ PROJETS VIDÉOS SECTION (02) ═══════════════════ */}
-      <section id="videos" className="relative bg-[#050505] pt-16 md:pt-20 pb-16 border-t border-white/10">
+      <section id="videos" className="relative bg-[#050505] pt-16 md:pt-20 pb-16 border-t border-white/10 scroll-mt-[44px] md:scroll-mt-[56px]">
         <div className="px-5 md:px-16 mb-8 md:mb-12">
           <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
@@ -1784,7 +1753,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ ABOUT SECTION (03) ═══════════════════ */}
-      <section ref={aboutRef} id="about" className="relative bg-[#0d0d0d] min-h-screen flex flex-col justify-start pt-16 md:pt-20 pb-32 md:pb-48 overflow-hidden border-t border-white/10">
+      <section ref={aboutRef} id="about" className="relative bg-[#0d0d0d] min-h-screen flex flex-col justify-start pt-16 md:pt-20 pb-32 md:pb-48 overflow-hidden border-t border-white/10 scroll-mt-[44px] md:scroll-mt-[56px]">
         <div className="px-5 md:px-16">
           <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
@@ -1861,7 +1830,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ CONTACT / FOOTER (04) ═══════════════════ */}
-      <footer ref={contactRef} id="contact" className="relative bg-[#050505] pt-16 md:pt-20 pb-4 md:pb-12 min-h-[85vh] md:min-h-screen flex flex-col justify-between overflow-hidden border-t border-white/10">
+      <footer ref={contactRef} id="contact" className="relative bg-[#050505] pt-16 md:pt-20 pb-4 md:pb-12 min-h-[85vh] md:min-h-screen flex flex-col justify-between overflow-hidden border-t border-white/10 scroll-mt-[44px] md:scroll-mt-[56px]">
         <div className="px-5 md:px-16 flex-1 flex flex-col justify-between">
           <div>
             <div data-text-reveal className="flex items-center gap-6 mb-10 md:mb-14">
