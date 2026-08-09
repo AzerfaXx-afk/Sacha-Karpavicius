@@ -109,10 +109,9 @@ const AnimatedLink = ({
       } else {
         const target = document.querySelector(href);
         if (target) {
-          const navOffset = window.innerWidth >= 768 ? -56 : -44;
           if (lenis) {
             lenis.scrollTo(target as HTMLElement, { 
-              offset: navOffset,
+              offset: 0,
               duration: 1.8,
               easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             });
