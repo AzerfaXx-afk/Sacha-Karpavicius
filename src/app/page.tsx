@@ -471,9 +471,29 @@ function VideoCardItem({
   playHoverSfx?: () => void;
 }) {
   const [isHovered, setIsHovered] = useState(false);
-  const [isVideoReady, setIsVideoReady] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [activeVideo, setActiveVideo] = useState<"A" | "B">("A");
+  const [isReadyA, setIsReadyA] = useState(false);
+  const [isReadyB, setIsReadyB] = useState(false);
+
+  const videoRefA = useRef<HTMLVideoElement>(null);
+  const videoRefB = useRef<HTMLVideoElement>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const clipIndexRef = useRef<number>(0);
+
   const isPoster = project.coverImage.toLowerCase().includes("affiche");
+
+  // Strategic high-impact timestamps per video (skipping intro black/bars/logos)
+  const getStrategicClips = (duration: number, slug: string) => {
+    const dur = duration && !isNaN(duration) && duration > 5 ? duration : 40;
+    if (slug === "maladaptive") {
+      return [dur * 0.20, dur * 0.40, dur * 0.58, dur * 0.75, dur * 0.88];
+    } else if (slug === "festival-in-and-out" || slug === "nice-queer") {
+      return [dur * 0.22, dur * 0.40, dur * 0.58, dur * 0.75, dur * 0.90];
+    } else if (slug === "au-grand-jour") {
+      return [dur * 0.18, dur * 0.35, dur * 0.52, dur * 0.70, dur * 0.85];
+    }
+    return [dur * 0.20, dur * 0.40, dur * 0.60, dur * 0.80, dur * 0.92];
+  };
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -482,33 +502,105 @@ function VideoCardItem({
 
   const handleMouseLeave = () => {
     setIsHovered(false);
-    setIsVideoReady(false);
+    setIsReadyA(false);
+    setIsReadyB(false);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    if (videoRefA.current) videoRefA.current.pause();
+    if (videoRefB.current) videoRefB.current.pause();
   };
 
   useEffect(() => {
-    const vid = videoRef.current;
-    if (!vid || !project.videoUrl) return;
+    if (!project.videoUrl) return;
 
     if (isHovered) {
-      vid.muted = true;
-      vid.defaultMuted = true;
-      
-      // Start playing smoothly
-      const playPromise = vid.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            setIsVideoReady(true);
-          })
-          .catch(() => {
-            setIsVideoReady(false);
-          });
+      const vidA = videoRefA.current;
+      const vidB = videoRefB.current;
+
+      if (vidA) {
+        vidA.muted = true;
+        vidA.defaultMuted = true;
       }
+      if (vidB) {
+        vidB.muted = true;
+        vidB.defaultMuted = true;
+      }
+
+      clipIndexRef.current = 0;
+      setActiveVideo("A");
+
+      // Start 1st clip on Video A
+      if (vidA) {
+        const dur = vidA.duration || 40;
+        const clips = getStrategicClips(dur, project.slug || project.id);
+        try {
+          vidA.currentTime = clips[0];
+        } catch (_) {}
+
+        vidA.play()
+          .then(() => setIsReadyA(true))
+          .catch(() => {});
+      }
+
+      if (intervalRef.current) clearInterval(intervalRef.current);
+
+      // Cycle 5 strategic clips every 2.7 seconds with seamless cross-fade
+      intervalRef.current = setInterval(() => {
+        const activeVid = activeVideo === "A" ? videoRefA.current : videoRefB.current;
+        const nextVid = activeVideo === "A" ? videoRefB.current : videoRefA.current;
+
+        if (!nextVid) return;
+
+        const dur = (activeVid && activeVid.duration) || 40;
+        const clips = getStrategicClips(dur, project.slug || project.id);
+        
+        clipIndexRef.current = (clipIndexRef.current + 1) % clips.length;
+        const targetTime = clips[clipIndexRef.current];
+
+        nextVid.muted = true;
+        nextVid.defaultMuted = true;
+
+        try {
+          nextVid.currentTime = targetTime;
+        } catch (_) {}
+
+        nextVid.play()
+          .then(() => {
+            if (activeVideo === "A") {
+              setIsReadyB(true);
+              setActiveVideo("B");
+              setTimeout(() => {
+                if (videoRefA.current) videoRefA.current.pause();
+              }, 700);
+            } else {
+              setIsReadyA(true);
+              setActiveVideo("A");
+              setTimeout(() => {
+                if (videoRefB.current) videoRefB.current.pause();
+              }, 700);
+            }
+          })
+          .catch(() => {});
+      }, 2700);
     } else {
-      setIsVideoReady(false);
-      vid.pause();
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (videoRefA.current) videoRefA.current.pause();
+      if (videoRefB.current) videoRefB.current.pause();
+      setIsReadyA(false);
+      setIsReadyB(false);
     }
-  }, [isHovered, project.videoUrl]);
+  }, [isHovered, project.videoUrl, project.slug, project.id]);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
 
   return (
     <div
@@ -556,23 +648,44 @@ function VideoCardItem({
           />
         </div>
 
-        {/* Rock-Solid Single Video Hover Extraits Reader */}
+        {/* Dual-Video Cross-Fade Strategic 5 Clips Reader (Video A) */}
         {project.videoUrl && (
           <video
-            ref={videoRef}
+            ref={videoRefA}
             src={project.videoUrl}
             loop
             muted
             playsInline
             preload="metadata"
             onCanPlay={() => {
-              if (isHovered) setIsVideoReady(true);
+              if (isHovered && activeVideo === "A") setIsReadyA(true);
             }}
             onPlaying={() => {
-              if (isHovered) setIsVideoReady(true);
+              if (isHovered && activeVideo === "A") setIsReadyA(true);
             }}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${
-              isHovered && isVideoReady ? "opacity-100" : "opacity-0"
+              isHovered && activeVideo === "A" && isReadyA ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        )}
+
+        {/* Dual-Video Cross-Fade Strategic 5 Clips Reader (Video B) */}
+        {project.videoUrl && (
+          <video
+            ref={videoRefB}
+            src={project.videoUrl}
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            onCanPlay={() => {
+              if (isHovered && activeVideo === "B") setIsReadyB(true);
+            }}
+            onPlaying={() => {
+              if (isHovered && activeVideo === "B") setIsReadyB(true);
+            }}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${
+              isHovered && activeVideo === "B" && isReadyB ? "opacity-100" : "opacity-0"
             }`}
           />
         )}
