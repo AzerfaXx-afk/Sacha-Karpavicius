@@ -111,7 +111,7 @@ const AnimatedLink = ({
         if (target) {
           if (lenis) {
             lenis.scrollTo(target as HTMLElement, { 
-              offset: 0,
+              offset: 10,
               duration: 1.8,
               easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             });

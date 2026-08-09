@@ -842,7 +842,7 @@ export default function Home() {
             const lenis = (window as any).__lenis;
             if (lenis && typeof lenis.scrollTo === "function") {
               lenis.scrollTo(targetEl as HTMLElement, {
-                offset: 0,
+                offset: 10,
                 duration: 1.8,
                 easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
               });
