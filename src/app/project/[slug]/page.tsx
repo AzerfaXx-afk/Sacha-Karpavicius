@@ -521,7 +521,7 @@ export default function ProjectPage() {
                   }}
                   className="object-cover w-full h-full min-h-full min-w-full transform-gpu brightness-[1.03] contrast-[1.03] saturate-[1.04] will-change-transform"
                 >
-                  {project.videoUrl.endsWith(".mp4") && (
+                  {!project.videoUrl.startsWith("http") && project.videoUrl.endsWith(".mp4") && (
                     <source
                       src={project.videoUrl.replace(/\.mp4$/, ".webm")}
                       type="video/webm"

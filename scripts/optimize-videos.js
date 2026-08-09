@@ -25,29 +25,29 @@ const SUPPORTED_EXTS = [".mov", ".mp4", ".m4v", ".avi", ".mkv", ".webm"];
 
 function encodeVideoMP4(inputFile, outputFile, baseName) {
   return new Promise((resolve) => {
-    console.log(`\n🎬 Encodage MP4 Stream Optimisé (<45MB H.264 Faststart) : ${baseName}.mp4 ...`);
+    console.log(`\n🎬 Encodage 4K Cinema Master MP4 : ${baseName}.mp4 ...`);
 
     ffmpeg(inputFile)
       .output(outputFile)
       .videoCodec("libx264")
       .outputOptions([
-        "-crf 24",
+        "-crf 17",
         "-preset medium",
         "-pix_fmt yuv420p",
         "-movflags +faststart",
-        "-vf scale=-2:720",
-        "-maxrate 1.5M",
-        "-bufsize 3.0M"
+        "-vf scale='min(2160\,iw):-2'",
+        "-maxrate 6M",
+        "-bufsize 12M"
       ])
       .audioCodec("aac")
-      .audioBitrate("128k")
+      .audioBitrate("192k")
       .on("progress", (progress) => {
         const percent = Math.round(progress.percent || 0);
-        process.stdout.write(`   ⏳ Progrès MP4 : ${percent}% \r`);
+        process.stdout.write(`   ⏳ Progrès 4K MP4 : ${percent}% \r`);
       })
       .on("end", () => {
         const sizeMb = (fs.statSync(outputFile).size / (1024 * 1024)).toFixed(2);
-        console.log(`\n   ✅ MP4 terminé -> public/Videos/${path.basename(outputFile)} (${sizeMb} MB)`);
+        console.log(`\n   ✅ 4K MP4 terminé -> public/Videos/${path.basename(outputFile)} (${sizeMb} MB)`);
         resolve(true);
       })
       .on("error", (err) => {
@@ -60,42 +60,42 @@ function encodeVideoMP4(inputFile, outputFile, baseName) {
 
 function encodeVideoWebM(inputFile, outputFile, baseName) {
   return new Promise((resolve) => {
-    console.log(`\n🎬 Encodage WebM Stream Optimisé (<25MB VP9) : ${baseName}.webm ...`);
+    console.log(`\n🎬 Encodage 4K WebM Stream : ${baseName}.webm ...`);
 
     ffmpeg(inputFile)
       .output(outputFile)
       .videoCodec("libvpx-vp9")
       .outputOptions([
-        "-crf 34",
-        "-b:v 1.0M",
+        "-crf 22",
+        "-b:v 4M",
         "-pix_fmt yuv420p",
-        "-vf scale=-2:720"
+        "-vf scale='min(2160\,iw):-2'"
       ])
       .audioCodec("libopus")
-      .audioBitrate("96k")
+      .audioBitrate("128k")
       .on("progress", (progress) => {
         const percent = Math.round(progress.percent || 0);
-        process.stdout.write(`   ⏳ Progrès WebM : ${percent}% \r`);
+        process.stdout.write(`   ⏳ Progrès 4K WebM : ${percent}% \r`);
       })
       .on("end", () => {
         const sizeMb = (fs.statSync(outputFile).size / (1024 * 1024)).toFixed(2);
-        console.log(`\n   ✅ WebM terminé -> public/Videos/${path.basename(outputFile)} (${sizeMb} MB)`);
+        console.log(`\n   ✅ 4K WebM terminé -> public/Videos/${path.basename(outputFile)} (${sizeMb} MB)`);
         resolve(true);
       })
       .on("error", (err) => {
         ffmpeg(inputFile)
           .output(outputFile)
           .videoCodec("libvpx-vp9")
-          .outputOptions(["-crf 34", "-b:v 1.0M", "-pix_fmt yuv420p", "-vf scale=-2:720"])
+          .outputOptions(["-crf 22", "-b:v 4M", "-pix_fmt yuv420p", "-vf scale='min(2160\,iw):-2'"])
           .audioCodec("libvorbis")
-          .audioBitrate("96k")
+          .audioBitrate("128k")
           .on("progress", (progress) => {
             const percent = Math.round(progress.percent || 0);
-            process.stdout.write(`   ⏳ Progrès WebM (Vorbis) : ${percent}% \r`);
+            process.stdout.write(`   ⏳ Progrès 4K WebM (Vorbis) : ${percent}% \r`);
           })
           .on("end", () => {
             const sizeMb = (fs.statSync(outputFile).size / (1024 * 1024)).toFixed(2);
-            console.log(`\n   ✅ WebM terminé -> public/Videos/${path.basename(outputFile)} (${sizeMb} MB)`);
+            console.log(`\n   ✅ 4K WebM terminé -> public/Videos/${path.basename(outputFile)} (${sizeMb} MB)`);
             resolve(true);
           })
           .on("error", (fallbackErr) => {
