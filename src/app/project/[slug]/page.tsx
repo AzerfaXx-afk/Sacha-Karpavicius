@@ -106,33 +106,53 @@ export default function ProjectPage() {
     };
   }, [setIsHideUI, resumeAudio]);
 
-  // Launch video directly on enter with sound (and pause background music), OR resume background music for photo projects
+  // Launch video directly on enter with robust instant playback (like Netflix)
   useEffect(() => {
-    if (project?.videoUrl && videoRef.current) {
-      const vid = videoRef.current;
-      vid.muted = false;
-      setIsVideoMuted(false);
-      vid.play()
-        .then(() => {
-          setIsVideoPlaying(true);
-          pauseAudio(true);
-        })
-        .catch(() => {
-          // If browser blocks unmuted autoplay, fallback to muted play
-          vid.muted = true;
-          setIsVideoMuted(true);
-          vid.play().then(() => {
-            setIsVideoPlaying(true);
-            pauseAudio(true);
-          }).catch(() => {});
-        });
-    } else {
-      // Photo project: background music continues uninterrupted
+    if (!project?.videoUrl) {
       resumeAudio(true);
+      return;
     }
 
+    const vid = videoRef.current;
+    if (!vid) return;
+
+    const startPlayback = async () => {
+      try {
+        vid.muted = false;
+        setIsVideoMuted(false);
+        await vid.play();
+        setIsVideoPlaying(true);
+        pauseAudio(true);
+      } catch {
+        // Browser blocked unmuted autoplay -> immediately play muted without delay
+        try {
+          vid.muted = true;
+          setIsVideoMuted(true);
+          await vid.play();
+          setIsVideoPlaying(true);
+          pauseAudio(true);
+        } catch {
+          // Waiting for user interaction
+        }
+      }
+    };
+
+    startPlayback();
+
+    // Also attach once to window for instant unmute/play on ANY first interaction
+    const handleFirstInteraction = () => {
+      if (vid && vid.paused) {
+        startPlayback();
+      }
+    };
+    window.addEventListener("click", handleFirstInteraction, { once: true });
+    window.addEventListener("touchstart", handleFirstInteraction, { once: true });
+    window.addEventListener("keydown", handleFirstInteraction, { once: true });
+
     return () => {
-      // When unmounting project page (going back home or to another project), resume background audio if user wants audio
+      window.removeEventListener("click", handleFirstInteraction);
+      window.removeEventListener("touchstart", handleFirstInteraction);
+      window.removeEventListener("keydown", handleFirstInteraction);
       resumeAudio(true);
     };
   }, [project?.slug, project?.videoUrl, pauseAudio, resumeAudio]);
@@ -495,6 +515,7 @@ export default function ProjectPage() {
               <>
                 <video
                   ref={videoRef}
+                  src={project.videoUrl}
                   poster={project.coverImage || project.heroImage}
                   autoPlay
                   loop
@@ -502,10 +523,24 @@ export default function ProjectPage() {
                   playsInline
                   preload="auto"
                   crossOrigin="anonymous"
+                  onLoadedMetadata={(e) => {
+                    const vid = e.currentTarget;
+                    setVideoDur(vid.duration || 0);
+                    setVideoTime(vid.currentTime || 0);
+                    if (vid.paused) {
+                      vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+                    }
+                  }}
+                  onCanPlay={(e) => {
+                    const vid = e.currentTarget;
+                    if (vid.paused) {
+                      vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+                    }
+                  }}
                   onTimeUpdate={handleTimeUpdate}
                   onPlay={() => {
                     setIsVideoPlaying(true);
-                    if (!videoRef.current?.muted) {
+                    if (!videoRef.current?.muted && videoVolume > 0) {
                       pauseAudio(true);
                     } else {
                       resumeAudio(true);
@@ -529,6 +564,23 @@ export default function ProjectPage() {
                   )}
                   <source src={project.videoUrl} type={project.videoUrl.endsWith(".webm") ? "video/webm" : "video/mp4"} />
                 </video>
+
+                {/* Floating Unmute Quick Action Pill (when muted autoplay starts) */}
+                {isVideoMuted && isVideoPlaying && !isIdle && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      toggleMuteVideo();
+                    }}
+                    className="absolute top-20 md:top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 bg-black/80 hover:bg-white text-white hover:text-black px-4 py-2 rounded-full border border-white/20 shadow-[0_0_30px_rgba(0,0,0,0.8)] font-inter text-[10px] md:text-[11px] uppercase tracking-widest transition-all duration-300 animate-bounce cursor-pointer group"
+                  >
+                    <svg className="w-3.5 h-3.5 text-amber-400 group-hover:text-black transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                    </svg>
+                    <span>{lang === "fr" ? "Activer le son" : "Unmute Audio"}</span>
+                  </button>
+                )}
 
                 {/* Awwwards Center Play/Pause Animated Pulse Feedback */}
                 <div
