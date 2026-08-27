@@ -64,6 +64,92 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
     }
   }, []);
 
+  // 5-Point Milestone Calibration (0% Hero -> 25% Photos -> 50% Videos -> 75% About -> 100% Contact)
+  const getCalibratedScrollProgress = useCallback((scrollY: number): number => {
+    if (typeof document === "undefined") return 0;
+    const photosEl = document.getElementById("photos");
+    const videosEl = document.getElementById("videos");
+    const aboutEl = document.getElementById("about");
+    const contactEl = document.getElementById("contact");
+
+    const docH = document.documentElement.scrollHeight - window.innerHeight;
+    if (docH <= 0) return 0;
+
+    if (!photosEl || !videosEl || !aboutEl || !contactEl) {
+      return Math.min(1, Math.max(0, scrollY / docH));
+    }
+
+    const yHero = 0;
+    const yPhotos = photosEl.offsetTop;
+    const yVideos = videosEl.offsetTop;
+    const yAbout = aboutEl.offsetTop;
+    const yContact = Math.min(contactEl.offsetTop, docH);
+
+    if (scrollY <= yHero) return 0;
+
+    // Interval 0: Hero -> Photos (0% to 25%)
+    if (scrollY < yPhotos) {
+      const ratio = (scrollY - yHero) / Math.max(1, yPhotos - yHero);
+      return ratio * 0.25;
+    }
+    // Interval 1: Photos -> Videos (25% to 50%)
+    if (scrollY < yVideos) {
+      const ratio = (scrollY - yPhotos) / Math.max(1, yVideos - yPhotos);
+      return 0.25 + ratio * 0.25;
+    }
+    // Interval 2: Videos -> About (50% to 75%)
+    if (scrollY < yAbout) {
+      const ratio = (scrollY - yVideos) / Math.max(1, yAbout - yVideos);
+      return 0.50 + ratio * 0.25;
+    }
+    // Interval 3: About -> Contact (75% to 100%)
+    const span = Math.max(1, docH - yAbout);
+    const ratio = (scrollY - yAbout) / span;
+    return Math.min(1, 0.75 + ratio * 0.25);
+  }, []);
+
+  const getScrollYFromProgress = useCallback((progress: number): number => {
+    if (typeof document === "undefined") return 0;
+    const photosEl = document.getElementById("photos");
+    const videosEl = document.getElementById("videos");
+    const aboutEl = document.getElementById("about");
+    const contactEl = document.getElementById("contact");
+    const docH = document.documentElement.scrollHeight - window.innerHeight;
+
+    if (docH <= 0) return 0;
+    if (!photosEl || !videosEl || !aboutEl || !contactEl) {
+      return progress * docH;
+    }
+
+    const yHero = 0;
+    const yPhotos = photosEl.offsetTop;
+    const yVideos = videosEl.offsetTop;
+    const yAbout = aboutEl.offsetTop;
+    const yContact = docH;
+
+    if (progress <= 0) return 0;
+    if (progress >= 1) return docH;
+
+    // 0% -> 25% (Hero -> Photos)
+    if (progress < 0.25) {
+      const ratio = progress / 0.25;
+      return yHero + ratio * (yPhotos - yHero);
+    }
+    // 25% -> 50% (Photos -> Videos)
+    if (progress < 0.50) {
+      const ratio = (progress - 0.25) / 0.25;
+      return yPhotos + ratio * (yVideos - yPhotos);
+    }
+    // 50% -> 75% (Videos -> About)
+    if (progress < 0.75) {
+      const ratio = (progress - 0.50) / 0.25;
+      return yVideos + ratio * (yAbout - yVideos);
+    }
+    // 75% -> 100% (About -> Contact)
+    const ratio = (progress - 0.75) / 0.25;
+    return yAbout + ratio * (yContact - yAbout);
+  }, []);
+
   // Sync scroll on window / Lenis scroll
   useEffect(() => {
     if (!isHomePage) return;
@@ -73,8 +159,7 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
     const updateProgress = () => {
       if (isDragging || isFlinging) return; // Ignore window scroll updates while user is scrubbing/flinging
       const scrollY = window.scrollY || document.documentElement.scrollTop;
-      const docH = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = docH > 0 ? scrollY / docH : 0;
+      const progress = getCalibratedScrollProgress(scrollY);
       updateProgressVisuals(progress);
     };
 
@@ -108,7 +193,7 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
         lenis.off("scroll", onScroll);
       }
     };
-  }, [isHomePage, isDragging, isFlinging, updateProgressVisuals]);
+  }, [isHomePage, isDragging, isFlinging, updateProgressVisuals, getCalibratedScrollProgress]);
 
   // Handle Scrub / Drag calculation
   const handleScrub = useCallback((clientY: number) => {
@@ -118,9 +203,7 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
     const progress = rect.height > 0 ? offsetY / rect.height : 0;
 
     updateProgressVisuals(progress);
-
-    const docH = document.documentElement.scrollHeight - window.innerHeight;
-    const targetY = progress * docH;
+    const targetY = getScrollYFromProgress(progress);
 
     // Instant Lenis or native window scroll update
     const lenis = (window as any).__lenis;
@@ -129,7 +212,7 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
     } else {
       window.scrollTo({ top: targetY, behavior: "instant" });
     }
-  }, [updateProgressVisuals]);
+  }, [updateProgressVisuals, getScrollYFromProgress]);
 
   // Launch / Fling Inertia Loop
   const startFlingInertia = useCallback(() => {
@@ -174,8 +257,7 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
 
       // Apply visuals & update scroll position
       updateProgressVisuals(currentProgress);
-      const docH = document.documentElement.scrollHeight - window.innerHeight;
-      const targetY = currentProgress * docH;
+      const targetY = getScrollYFromProgress(currentProgress);
 
       const lenis = (window as any).__lenis;
       if (lenis && typeof lenis.scrollTo === "function") {
@@ -195,7 +277,7 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
     };
 
     flingRafRef.current = requestAnimationFrame(step);
-  }, [updateProgressVisuals]);
+  }, [updateProgressVisuals, getScrollYFromProgress]);
 
   // Pointer Event Handlers for Mouse & Touch Scrubbing
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {

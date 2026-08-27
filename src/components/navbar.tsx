@@ -111,8 +111,8 @@ const AnimatedLink = ({
         if (target) {
           if (lenis) {
             lenis.scrollTo(target as HTMLElement, { 
-              offset: 10,
-              duration: 1.8,
+              offset: 0,
+              duration: 1.6,
               easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             });
           } else {
@@ -495,9 +495,9 @@ export default function Navbar({
             <div className={`h-[1px] bg-white transition-all duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] ${isOpen ? 'w-8 -rotate-45 -translate-y-[4.5px]' : 'w-6 group-hover:w-10'}`} />
           </button>
 
-          {/* Top Center: Logo */}
+          {/* Top Center: Silhouette Logo grounded on section border */}
           <div 
-            className="absolute left-1/2 -translate-x-1/2 top-4 md:top-4 w-14 h-14 md:w-20 md:h-20 cursor-pointer group"
+            className="absolute left-1/2 -translate-x-1/2 top-2 md:top-3 w-14 h-14 md:w-18 md:h-18 flex items-end justify-center cursor-pointer group pointer-events-auto"
             onClick={() => {
               onPlayClickSfx?.();
               handleLinkClick();
@@ -516,7 +516,7 @@ export default function Navbar({
               }
             }}
           >
-            <img src="/logo.png" alt="Sacha Karpavicius Logo" className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
+            <img src="/logo.png" alt="Sacha Karpavicius Logo" className="w-auto h-full max-h-12 md:max-h-16 object-contain object-bottom group-hover:scale-105 transition-transform duration-500" />
           </div>
         </div>
       </nav>
