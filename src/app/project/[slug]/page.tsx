@@ -157,20 +157,13 @@ export default function ProjectPage() {
     };
   }, [project?.slug, project?.videoUrl, pauseAudio, resumeAudio]);
 
-  // On physical browser reload (F5 / Refresh button directly on project URL), return to homepage
+  // Ensure scroll position is reset on page entry
   useEffect(() => {
     if (typeof window === "undefined") return;
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
     }
-    const isSpaNav = sessionStorage.getItem("spa_nav") === "true";
-    const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
-    const isDirectReload = !isSpaNav && navEntries.length > 0 && navEntries[0].type === "reload";
-    if (isDirectReload) {
-      sessionStorage.removeItem("spa_nav");
-      router.replace("/");
-    }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     setHasEnteredSite(true);
@@ -356,10 +349,13 @@ export default function ProjectPage() {
     const vid = videoRef.current;
     if (!vid) return;
     if (vid.paused) {
-      vid.play().catch(() => {});
-      triggerPulse("play");
+      vid.play().then(() => {
+        setIsVideoPlaying(true);
+        triggerPulse("play");
+      }).catch(() => {});
     } else {
       vid.pause();
+      setIsVideoPlaying(false);
       triggerPulse("pause");
     }
   }, [triggerPulse]);
@@ -557,7 +553,6 @@ export default function ProjectPage() {
                   muted={isVideoMuted}
                   playsInline
                   preload="auto"
-                  crossOrigin="anonymous"
                   onLoadedMetadata={(e) => {
                     const vid = e.currentTarget;
                     setVideoDur(vid.duration || 0);
@@ -590,54 +585,7 @@ export default function ProjectPage() {
                     resumeAudio(true);
                   }}
                   className="object-cover w-full h-full min-h-full min-w-full transform-gpu brightness-[1.03] contrast-[1.03] saturate-[1.04] will-change-transform"
-                >
-                  {!project.videoUrl.startsWith("http") && project.videoUrl.endsWith(".mp4") && (
-                    <source
-                      src={project.videoUrl.replace(/\.mp4$/, ".webm")}
-                      type="video/webm"
-                    />
-                  )}
-                  <source src={project.videoUrl} type={project.videoUrl.endsWith(".webm") ? "video/webm" : "video/mp4"} />
-                </video>
-
-                {/* Netflix-style Top Navigation Bar */}
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  className={`absolute top-0 inset-x-0 z-50 px-6 md:px-12 py-6 flex items-center justify-between pointer-events-none transition-all duration-500 bg-gradient-to-b from-black/90 via-black/40 to-transparent ${
-                    isIdle && isVideoPlaying ? "opacity-0 -translate-y-4" : "opacity-100 translate-y-0"
-                  }`}
-                >
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      playClickSfx();
-                      sessionStorage.setItem("targetSection", "#videos");
-                      triggerPageTransition(router, "/#videos");
-                    }}
-                    className="pointer-events-auto flex items-center gap-2.5 text-white/80 hover:text-white group bg-black/50 hover:bg-black/80 backdrop-blur-md px-4 py-2 rounded-full border border-white/15 hover:border-white/40 transition-all duration-300 shadow-xl cursor-pointer"
-                    title="Retour aux vidéos"
-                  >
-                    <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                    <span className="font-mono text-xs uppercase tracking-widest font-semibold hidden sm:inline-block">
-                      {lang === "fr" ? "Vidéos" : "Videos"}
-                    </span>
-                  </button>
-
-                  <div className="pointer-events-auto flex items-center gap-3">
-                    <span className="font-syne font-extrabold text-xs md:text-sm tracking-[0.25em] text-white/90 uppercase drop-shadow-md">
-                      SACHA KARPAVICIUS
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-white/70 border border-white/20 px-3 py-1 rounded-full backdrop-blur-md bg-black/40">
-                      4K DCI
-                    </span>
-                  </div>
-                </div>
+                />
 
                 {/* Floating Unmute Quick Action Pill (when muted autoplay starts) */}
                 {isVideoMuted && isVideoPlaying && !isIdle && (
@@ -656,20 +604,20 @@ export default function ProjectPage() {
                   </button>
                 )}
 
-                {/* Awwwards Center Play/Pause Animated Pulse Feedback */}
+                {/* Awwwards Center Play/Pause Animated Pulse Feedback (Détouré, No Circle Container) */}
                 <div
-                  className={`absolute inset-0 z-30 flex items-center justify-center pointer-events-none transition-all duration-500 ease-out ${
+                  className={`absolute inset-0 z-30 flex items-center justify-center pointer-events-none transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                     playPulseState ? "opacity-100 scale-100" : "opacity-0 scale-75"
                   }`}
                 >
-                  <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-black/75 backdrop-blur-2xl border border-white/25 flex items-center justify-center shadow-[0_0_60px_rgba(0,0,0,0.9)] transition-transform duration-300">
+                  <div className="flex items-center justify-center drop-shadow-[0_10px_35px_rgba(0,0,0,0.9)]">
                     {playPulseState === "pause" ? (
-                      <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                      <svg className="w-16 h-16 md:w-24 md:h-24 text-white fill-current filter drop-shadow-[0_0_25px_rgba(255,255,255,0.5)]" viewBox="0 0 24 24">
+                        <path d="M6 4.5h4.5v15H6v-15zm7.5 0H18v15h-4.5v-15z" />
                       </svg>
                     ) : (
-                      <svg className="w-10 h-10 text-white translate-x-1" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
+                      <svg className="w-16 h-16 md:w-24 md:h-24 text-white fill-current translate-x-1.5 filter drop-shadow-[0_0_25px_rgba(255,255,255,0.5)]" viewBox="0 0 24 24">
+                        <path d="M7 4.5v15l13-7.5L7 4.5z" />
                       </svg>
                     )}
                   </div>
@@ -677,12 +625,12 @@ export default function ProjectPage() {
 
                 {/* Netflix-style Left Paused Overlay (Now Watching Card) */}
                 <div
-                  className={`absolute inset-0 z-20 pointer-events-none flex flex-col justify-end p-8 md:p-16 pb-32 md:pb-36 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  className={`absolute inset-0 z-20 pointer-events-none flex flex-col justify-end p-8 md:p-16 pb-36 md:pb-40 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                     !isVideoPlaying
                       ? "opacity-100 translate-y-0 bg-black/40 backdrop-blur-[2px]"
                       : isIdle
                       ? "opacity-0 translate-y-8 pointer-events-none"
-                      : "opacity-90 translate-y-0"
+                      : "opacity-0 pointer-events-none"
                   }`}
                 >
                   <div className="max-w-xl md:max-w-2xl space-y-3 pointer-events-auto">
@@ -696,9 +644,8 @@ export default function ProjectPage() {
                     </h1>
                     <div className="flex items-center flex-wrap gap-3 font-mono text-[11px] text-white/80 font-medium pt-1">
                       <span className="text-white font-bold bg-white/10 px-2 py-0.5 rounded border border-white/20">{project.year}</span>
-                      <span className="border border-white/30 px-1.5 py-0.5 rounded text-[10px] text-white/90">4K ULTRA HD</span>
                       <span className="text-white/40">•</span>
-                      <span>{project.category || (lang === "fr" ? "Réalisation & DA" : "Direction & Art")}</span>
+                      <span>{project.category || (lang === "fr" ? "Vidéo" : "Video")}</span>
                       {videoDur > 0 && (
                         <>
                           <span className="text-white/40">•</span>
@@ -715,7 +662,7 @@ export default function ProjectPage() {
 
                   {/* Netflix "En pause" Indicator */}
                   {!isVideoPlaying && (
-                    <div className="absolute right-8 md:right-16 bottom-32 md:bottom-36 font-inter text-xs uppercase tracking-widest text-white/70 font-semibold flex items-center gap-2.5">
+                    <div className="absolute right-8 md:right-16 bottom-36 md:bottom-40 font-inter text-xs uppercase tracking-widest text-white/70 font-semibold flex items-center gap-2.5">
                       <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse shadow-[0_0_10px_rgba(255,255,255,1)]" />
                       <span>{lang === "fr" ? "En pause" : "Paused"}</span>
                     </div>
@@ -728,7 +675,7 @@ export default function ProjectPage() {
                   onMouseDown={(e) => { e.stopPropagation(); }}
                   onTouchStart={(e) => { e.stopPropagation(); }}
                   onDoubleClick={(e) => { e.stopPropagation(); }}
-                  className={`absolute inset-x-0 bottom-0 z-40 px-6 md:px-12 pb-6 md:pb-8 pt-20 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-3 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  className={`absolute inset-x-0 bottom-0 z-40 px-6 sm:px-12 md:px-36 lg:px-44 pb-6 md:pb-8 pt-20 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-3 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                     isIdle && isVideoPlaying
                       ? "opacity-0 translate-y-6 pointer-events-none"
                       : "opacity-100 translate-y-0 pointer-events-auto"
@@ -779,43 +726,52 @@ export default function ProjectPage() {
                   <div className="flex items-center justify-between pt-1">
                     {/* Left Control Group */}
                     <div className="flex items-center gap-3 sm:gap-5">
-                      {/* Play / Pause button */}
+                      {/* Play / Pause button (Détouré, No Background Circle) */}
                       <button
-                        onClick={togglePlayVideo}
-                        className="text-white hover:text-white/80 p-2 cursor-pointer transition-transform hover:scale-110 active:scale-95 flex items-center justify-center"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          togglePlayVideo();
+                        }}
+                        className="text-white hover:text-white/80 p-1.5 cursor-pointer transition-all duration-200 hover:scale-115 active:scale-90 flex items-center justify-center group/playbtn"
                         title={isVideoPlaying ? "Pause (Espace)" : "Lecture (Espace)"}
                       >
                         {isVideoPlaying ? (
-                          <svg className="w-6 h-6 sm:w-7 sm:h-7 fill-current" viewBox="0 0 24 24">
-                            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                          <svg className="w-6 h-6 sm:w-7 sm:h-7 fill-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]" viewBox="0 0 24 24">
+                            <path d="M6 4.5h4.5v15H6v-15zm7.5 0H18v15h-4.5v-15z" />
                           </svg>
                         ) : (
-                          <svg className="w-6 h-6 sm:w-7 sm:h-7 fill-current translate-x-0.5" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z" />
+                          <svg className="w-6 h-6 sm:w-7 sm:h-7 fill-white translate-x-0.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]" viewBox="0 0 24 24">
+                            <path d="M7 4.5v15l13-7.5L7 4.5z" />
                           </svg>
                         )}
                       </button>
 
-                      {/* Rewind 10s */}
+                      {/* Rewind 10s (Arrow pointing back/counter-clockwise with 10) */}
                       <button
-                        onClick={() => seekRelative(-10)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          seekRelative(-10);
+                        }}
                         className="text-white/85 hover:text-white p-2 cursor-pointer transition-transform hover:scale-110 active:scale-95 relative flex items-center justify-center group"
                         title="Reculer de 10s (←)"
                       >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12.5 4a8.5 8.5 0 1 0 7.8 5.1M12.5 4l3-2.5m-3 2.5l3 2.5" />
+                        <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5a7.5 7.5 0 1 0 7.06 4.98M12 4.5L9 2m3 2.5L9 7" />
                         </svg>
                         <span className="absolute font-mono text-[9px] font-bold text-white pt-1">10</span>
                       </button>
 
-                      {/* Fast Forward 10s */}
+                      {/* Fast Forward 10s (Arrow pointing forward/clockwise with 10) */}
                       <button
-                        onClick={() => seekRelative(10)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          seekRelative(10);
+                        }}
                         className="text-white/85 hover:text-white p-2 cursor-pointer transition-transform hover:scale-110 active:scale-95 relative flex items-center justify-center group"
                         title="Avancer de 10s (→)"
                       >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M11.5 4a8.5 8.5 0 1 1-7.8 5.1M11.5 4l-3-2.5m3 2.5l-3 2.5" />
+                        <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5a7.5 7.5 0 1 1-7.06 4.98M12 4.5L15 2m-3 2.5l3 2.5" />
                         </svg>
                         <span className="absolute font-mono text-[9px] font-bold text-white pt-1">10</span>
                       </button>
