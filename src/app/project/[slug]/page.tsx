@@ -406,6 +406,41 @@ export default function ProjectPage() {
     }
   }, [changeVolume]);
 
+  const [playbackRate, setPlaybackRate] = useState<number>(1);
+  const [hoverSeekTime, setHoverSeekTime] = useState<number | null>(null);
+  const [hoverSeekPos, setHoverSeekPos] = useState<number>(0);
+  const [isScrubberHovered, setIsScrubberHovered] = useState<boolean>(false);
+
+  const cyclePlaybackRate = useCallback(() => {
+    const rates = [1, 1.25, 1.5, 2, 0.75];
+    const nextIdx = (rates.indexOf(playbackRate) + 1) % rates.length;
+    const nextRate = rates[nextIdx];
+    setPlaybackRate(nextRate);
+    if (videoRef.current) {
+      videoRef.current.playbackRate = nextRate;
+    }
+  }, [playbackRate]);
+
+  const seekRelative = useCallback((seconds: number) => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    const target = Math.max(0, Math.min(vid.duration || 0, vid.currentTime + seconds));
+    vid.currentTime = target;
+    setVideoTime(target);
+    triggerPulse(seconds > 0 ? "play" : "pause");
+  }, [triggerPulse]);
+
+  const handleScrubberMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const width = rect.width;
+    if (width > 0 && videoDur > 0) {
+      const ratio = Math.max(0, Math.min(1, clickX / width));
+      setHoverSeekTime(ratio * videoDur);
+      setHoverSeekPos(clickX);
+    }
+  }, [videoDur]);
+
   // Keyboard shortcuts (Space: Play/Pause, F: Fullscreen, M: Mute, Arrows: Seek & Volume)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -425,12 +460,12 @@ export default function ProjectPage() {
       } else if (e.key === "ArrowRight") {
         if (vid) {
           e.preventDefault();
-          vid.currentTime = Math.min(vid.duration || 0, vid.currentTime + 5);
+          seekRelative(10);
         }
       } else if (e.key === "ArrowLeft") {
         if (vid) {
           e.preventDefault();
-          vid.currentTime = Math.max(0, vid.currentTime - 5);
+          seekRelative(-10);
         }
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
@@ -442,7 +477,7 @@ export default function ProjectPage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [togglePlayVideo, toggleFullscreen, toggleMuteVideo, changeVolume, videoVolume]);
+  }, [togglePlayVideo, toggleFullscreen, toggleMuteVideo, changeVolume, videoVolume, seekRelative]);
 
   const handleTimeUpdate = () => {
     const vid = videoRef.current;
@@ -565,6 +600,45 @@ export default function ProjectPage() {
                   <source src={project.videoUrl} type={project.videoUrl.endsWith(".webm") ? "video/webm" : "video/mp4"} />
                 </video>
 
+                {/* Netflix-style Top Navigation Bar */}
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className={`absolute top-0 inset-x-0 z-50 px-6 md:px-12 py-6 flex items-center justify-between pointer-events-none transition-all duration-500 bg-gradient-to-b from-black/90 via-black/40 to-transparent ${
+                    isIdle && isVideoPlaying ? "opacity-0 -translate-y-4" : "opacity-100 translate-y-0"
+                  }`}
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      playClickSfx();
+                      sessionStorage.setItem("targetSection", "#videos");
+                      triggerPageTransition(router, "/#videos");
+                    }}
+                    className="pointer-events-auto flex items-center gap-2.5 text-white/80 hover:text-white group bg-black/50 hover:bg-black/80 backdrop-blur-md px-4 py-2 rounded-full border border-white/15 hover:border-white/40 transition-all duration-300 shadow-xl cursor-pointer"
+                    title="Retour aux vidéos"
+                  >
+                    <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span className="font-mono text-xs uppercase tracking-widest font-semibold hidden sm:inline-block">
+                      {lang === "fr" ? "Vidéos" : "Videos"}
+                    </span>
+                  </button>
+
+                  <div className="pointer-events-auto flex items-center gap-3">
+                    <span className="font-syne font-extrabold text-xs md:text-sm tracking-[0.25em] text-white/90 uppercase drop-shadow-md">
+                      SACHA KARPAVICIUS
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-white/70 border border-white/20 px-3 py-1 rounded-full backdrop-blur-md bg-black/40">
+                      4K DCI
+                    </span>
+                  </div>
+                </div>
+
                 {/* Floating Unmute Quick Action Pill (when muted autoplay starts) */}
                 {isVideoMuted && isVideoPlaying && !isIdle && (
                   <button
@@ -573,153 +647,250 @@ export default function ProjectPage() {
                       e.preventDefault();
                       toggleMuteVideo();
                     }}
-                    className="absolute top-20 md:top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 bg-black/80 hover:bg-white text-white hover:text-black px-4 py-2 rounded-full border border-white/20 shadow-[0_0_30px_rgba(0,0,0,0.8)] font-inter text-[10px] md:text-[11px] uppercase tracking-widest transition-all duration-300 animate-bounce cursor-pointer group"
+                    className="absolute top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 bg-black/85 hover:bg-white text-white hover:text-black px-5 py-2.5 rounded-full border border-white/25 shadow-[0_0_30px_rgba(0,0,0,0.9)] font-inter text-[11px] uppercase tracking-widest transition-all duration-300 animate-bounce cursor-pointer group"
                   >
-                    <svg className="w-3.5 h-3.5 text-amber-400 group-hover:text-black transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-amber-400 group-hover:text-black transition-colors" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
                     </svg>
-                    <span>{lang === "fr" ? "Activer le son" : "Unmute Audio"}</span>
+                    <span className="font-semibold">{lang === "fr" ? "Activer le son" : "Unmute Audio"}</span>
                   </button>
                 )}
 
                 {/* Awwwards Center Play/Pause Animated Pulse Feedback */}
                 <div
                   className={`absolute inset-0 z-30 flex items-center justify-center pointer-events-none transition-all duration-500 ease-out ${
-                    !isVideoPlaying || playPulseState ? "opacity-100 scale-100" : "opacity-0 scale-75"
+                    playPulseState ? "opacity-100 scale-100" : "opacity-0 scale-75"
                   }`}
                 >
-                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-black/65 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.8)] transition-transform duration-300 hover:scale-110">
-                    {!isVideoPlaying || playPulseState === "pause" ? (
-                      <svg className="w-9 h-9 text-white translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
+                  <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-black/75 backdrop-blur-2xl border border-white/25 flex items-center justify-center shadow-[0_0_60px_rgba(0,0,0,0.9)] transition-transform duration-300">
+                    {playPulseState === "pause" ? (
+                      <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                       </svg>
                     ) : (
-                      <svg className="w-9 h-9 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                      <svg className="w-10 h-10 text-white translate-x-1" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
                       </svg>
                     )}
                   </div>
                 </div>
 
-                {/* Netflix-style Cinema Video Control HUD Overlay */}
+                {/* Netflix-style Left Paused Overlay (Now Watching Card) */}
+                <div
+                  className={`absolute inset-0 z-20 pointer-events-none flex flex-col justify-end p-8 md:p-16 pb-32 md:pb-36 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    !isVideoPlaying
+                      ? "opacity-100 translate-y-0 bg-black/40 backdrop-blur-[2px]"
+                      : isIdle
+                      ? "opacity-0 translate-y-8 pointer-events-none"
+                      : "opacity-90 translate-y-0"
+                  }`}
+                >
+                  <div className="max-w-xl md:max-w-2xl space-y-3 pointer-events-auto">
+                    <div className="flex items-center gap-2">
+                      <span className="font-inter text-xs md:text-sm tracking-widest uppercase text-white/60 font-semibold">
+                        {lang === "fr" ? "Vous regardez" : "Now watching"}
+                      </span>
+                    </div>
+                    <h1 className="font-syne font-black text-4xl sm:text-5xl md:text-6xl text-white tracking-tight uppercase drop-shadow-[0_10px_30px_rgba(0,0,0,0.95)]">
+                      {project.title}
+                    </h1>
+                    <div className="flex items-center flex-wrap gap-3 font-mono text-[11px] text-white/80 font-medium pt-1">
+                      <span className="text-white font-bold bg-white/10 px-2 py-0.5 rounded border border-white/20">{project.year}</span>
+                      <span className="border border-white/30 px-1.5 py-0.5 rounded text-[10px] text-white/90">4K ULTRA HD</span>
+                      <span className="text-white/40">•</span>
+                      <span>{project.category || (lang === "fr" ? "Réalisation & DA" : "Direction & Art")}</span>
+                      {videoDur > 0 && (
+                        <>
+                          <span className="text-white/40">•</span>
+                          <span>{formatTime(videoDur)}</span>
+                        </>
+                      )}
+                    </div>
+                    {project.descriptionFr && (
+                      <p className="font-inter text-xs sm:text-sm text-white/80 leading-relaxed max-w-lg pt-1 drop-shadow-md">
+                        {lang === "fr" ? project.descriptionFr : (project.descriptionEn || project.descriptionFr)}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Netflix "En pause" Indicator */}
+                  {!isVideoPlaying && (
+                    <div className="absolute right-8 md:right-16 bottom-32 md:bottom-36 font-inter text-xs uppercase tracking-widest text-white/70 font-semibold flex items-center gap-2.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse shadow-[0_0_10px_rgba(255,255,255,1)]" />
+                      <span>{lang === "fr" ? "En pause" : "Paused"}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Netflix-style Cinema Bottom HUD Overlay (Black & White Awwwards Theme) */}
                 <div
                   onClick={(e) => { e.stopPropagation(); }}
                   onMouseDown={(e) => { e.stopPropagation(); }}
                   onTouchStart={(e) => { e.stopPropagation(); }}
                   onDoubleClick={(e) => { e.stopPropagation(); }}
-                  className={`absolute left-1/2 -translate-x-1/2 bottom-6 md:bottom-8 z-40 flex items-center gap-3 md:gap-4 bg-black/75 backdrop-blur-2xl border border-white/20 px-4 py-2 md:px-5 md:py-2.5 rounded-full shadow-[0_16px_50px_rgba(0,0,0,0.9)] transition-all duration-500 ${
+                  className={`absolute inset-x-0 bottom-0 z-40 px-6 md:px-12 pb-6 md:pb-8 pt-20 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-3 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                     isIdle && isVideoPlaying
-                      ? "opacity-0 scale-95 pointer-events-none translate-y-4"
-                      : "opacity-100 scale-100 pointer-events-auto translate-y-0"
+                      ? "opacity-0 translate-y-6 pointer-events-none"
+                      : "opacity-100 translate-y-0 pointer-events-auto"
                   }`}
                 >
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      togglePlayVideo();
-                    }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onTouchStart={(e) => e.stopPropagation()}
-                    className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1.5 cursor-pointer flex items-center justify-center"
-                    title={isVideoPlaying ? "Pause (Espace)" : "Lecture (Espace)"}
-                  >
-                    {isVideoPlaying ? (
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                    ) : (
-                      <svg className="w-4 h-4 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    )}
-                  </button>
-
-                  {/* Volume Control Group (Icon + Interactive Slider) */}
-                  <div
-                    className="flex items-center gap-2 group/vol"
-                    onClick={(e) => e.stopPropagation()}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onTouchStart={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        toggleMuteVideo();
-                      }}
-                      onMouseDown={(e) => e.stopPropagation()}
-                      onTouchStart={(e) => e.stopPropagation()}
-                      className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1 cursor-pointer flex items-center justify-center"
-                      title={isVideoMuted || videoVolume === 0 ? "Activer le son (M)" : "Couper le son (M)"}
-                    >
-                      {isVideoMuted || videoVolume === 0 ? (
-                        <svg className="w-4 h-4 text-white/50" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
-                      ) : videoVolume < 0.5 ? (
-                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/></svg>
-                      ) : (
-                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                      )}
-                    </button>
-
-                    {/* Interactive Volume Slider */}
+                  {/* Full-width Scrubber Progress Bar */}
+                  <div className="relative w-full flex items-center gap-4">
                     <div
-                      onPointerDown={handleVolumePointer}
+                      onPointerDown={handleSeekPointer}
                       onPointerMove={(e) => {
-                        if (e.buttons === 1) handleVolumePointer(e);
+                        if (e.buttons === 1) handleSeekPointer(e);
+                        handleScrubberMouseMove(e);
                       }}
-                      className="relative w-12 sm:w-16 h-1.5 bg-white/20 rounded-full cursor-pointer overflow-hidden p-0 transition-all duration-300 hover:h-2"
-                      title="Régler le volume vidéo"
+                      onMouseEnter={() => setIsScrubberHovered(true)}
+                      onMouseLeave={() => {
+                        setIsScrubberHovered(false);
+                        setHoverSeekTime(null);
+                      }}
+                      className="relative flex-1 h-1.5 hover:h-2.5 bg-white/20 hover:bg-white/30 rounded-full cursor-pointer group/scrubber transition-all duration-200"
                     >
+                      {/* Floating Hover Time Tooltip */}
+                      {isScrubberHovered && hoverSeekTime !== null && (
+                        <div
+                          className="absolute -top-9 -translate-x-1/2 bg-black/95 text-white border border-white/20 font-mono text-[11px] px-2.5 py-0.5 rounded shadow-2xl pointer-events-none font-semibold"
+                          style={{ left: `${hoverSeekPos}px` }}
+                        >
+                          {formatTime(hoverSeekTime)}
+                        </div>
+                      )}
+
+                      {/* Progress Fill (Black & White Theme - Pure White with Glow) */}
                       <div
-                        className="h-full bg-white rounded-full transition-all duration-75 origin-left"
-                        style={{ width: `${isVideoMuted ? 0 : videoVolume * 100}%` }}
-                      />
+                        className="h-full bg-white rounded-full relative transition-all duration-75 origin-left shadow-[0_0_15px_rgba(255,255,255,0.7)]"
+                        style={{ width: `${videoDur > 0 ? (videoTime / videoDur) * 100 : 0}%` }}
+                      >
+                        {/* Scrubber Thumb */}
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,1)] transform scale-75 group-hover/scrubber:scale-125 transition-transform" />
+                      </div>
                     </div>
+
+                    {/* Remaining Time readout */}
+                    <span className="font-mono text-xs text-white/85 shrink-0 font-medium tracking-wider">
+                      {videoDur > 0 ? `-${formatTime(Math.max(0, videoDur - videoTime))}` : "00:00"}
+                    </span>
                   </div>
 
-                  <div className="h-3 w-[1px] bg-white/15" />
+                  {/* Controls Row */}
+                  <div className="flex items-center justify-between pt-1">
+                    {/* Left Control Group */}
+                    <div className="flex items-center gap-3 sm:gap-5">
+                      {/* Play / Pause button */}
+                      <button
+                        onClick={togglePlayVideo}
+                        className="text-white hover:text-white/80 p-2 cursor-pointer transition-transform hover:scale-110 active:scale-95 flex items-center justify-center"
+                        title={isVideoPlaying ? "Pause (Espace)" : "Lecture (Espace)"}
+                      >
+                        {isVideoPlaying ? (
+                          <svg className="w-6 h-6 sm:w-7 sm:h-7 fill-current" viewBox="0 0 24 24">
+                            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-6 h-6 sm:w-7 sm:h-7 fill-current translate-x-0.5" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        )}
+                      </button>
 
-                  {/* Interactive Progress Scrubber with Pointer Seeking & Dragging */}
-                  <div
-                    onPointerDown={handleSeekPointer}
-                    onPointerMove={(e) => {
-                      if (e.buttons === 1) handleSeekPointer(e);
-                    }}
-                    className="relative w-24 sm:w-36 md:w-48 h-1.5 bg-white/20 rounded-full cursor-pointer group/progress p-0 transition-all duration-300 hover:h-2"
-                    title="Cliquer ou glisser pour rechercher dans la vidéo"
-                  >
-                    <div
-                      className="h-full bg-gradient-to-r from-white/70 via-white to-white rounded-full transition-all duration-75 origin-left relative"
-                      style={{ width: `${videoDur > 0 ? (videoTime / videoDur) * 100 : 0}%` }}
-                    >
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,1)] opacity-0 group-hover/progress:opacity-100 transition-opacity" />
+                      {/* Rewind 10s */}
+                      <button
+                        onClick={() => seekRelative(-10)}
+                        className="text-white/85 hover:text-white p-2 cursor-pointer transition-transform hover:scale-110 active:scale-95 relative flex items-center justify-center group"
+                        title="Reculer de 10s (←)"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12.5 4a8.5 8.5 0 1 0 7.8 5.1M12.5 4l3-2.5m-3 2.5l3 2.5" />
+                        </svg>
+                        <span className="absolute font-mono text-[9px] font-bold text-white pt-1">10</span>
+                      </button>
+
+                      {/* Fast Forward 10s */}
+                      <button
+                        onClick={() => seekRelative(10)}
+                        className="text-white/85 hover:text-white p-2 cursor-pointer transition-transform hover:scale-110 active:scale-95 relative flex items-center justify-center group"
+                        title="Avancer de 10s (→)"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11.5 4a8.5 8.5 0 1 1-7.8 5.1M11.5 4l-3-2.5m3 2.5l-3 2.5" />
+                        </svg>
+                        <span className="absolute font-mono text-[9px] font-bold text-white pt-1">10</span>
+                      </button>
+
+                      {/* Volume Button & Expanding Slider */}
+                      <div className="flex items-center gap-2 group/vol">
+                        <button
+                          onClick={toggleMuteVideo}
+                          className="text-white/85 hover:text-white p-2 cursor-pointer transition-transform hover:scale-110 active:scale-95 flex items-center justify-center"
+                          title={isVideoMuted || videoVolume === 0 ? "Activer le son (M)" : "Couper le son (M)"}
+                        >
+                          {isVideoMuted || videoVolume === 0 ? (
+                            <svg className="w-6 h-6 text-white/50 fill-current" viewBox="0 0 24 24">
+                              <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-6 h-6 text-white fill-current" viewBox="0 0 24 24">
+                              <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                            </svg>
+                          )}
+                        </button>
+
+                        {/* Expandable Volume Slider */}
+                        <div
+                          onPointerDown={handleVolumePointer}
+                          onPointerMove={(e) => {
+                            if (e.buttons === 1) handleVolumePointer(e);
+                          }}
+                          className="relative w-16 sm:w-20 h-1.5 bg-white/20 rounded-full cursor-pointer overflow-hidden transition-all duration-300 hover:h-2"
+                          title="Volume"
+                        >
+                          <div
+                            className="h-full bg-white rounded-full transition-all duration-75 origin-left"
+                            style={{ width: `${isVideoMuted ? 0 : videoVolume * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Center Project Title */}
+                    <div className="hidden md:flex items-center justify-center">
+                      <span className="font-syne font-bold text-sm tracking-wider text-white/90 uppercase truncate max-w-xs drop-shadow">
+                        {project.title}
+                      </span>
+                    </div>
+
+                    {/* Right Control Group */}
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      {/* Playback Speed Button */}
+                      <button
+                        onClick={cyclePlaybackRate}
+                        className="font-mono text-xs font-semibold text-white/80 hover:text-white px-2.5 py-1 rounded border border-white/20 hover:border-white/50 transition-all cursor-pointer"
+                        title="Vitesse de lecture"
+                      >
+                        {playbackRate}x
+                      </button>
+
+                      {/* Fullscreen Button */}
+                      <button
+                        onClick={toggleFullscreen}
+                        className="text-white/85 hover:text-white p-2 cursor-pointer transition-transform hover:scale-110 active:scale-95 flex items-center justify-center"
+                        title={isFullscreen ? "Quitter le plein écran (F)" : "Plein écran (F)"}
+                      >
+                        {isFullscreen ? (
+                          <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                            <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" />
+                          </svg>
+                        )}
+                      </button>
                     </div>
                   </div>
-
-                  <span className="font-mono text-[10px] md:text-[11px] text-white/80 tracking-wider select-none shrink-0">
-                    {formatTime(videoTime)} / {formatTime(videoDur)}
-                  </span>
-
-                  <div className="h-3 w-[1px] bg-white/15" />
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      toggleFullscreen();
-                    }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onTouchStart={(e) => e.stopPropagation()}
-                    className="text-white/80 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 p-1.5 cursor-pointer flex items-center justify-center"
-                    title={isFullscreen ? "Quitter le plein écran (F)" : "Plein écran (F)"}
-                  >
-                    {isFullscreen ? (
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
-                      </svg>
-                    ) : (
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-                      </svg>
-                    )}
-                  </button>
                 </div>
               </>
             ) : (
@@ -737,27 +908,29 @@ export default function ProjectPage() {
           </div>
         </div>
 
-        <div className={`relative z-10 w-full px-5 md:px-16 pb-28 sm:pb-32 md:pb-20 text-left flex flex-col justify-end items-start transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${
-          isIdle && isVideoPlaying
-            ? "opacity-0 translate-y-8 pointer-events-none"
-            : "opacity-100 translate-y-0 pointer-events-auto"
-        }`}>
-          <div ref={titleRef} className="space-y-2 flex flex-col items-start max-w-full pointer-events-auto">
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-[10px] md:text-[11px] tracking-[0.4em] text-white/70 uppercase font-semibold drop-shadow-md">
-                {project.year}
-              </span>
+        {!project.videoUrl && (
+          <div className={`relative z-10 w-full px-5 md:px-16 pb-28 sm:pb-32 md:pb-20 text-left flex flex-col justify-end items-start transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${
+            isIdle
+              ? "opacity-0 translate-y-8 pointer-events-none"
+              : "opacity-100 translate-y-0 pointer-events-auto"
+          }`}>
+            <div ref={titleRef} className="space-y-2 flex flex-col items-start max-w-full pointer-events-auto">
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-[10px] md:text-[11px] tracking-[0.4em] text-white/70 uppercase font-semibold drop-shadow-md">
+                  {project.year}
+                </span>
+              </div>
+              <h1 className="font-syne font-extrabold text-[7.5vw] sm:text-[5vw] md:text-[2.2vw] leading-[0.95] uppercase tracking-tight text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.95)]">
+                {project.title}
+              </h1>
+              {project.descriptionFr && (
+                <p className="font-inter text-[12px] sm:text-[13px] md:text-[14px] leading-relaxed text-white/80 max-w-xl md:max-w-2xl font-light pt-1 drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
+                  {lang === "fr" ? project.descriptionFr : (project.descriptionEn || project.descriptionFr)}
+                </p>
+              )}
             </div>
-            <h1 className="font-syne font-extrabold text-[7.5vw] sm:text-[5vw] md:text-[2.2vw] leading-[0.95] uppercase tracking-tight text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.95)]">
-              {project.title}
-            </h1>
-            {project.descriptionFr && (
-              <p className="font-inter text-[12px] sm:text-[13px] md:text-[14px] leading-relaxed text-white/80 max-w-xl md:max-w-2xl font-light pt-1 drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
-                {lang === "fr" ? project.descriptionFr : (project.descriptionEn || project.descriptionFr)}
-              </p>
-            )}
           </div>
-        </div>
+        )}
       </section>
 
       {/* ═══════════════════ PINNED HORIZONTAL SCROLLYTELLING CAROUSEL (PURE AWWWARDS) ═══════════════════ */}
