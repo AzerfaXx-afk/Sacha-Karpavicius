@@ -247,12 +247,12 @@ const AboutImageCard = ({ isMenuOpen }: { isMenuOpen: boolean }) => {
   return (
     <div
       data-about-img
-      className="w-full max-w-[280px] md:max-w-[340px] lg:max-w-[360px] aspect-[3/4] rounded-xl will-change-transform shadow-2xl"
+      className="w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] lg:max-w-[380px] xl:max-w-[400px] aspect-[3/4] rounded-2xl will-change-transform shadow-2xl"
       style={{ perspective: "1000px" }}
     >
       <div
         ref={cardRef}
-        className="relative w-full h-full rounded-xl overflow-hidden border border-white/10 shadow-2xl cursor-pointer group select-none touch-pan-y transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:border-white/30 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_40px_rgba(255,255,255,0.15)]"
+        className="relative w-full h-full rounded-2xl overflow-hidden border border-white/10 shadow-2xl cursor-pointer group select-none touch-pan-y transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:border-white/30 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_40px_rgba(255,255,255,0.15)]"
         style={{ transformStyle: "preserve-3d" }}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
@@ -1838,8 +1838,8 @@ export default function Home() {
 
       {/* ═══════════════════ ABOUT SECTION (03) ═══════════════════ */}
       <section ref={aboutRef} id="about" className="relative bg-[#0d0d0d] min-h-screen flex flex-col justify-between pt-16 md:pt-[84px] pb-8 md:pb-12 overflow-hidden border-t border-white/10">
-        <div className="px-5 md:px-16 flex-1 flex flex-col justify-between">
-          <div>
+        <div className="px-5 md:px-12 lg:px-16 flex-1 flex flex-col justify-between">
+          <div className="max-w-[1240px] mx-auto w-full">
             <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
               <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
                 03
@@ -1847,54 +1847,54 @@ export default function Home() {
               <div data-line-reveal className="flex-1 h-[1px] bg-white/10 origin-left" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-10 lg:gap-14 items-center">
               {/* Left Column: Typography aligned with site design system (7 Cols) */}
               <div className="md:col-span-7 space-y-4 md:space-y-5" data-text-reveal>
                 <div>
                   <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase block mb-2">
-                    ART VISUEL & DIRECTION ARTISTIQUE
+                    {lang === "fr" ? "ART VISUEL & AUDIOVISUEL" : "VISUAL ART & AUDIOVISUAL"}
                   </span>
-                  <h2 className="font-syne font-bold text-[8vw] md:text-[3.8vw] leading-[0.95] tracking-tight text-white uppercase">
+                  <h2 className="font-syne font-bold text-[8vw] md:text-[3.6vw] leading-[0.95] tracking-tight text-white uppercase">
                     SACHA<br />KARPAVICIUS
                   </h2>
                 </div>
 
                 {/* Artistic Quote */}
                 <div className="border-l border-white/30 pl-4 py-0.5">
-                  <p className="font-inter text-[14px] md:text-[16px] leading-relaxed text-white/80 tracking-tight">
+                  <p className="font-inter text-[14px] md:text-[15px] leading-relaxed text-white/80 tracking-tight">
                     {lang === "fr" 
-                      ? "« Capturer l’essence brute, sculpter la lumière et transformer le mouvement en une poésie visuelle atemporelle. »"
-                      : "« Capturing raw essence, sculpting light, and transforming movement into timeless visual poetry. »"
+                      ? "« Créer, expérimenter et explorer de nouveaux territoires visuels pour transmettre des émotions. »"
+                      : "« Creating, experimenting, and exploring new visual realms to convey authentic emotions. »"
                     }
                   </p>
                 </div>
 
-                {/* Short Bio Description */}
-                <p className="font-inter text-[13px] md:text-[14px] leading-relaxed text-white/50 max-w-xl">
+                {/* Bio Description from user */}
+                <p className="font-inter text-[13px] md:text-[14px] leading-relaxed text-white/60 max-w-xl">
                   {lang === "fr" ? (
                     <>
-                      Basé entre Paris et Milan, Sacha Karpavicius façonne des univers photographiques et cinématographiques singuliers. Spécialisé dans la photographie de mode, le portrait éditorial et la direction artistique, chaque visuel s&apos;affirme comme une immersion sensorielle d&apos;exception.
+                      Étudiant niçois en audiovisuel, je pratique l’art visuel comme la photo, la réalisation et la création dans des domaines variés. Je cherche continuellement à créer et expérimenter des choses différentes afin de transmettre des émotions.
                     </>
                   ) : (
                     <>
-                      Based between Paris and Milan, Sacha Karpavicius shapes singular photographic and cinematic universes. Specializing in fashion photography, editorial portraiture and art direction, each project is crafted as an immersive visual work.
+                      Audiovisual student based in Nice, I practice visual arts including photography, filmmaking, and multidisciplinary creation across diverse fields. I continuously strive to create and experiment with different forms to evoke genuine emotion.
                     </>
                   )}
                 </p>
 
                 {/* Visual Metrics & Tags Grid */}
-                <div className="pt-4 grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-white/10 font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-white/40 uppercase">
+                <div className="pt-4 grid grid-cols-2 sm:grid-cols-3 gap-4 border-t border-white/10 font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-white/40 uppercase">
                   <div>
                     <span className="block text-white/30 text-[9px] mb-1">LOCALISATION</span>
-                    <span className="text-white font-semibold">PARIS — MILAN</span>
+                    <span className="text-white font-semibold">NICE — FRANCE</span>
                   </div>
                   <div>
                     <span className="block text-white/30 text-[9px] mb-1">UNIVERS</span>
-                    <span className="text-white font-semibold">MODE & ÉDITORIAL</span>
+                    <span className="text-white font-semibold">{lang === "fr" ? "PHOTO & RÉALISATION" : "PHOTO & DIRECTING"}</span>
                   </div>
                   <div>
                     <span className="block text-white/30 text-[9px] mb-1">DISCIPLINE</span>
-                    <span className="text-white font-semibold">ARTS VISUELS</span>
+                    <span className="text-white font-semibold">{lang === "fr" ? "ARTS VISUELS" : "VISUAL ARTS"}</span>
                   </div>
                 </div>
 
@@ -1902,11 +1902,11 @@ export default function Home() {
                 <SignatureAnim className="pt-4 border-t border-white/10" />
               </div>
 
-              {/* Right Column: Large Portrait Card with Organic Circular LED Aura (5 Cols) */}
-              <div className="md:col-span-5 flex justify-center md:justify-end items-center" data-text-reveal>
+              {/* Right Column: Large Portrait Card with Organic Circular LED Aura (5 Cols) - Pulled gracefully left & balanced */}
+              <div className="md:col-span-5 flex justify-center md:justify-start md:pl-4 lg:pl-8 items-center" data-text-reveal>
                 <div className="relative group flex items-center justify-center">
-                  {/* Ultra-Fluid Circular LED Radial Ambient Backlight Aura (Zero rectangular box edges) */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.22)_0%,rgba(217,119,6,0.15)_35%,rgba(168,85,247,0.1)_65%,transparent_85%)] blur-[100px] pointer-events-none opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" />
+                  {/* Ultra-Fluid Circular LED Radial Ambient Backlight Aura */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[130%] h-[130%] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.22)_0%,rgba(217,119,6,0.14)_35%,rgba(168,85,247,0.08)_65%,transparent_85%)] blur-[80px] pointer-events-none opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" />
                   <AboutImageCard isMenuOpen={isMenuOpen} />
                 </div>
               </div>
