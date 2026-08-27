@@ -497,7 +497,7 @@ export default function Navbar({
 
           {/* Top Center: Silhouette Logo grounded on section border */}
           <div 
-            className="absolute left-1/2 -translate-x-1/2 top-2 md:top-3 w-14 h-14 md:w-18 md:h-18 flex items-end justify-center cursor-pointer group pointer-events-auto"
+            className="absolute left-1/2 -translate-x-1/2 top-1 md:top-2 w-16 h-16 md:w-22 md:h-22 flex items-end justify-center cursor-pointer group pointer-events-auto"
             onClick={() => {
               onPlayClickSfx?.();
               handleLinkClick();
@@ -516,7 +516,7 @@ export default function Navbar({
               }
             }}
           >
-            <img src="/logo.png" alt="Sacha Karpavicius Logo" className="w-auto h-full max-h-12 md:max-h-16 object-contain object-bottom group-hover:scale-105 transition-transform duration-500" />
+            <img src="/logo.png" alt="Sacha Karpavicius Logo" className="w-auto h-full max-h-14 md:max-h-20 object-contain object-bottom group-hover:scale-105 transition-transform duration-500" />
           </div>
         </div>
       </nav>
