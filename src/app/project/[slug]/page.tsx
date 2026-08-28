@@ -268,6 +268,8 @@ export default function ProjectPage() {
     };
   }, [project, setHasEnteredSite, setIsHideUI]);
 
+  const scrollPosBeforeFs = useRef<number>(0);
+
   // Fullscreen state listener
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -281,17 +283,17 @@ export default function ProjectPage() {
       setIsFullscreen(isFs);
 
       if (!isFs) {
-        // Smoothly ensure hero is in view when exiting fullscreen
-        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
+        // Restore scroll position cleanly without instant jump or resize glitch
+        const targetY = scrollPosBeforeFs.current || 0;
         const lenis = (window as any).__lenis;
         if (lenis && typeof lenis.scrollTo === "function") {
-          lenis.scrollTo(0, { immediate: true });
+          lenis.scrollTo(targetY, { immediate: true });
+        } else {
+          window.scrollTo({ top: targetY, left: 0, behavior: "instant" });
         }
         setTimeout(() => {
           ScrollTrigger.refresh();
-        }, 100);
+        }, 350);
       }
     };
     document.addEventListener("fullscreenchange", onFsChange);
@@ -376,9 +378,19 @@ export default function ProjectPage() {
     const vid = videoRef.current;
     if (!container || !vid) return;
 
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {});
+    if (
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).mozFullScreenElement ||
+      (document as any).msFullscreenElement
+    ) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if ((document as any).webkitExitFullscreen) {
+        (document as any).webkitExitFullscreen();
+      }
     } else {
+      scrollPosBeforeFs.current = window.scrollY || document.documentElement.scrollTop || 0;
       if (container.requestFullscreen) {
         container.requestFullscreen().catch(() => {});
       } else if ((container as any).webkitRequestFullscreen) {

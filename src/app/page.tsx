@@ -692,15 +692,6 @@ function VideoCardItem({
 
         {/* Hover dark overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500 pointer-events-none z-20" />
-
-        {/* Centered Minimalist Play Button Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-          <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-white/10 border border-white/30 backdrop-blur-md flex items-center justify-center text-white opacity-90 group-hover:opacity-100 group-hover:scale-110 group-hover:bg-white group-hover:text-black group-hover:border-white transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_0_40px_rgba(0,0,0,0.8)]">
-            <svg className="w-5 h-5 md:w-6 md:h-6 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-        </div>
       </div>
 
       {/* Project Info Bar below card — EXACT SAME FORMAT AS PHOTO CARDS */}
