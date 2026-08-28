@@ -680,7 +680,7 @@ export default function ProjectPage() {
                     setIsVideoPlaying(false);
                     resumeAudio(true);
                   }}
-                  className="object-cover w-full h-full min-h-full min-w-full transform-gpu will-change-transform"
+                  className="object-contain w-full h-full min-h-full min-w-full transform-gpu will-change-transform"
                   style={{
                     imageRendering: "crisp-edges",
                     backfaceVisibility: "hidden",
@@ -696,9 +696,9 @@ export default function ProjectPage() {
                       e.preventDefault();
                       toggleMuteVideo();
                     }}
-                    className="absolute top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 bg-black/85 hover:bg-white text-white hover:text-black px-5 py-2.5 rounded-full border border-white/25 shadow-[0_0_30px_rgba(0,0,0,0.9)] font-inter text-[11px] uppercase tracking-widest transition-all duration-300 animate-bounce cursor-pointer group"
+                    className="absolute top-20 sm:top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-black/85 hover:bg-white text-white hover:text-black px-4 py-2 sm:px-5 sm:py-2.5 rounded-full border border-white/25 shadow-[0_0_30px_rgba(0,0,0,0.9)] font-inter text-[10px] sm:text-[11px] uppercase tracking-widest transition-all duration-300 animate-bounce cursor-pointer group"
                   >
-                    <svg className="w-4 h-4 text-amber-400 group-hover:text-black transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 group-hover:text-black transition-colors" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
                     </svg>
                     <span className="font-semibold">{lang === "fr" ? "Activer le son" : "Unmute Audio"}</span>
@@ -713,31 +713,31 @@ export default function ProjectPage() {
                 >
                   <div className="flex flex-col items-center justify-center drop-shadow-[0_10px_35px_rgba(0,0,0,0.9)]">
                     {playPulseState === "pause" && (
-                      <svg className="w-16 h-16 md:w-20 md:h-20 text-white fill-current filter drop-shadow-[0_0_25px_rgba(255,255,255,0.6)]" viewBox="0 0 24 24">
+                      <svg className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-white fill-current filter drop-shadow-[0_0_25px_rgba(255,255,255,0.6)]" viewBox="0 0 24 24">
                         <path d="M6 4.5h4.5v15H6v-15zm7.5 0H18v15h-4.5v-15z" />
                       </svg>
                     )}
                     {playPulseState === "play" && (
-                      <svg className="w-16 h-16 md:w-20 md:h-20 text-white fill-current translate-x-1 filter drop-shadow-[0_0_25px_rgba(255,255,255,0.6)]" viewBox="0 0 24 24">
+                      <svg className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-white fill-current translate-x-1 filter drop-shadow-[0_0_25px_rgba(255,255,255,0.6)]" viewBox="0 0 24 24">
                         <path d="M7 4.5v15l13-7.5L7 4.5z" />
                       </svg>
                     )}
                     {playPulseState === "rewind" && (
                       <div className="relative flex items-center justify-center filter drop-shadow-[0_0_25px_rgba(255,255,255,0.7)] text-white">
-                        <svg className="w-16 h-16 md:w-20 md:h-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <svg className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                           <path d="M3 3v5h5" />
                         </svg>
-                        <span className="absolute font-mono text-sm md:text-base font-bold text-white pt-1 pointer-events-none">10</span>
+                        <span className="absolute font-mono text-xs sm:text-sm md:text-base font-bold text-white pt-1 pointer-events-none">10</span>
                       </div>
                     )}
                     {playPulseState === "skip" && (
                       <div className="relative flex items-center justify-center filter drop-shadow-[0_0_25px_rgba(255,255,255,0.7)] text-white">
-                        <svg className="w-16 h-16 md:w-20 md:h-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <svg className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.99 6.74 2.74L21 8" />
                           <path d="M21 3v5h-5" />
                         </svg>
-                        <span className="absolute font-mono text-sm md:text-base font-bold text-white pt-1 pointer-events-none">10</span>
+                        <span className="absolute font-mono text-xs sm:text-sm md:text-base font-bold text-white pt-1 pointer-events-none">10</span>
                       </div>
                     )}
                   </div>
@@ -745,14 +745,14 @@ export default function ProjectPage() {
 
                 {/* Dynamic Cinema Bottom Gradient (Smoothly visible when UI is visible or paused, fades out when idle & playing) */}
                 <div
-                  className={`absolute inset-x-0 bottom-0 pointer-events-none h-80 sm:h-96 md:h-[440px] bg-gradient-to-t from-black/95 via-black/50 to-transparent transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] z-15 ${
+                  className={`absolute inset-x-0 bottom-0 pointer-events-none h-48 sm:h-72 md:h-[440px] bg-gradient-to-t from-black/95 via-black/50 to-transparent transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] z-15 ${
                     !isIdle || !isVideoPlaying ? "opacity-100" : "opacity-0"
                   }`}
                 />
 
                 {/* Minimal Paused Info Card (Clean, unobtrusive, positioned above the bottom controls) */}
                 <div
-                  className={`absolute inset-0 z-20 pointer-events-none flex flex-col justify-end p-8 md:p-16 pb-36 md:pb-40 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  className={`absolute inset-0 z-20 pointer-events-none flex flex-col justify-end p-4 sm:p-8 md:p-16 pb-20 sm:pb-28 md:pb-36 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                     !isVideoPlaying
                       ? "opacity-100 translate-y-0"
                       : isIdle
@@ -760,17 +760,17 @@ export default function ProjectPage() {
                       : "opacity-0 pointer-events-none"
                   }`}
                 >
-                  <div className="max-w-xl md:max-w-2xl space-y-3 pointer-events-auto">
+                  <div className="max-w-md sm:max-w-xl md:max-w-2xl space-y-1.5 sm:space-y-3 pointer-events-auto">
                     <div className="flex items-center gap-2">
-                      <span className="font-inter text-xs md:text-sm tracking-widest uppercase text-white/70 font-semibold drop-shadow-md">
+                      <span className="font-inter text-[10px] sm:text-xs md:text-sm tracking-widest uppercase text-white/70 font-semibold drop-shadow-md">
                         {lang === "fr" ? "Vous regardez" : "Now watching"}
                       </span>
                     </div>
-                    <h1 className="font-syne font-black text-4xl sm:text-5xl md:text-6xl text-white tracking-tight uppercase drop-shadow-[0_10px_30px_rgba(0,0,0,0.95)]">
+                    <h1 className="font-syne font-black text-xl sm:text-3xl md:text-5xl lg:text-6xl text-white tracking-tight uppercase drop-shadow-[0_10px_30px_rgba(0,0,0,0.95)]">
                       {project.title}
                     </h1>
-                    <div className="flex items-center flex-wrap gap-3 font-mono text-[11px] text-white/80 font-medium pt-1">
-                      <span className="text-white font-bold bg-white/10 px-2 py-0.5 rounded border border-white/20">{project.year}</span>
+                    <div className="flex items-center flex-wrap gap-2 sm:gap-3 font-mono text-[10px] sm:text-[11px] text-white/80 font-medium pt-0.5">
+                      <span className="text-white font-bold bg-white/10 px-1.5 py-0.5 rounded border border-white/20">{project.year}</span>
                       <span className="text-white/40">•</span>
                       <span>{project.category || (lang === "fr" ? "Vidéo" : "Video")}</span>
                       {videoDur > 0 && (
@@ -781,7 +781,7 @@ export default function ProjectPage() {
                       )}
                     </div>
                     {project.descriptionFr && (
-                      <p className="font-inter text-xs sm:text-sm text-white/80 leading-relaxed max-w-lg pt-1 drop-shadow-md">
+                      <p className="font-inter text-[10px] sm:text-xs md:text-sm text-white/80 leading-relaxed max-w-lg pt-0.5 drop-shadow-md line-clamp-2 sm:line-clamp-none">
                         {lang === "fr" ? project.descriptionFr : (project.descriptionEn || project.descriptionFr)}
                       </p>
                     )}
@@ -794,7 +794,7 @@ export default function ProjectPage() {
                   onMouseDown={(e) => { e.stopPropagation(); }}
                   onTouchStart={(e) => { e.stopPropagation(); }}
                   onDoubleClick={(e) => { e.stopPropagation(); }}
-                  className={`absolute inset-x-0 bottom-6 md:bottom-10 z-40 px-4 sm:px-8 md:px-44 lg:px-56 xl:px-64 flex flex-col items-center justify-end pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  className={`absolute inset-x-0 bottom-2 sm:bottom-4 md:bottom-10 z-40 px-3 sm:px-6 md:px-44 lg:px-56 xl:px-64 flex flex-col items-center justify-end pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                     isIdle && isVideoPlaying
                       ? "opacity-0 translate-y-6"
                       : "opacity-100 translate-y-0"
