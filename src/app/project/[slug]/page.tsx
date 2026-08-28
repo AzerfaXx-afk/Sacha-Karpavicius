@@ -139,20 +139,7 @@ export default function ProjectPage() {
 
     startPlayback();
 
-    // Also attach once to window for instant unmute/play on ANY first interaction
-    const handleFirstInteraction = () => {
-      if (vid && vid.paused) {
-        startPlayback();
-      }
-    };
-    window.addEventListener("click", handleFirstInteraction, { once: true });
-    window.addEventListener("touchstart", handleFirstInteraction, { once: true });
-    window.addEventListener("keydown", handleFirstInteraction, { once: true });
-
     return () => {
-      window.removeEventListener("click", handleFirstInteraction);
-      window.removeEventListener("touchstart", handleFirstInteraction);
-      window.removeEventListener("keydown", handleFirstInteraction);
       resumeAudio(true);
     };
   }, [project?.slug, project?.videoUrl, pauseAudio, resumeAudio]);
@@ -372,7 +359,7 @@ export default function ProjectPage() {
   const togglePlayVideo = useCallback(() => {
     const vid = videoRef.current;
     if (!vid) return;
-    if (vid.paused) {
+    if (vid.paused || vid.ended) {
       vid.play().then(() => {
         setIsVideoPlaying(true);
         triggerPulse("play");
