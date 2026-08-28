@@ -15,8 +15,8 @@ html {
   overscroll-behavior-y: none;
 }
 
-section[id] {
-  scroll-margin-top: 84px;
+section[id], footer[id] {
+  scroll-margin-top: 0px !important;
 }
 
 html.lenis,

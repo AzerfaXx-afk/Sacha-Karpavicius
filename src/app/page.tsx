@@ -1338,7 +1338,7 @@ export default function Home() {
     }
   }, []);
 
-  // Preload all project cover images for 60 FPS stutter-free scrolling
+  // Preload all project cover images & video streams for 60 FPS stutter-free scrolling & instant extraits
   useEffect(() => {
     if (typeof window === "undefined") return;
     const allImages = [
@@ -1350,6 +1350,18 @@ export default function Home() {
       if (src) {
         const img = new window.Image();
         img.src = src;
+      }
+    });
+
+    // Background warmup of video elements to ensure instant playback without lag
+    videoProjectsData.forEach((vp) => {
+      if (vp.videoUrl) {
+        const v = document.createElement("video");
+        v.preload = "auto";
+        v.muted = true;
+        v.playsInline = true;
+        v.src = vp.videoUrl;
+        v.load();
       }
     });
   }, []);
