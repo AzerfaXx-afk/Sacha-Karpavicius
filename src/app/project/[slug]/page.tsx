@@ -583,10 +583,23 @@ export default function ProjectPage() {
           lang={lang}
           onComplete={() => {
             setHasDismissedRotate(true);
-            setIsForcedLandscapeCSS(isPortrait);
+            const isCurrentlyPortrait = window.innerHeight > window.innerWidth;
+            setIsForcedLandscapeCSS(isCurrentlyPortrait);
             const vid = videoRef.current;
             if (vid) {
-              vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+              vid.muted = false;
+              setIsVideoMuted(false);
+              vid.play().then(() => {
+                setIsVideoPlaying(true);
+                pauseAudio(true);
+              }).catch(() => {
+                vid.muted = true;
+                setIsVideoMuted(true);
+                vid.play().then(() => {
+                  setIsVideoPlaying(true);
+                  pauseAudio(true);
+                }).catch(() => {});
+              });
             }
           }}
         />
@@ -631,7 +644,7 @@ export default function ProjectPage() {
                   ref={videoRef}
                   src={project.videoUrl}
                   poster={project.coverImage || project.heroImage}
-                  autoPlay
+                  autoPlay={!isMobileDevice}
                   loop
                   muted={isVideoMuted}
                   playsInline
@@ -640,13 +653,13 @@ export default function ProjectPage() {
                     const vid = e.currentTarget;
                     setVideoDur(vid.duration || 0);
                     setVideoTime(vid.currentTime || 0);
-                    if (vid.paused) {
+                    if ((!isMobileDevice || hasDismissedRotate) && vid.paused) {
                       vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
                     }
                   }}
                   onCanPlay={(e) => {
                     const vid = e.currentTarget;
-                    if (vid.paused) {
+                    if ((!isMobileDevice || hasDismissedRotate) && vid.paused) {
                       vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
                     }
                   }}
