@@ -475,12 +475,13 @@ function VideoCardItem({
   const [isFading, setIsFading] = useState(false);
   const [isMobileInView, setIsMobileInView] = useState(false);
   const [activeClipIndex, setActiveClipIndex] = useState(0);
+  const [clipProgress, setClipProgress] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const clipIndexRef = useRef<number>(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const clipStartTimeRef = useRef<number>(0);
+  const rafRef = useRef<number | null>(null);
 
   const isPoster = project.coverImage.toLowerCase().includes("affiche");
 
@@ -505,20 +506,20 @@ function VideoCardItem({
 
   const shouldPlay = isHovered || isMobileInView;
 
-  // 5 Strategic high-impact moments per video (5s each)
+  // 5 Strategic high-impact moments per video (deep inside the action, 5s each)
   const getStrategicClips = useCallback((duration: number, slug: string) => {
-    const total = duration && !isNaN(duration) && duration > 15 ? duration : 140;
+    const total = duration && !isNaN(duration) && duration > 20 ? duration : 180;
     if (slug === "au-grand-jour") {
-      // 5 strategic moments in AU GRAND JOUR
-      return [4, 24, 52, 85, 120].map(t => Math.min(t, Math.max(1, total - 6)));
+      // 5 strategic core scenes in AU GRAND JOUR
+      return [35, 70, 105, 145, 185].map(t => Math.min(t, Math.max(2, total - 7)));
     } else if (slug === "maladaptive") {
-      // 5 strategic moments in MALADAPTIVE
-      return [5, 28, 62, 98, 138].map(t => Math.min(t, Math.max(1, total - 6)));
+      // 5 strategic core scenes in MALADAPTIVE
+      return [22, 50, 85, 120, 160].map(t => Math.min(t, Math.max(2, total - 7)));
     } else if (slug === "festival-in-and-out" || slug === "nice-queer") {
-      // 5 strategic moments in BANDE ANNONCE
-      return [4, 18, 34, 50, 68].map(t => Math.min(t, Math.max(1, total - 6)));
+      // 5 strategic core scenes in BANDE ANNONCE
+      return [12, 26, 42, 58, 74].map(t => Math.min(t, Math.max(2, total - 7)));
     }
-    return [4, total * 0.25, total * 0.5, total * 0.72, total * 0.88];
+    return [total * 0.15, total * 0.35, total * 0.55, total * 0.72, total * 0.88];
   }, []);
 
   useEffect(() => {
@@ -529,9 +530,10 @@ function VideoCardItem({
       vid.muted = true;
       clipIndexRef.current = 0;
       setActiveClipIndex(0);
+      setClipProgress(0);
       setIsFading(false);
 
-      const dur = vid.duration || 100;
+      const dur = vid.duration || 120;
       const clips = getStrategicClips(dur, project.slug || project.id);
 
       try {
@@ -539,66 +541,70 @@ function VideoCardItem({
       } catch (_) { }
 
       vid.play()
-        .then(() => setIsPlayingPreview(true))
+        .then(() => {
+          setIsPlayingPreview(true);
+          clipStartTimeRef.current = performance.now();
+        })
         .catch(() => { });
 
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
+      clipStartTimeRef.current = performance.now();
 
-      // Cycle to the next strategic clip every 5000ms with cinematic 250ms soft dissolve
-      intervalRef.current = setInterval(() => {
-        if (!vid) return;
+      // Real-time animation frame loop for progressive 5s segment filling and flawless clip switching
+      const loop = (now: number) => {
+        const elapsed = now - clipStartTimeRef.current;
+        const clipDurationMs = 5000;
+        const progress = Math.min(1, Math.max(0, elapsed / clipDurationMs));
+        setClipProgress(progress);
 
-        // Soft dissolve just before keyframe seek
-        setIsFading(true);
+        // Soft dissolve 200ms before clip ends
+        if (elapsed >= clipDurationMs - 200 && !isFading) {
+          setIsFading(true);
+        }
 
-        fadeTimeoutRef.current = setTimeout(() => {
-          if (!vid) return;
-          const currentDur = vid.duration || 100;
+        if (elapsed >= clipDurationMs) {
+          const currentDur = vid.duration || 120;
           const currentClips = getStrategicClips(currentDur, project.slug || project.id);
 
           clipIndexRef.current = (clipIndexRef.current + 1) % currentClips.length;
           setActiveClipIndex(clipIndexRef.current);
-          const nextTime = currentClips[clipIndexRef.current];
+          clipStartTimeRef.current = now;
+          setClipProgress(0);
 
+          const nextTime = currentClips[clipIndexRef.current];
           try {
             vid.currentTime = nextTime;
             vid.play().catch(() => { });
           } catch (_) { }
 
-          // Quick recovery after frame decode
           setTimeout(() => {
             setIsFading(false);
           }, 80);
-        }, 220);
-      }, 5000);
+        }
+
+        rafRef.current = requestAnimationFrame(loop);
+      };
+
+      rafRef.current = requestAnimationFrame(loop);
     } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      if (fadeTimeoutRef.current) {
-        clearTimeout(fadeTimeoutRef.current);
-        fadeTimeoutRef.current = null;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
       }
       vid.pause();
       setIsPlayingPreview(false);
       setIsFading(false);
       clipIndexRef.current = 0;
       setActiveClipIndex(0);
+      setClipProgress(0);
     }
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      if (fadeTimeoutRef.current) {
-        clearTimeout(fadeTimeoutRef.current);
-        fadeTimeoutRef.current = null;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
       }
     };
-  }, [shouldPlay, project.videoUrl, project.slug, project.id, getStrategicClips]);
+  }, [shouldPlay, project.videoUrl, project.slug, project.id, isFading, getStrategicClips]);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -674,32 +680,26 @@ function VideoCardItem({
         {/* Hover dark overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500 pointer-events-none z-20" />
 
-        {/* YouTube / Stories Style 5-Segment Clip Progress Bar */}
+        {/* YouTube / Stories Style 5-Segment Clip Progress Bar with Real-Time Smooth Filling */}
         {project.videoUrl && (
           <div className={`absolute bottom-4 left-6 right-6 z-30 flex items-center gap-1.5 transition-opacity duration-500 ${shouldPlay ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-            {[0, 1, 2, 3, 4].map((segIdx) => (
-              <div key={segIdx} className="flex-1 h-[3px] bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
-                <div
-                  className={`h-full bg-white transition-all duration-300 rounded-full ${
-                    segIdx < activeClipIndex
-                      ? "w-full"
-                      : segIdx === activeClipIndex
-                      ? "w-full animate-[progress5s_5s_linear]"
-                      : "w-0"
-                  }`}
-                  style={{
-                    animationDuration: segIdx === activeClipIndex ? "5000ms" : undefined,
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        )}
+            {[0, 1, 2, 3, 4].map((segIdx) => {
+              const widthPct =
+                segIdx < activeClipIndex
+                  ? 100
+                  : segIdx === activeClipIndex
+                  ? clipProgress * 100
+                  : 0;
 
-        {/* Top-Right Clip Counter Badge */}
-        {project.videoUrl && (
-          <div className={`absolute top-4 right-4 z-30 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 font-mono text-[9px] tracking-widest text-white/80 transition-opacity duration-500 uppercase ${shouldPlay ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-            EXTRAIT 0{activeClipIndex + 1}/05
+              return (
+                <div key={segIdx} className="flex-1 h-[3px] bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
+                  <div
+                    className="h-full bg-white rounded-full will-change-[width]"
+                    style={{ width: `${widthPct}%` }}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
