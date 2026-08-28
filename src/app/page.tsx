@@ -725,6 +725,60 @@ export default function Home() {
   const isMenuOpenRef = useRef(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
+  // Magnetic Precision Section Landing: aligns manual scrolling with exact menu targets
+  useEffect(() => {
+    let scrollTimeout: NodeJS.Timeout | null = null;
+    let isAutoSnapping = false;
+
+    const handleScrollSnap = () => {
+      if (isAutoSnapping || isMenuOpenRef.current) return;
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+
+      scrollTimeout = setTimeout(() => {
+        const sections = ["photos", "videos", "about", "contact"]
+          .map((id) => document.getElementById(id))
+          .filter(Boolean) as HTMLElement[];
+
+        const currentY = window.scrollY;
+        const threshold = window.innerWidth < 768 ? 95 : 140;
+
+        for (const sec of sections) {
+          const targetY = sec.offsetTop;
+          const diff = currentY - targetY;
+
+          // If user scrolled close to the section header anchor
+          if (Math.abs(diff) > 6 && Math.abs(diff) <= threshold) {
+            const lenis = (window as any).__lenis;
+            isAutoSnapping = true;
+            if (lenis && typeof lenis.scrollTo === "function") {
+              lenis.scrollTo(targetY, {
+                duration: 0.85,
+                easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+                onComplete: () => {
+                  setTimeout(() => {
+                    isAutoSnapping = false;
+                  }, 120);
+                },
+              });
+            } else {
+              window.scrollTo({ top: targetY, behavior: "smooth" });
+              setTimeout(() => {
+                isAutoSnapping = false;
+              }, 500);
+            }
+            break;
+          }
+        }
+      }, 150);
+    };
+
+    window.addEventListener("scroll", handleScrollSnap, { passive: true });
+    return () => {
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+      window.removeEventListener("scroll", handleScrollSnap);
+    };
+  }, []);
+
   // Refs for curtain redirection transition
   const redirectCurtainRef = useRef<HTMLDivElement>(null);
   const redirectTextRef = useRef<HTMLDivElement>(null);
