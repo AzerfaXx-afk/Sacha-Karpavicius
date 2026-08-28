@@ -180,10 +180,10 @@ const AboutImageCard = ({ isMenuOpen }: { isMenuOpen: boolean }) => {
   // Mobile Gyroscope tilt interaction
   useEffect(() => {
     if (typeof window === "undefined") return;
-    
+
     const handleOrientation = (e: DeviceOrientationEvent) => {
       if (isTouching.current || e.gamma == null || e.beta == null || !cardRef.current || !imgRef.current || isMenuOpen) return;
-      
+
       const rawX = gsap.utils.clamp(-30, 30, e.gamma * 0.9);
       const rawY = gsap.utils.clamp(-30, 30, (e.beta - 50) * 0.9);
 
@@ -313,7 +313,7 @@ const InteractiveListItem = ({ text, onMouseEnter, onClick }: { text: string; on
   };
 
   return (
-    <li 
+    <li
       onMouseEnter={onMouseEnter}
       onClick={onClick}
       onTouchStart={handleTouchStart}
@@ -387,7 +387,7 @@ class GaplessPlayer {
     if (typeof window === "undefined") return;
     const AudioContextClass = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextClass) return;
-    
+
     try {
       this.ctx = new AudioContextClass();
       const response = await fetch(this.url);
@@ -412,7 +412,7 @@ class GaplessPlayer {
 
     // Always attempt resume (no-op if already running)
     if (this.ctx.state === "suspended") {
-      this.ctx.resume().catch(() => {});
+      this.ctx.resume().catch(() => { });
     }
 
     this.source = this.ctx.createBufferSource();
@@ -531,11 +531,11 @@ function VideoCardItem({
 
       try {
         vid.currentTime = clips[0];
-      } catch (_) {}
+      } catch (_) { }
 
       vid.play()
         .then(() => setIsPlayingPreview(true))
-        .catch(() => {});
+        .catch(() => { });
 
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
@@ -557,8 +557,8 @@ function VideoCardItem({
 
           try {
             vid.currentTime = nextTime;
-            vid.play().catch(() => {});
-          } catch (_) {}
+            vid.play().catch(() => { });
+          } catch (_) { }
 
           setTimeout(() => {
             setIsFading(false);
@@ -640,9 +640,8 @@ function VideoCardItem({
             src={project.coverImage}
             alt={project.title}
             fill
-            className={`${
-              isPoster ? "object-contain p-4 md:p-8 drop-shadow-[0_25px_60px_rgba(0,0,0,0.9)]" : "object-cover"
-            } object-center transition-all duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-105 brightness-[1.03] contrast-[1.05] transform-gpu`}
+            className={`${isPoster ? "object-contain p-4 md:p-8 drop-shadow-[0_25px_60px_rgba(0,0,0,0.9)]" : "object-cover"
+              } object-center transition-all duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-105 brightness-[1.03] contrast-[1.05] transform-gpu`}
             quality={100}
             sizes="100vw"
             priority={idx < 2}
@@ -659,9 +658,8 @@ function VideoCardItem({
             playsInline
             preload="metadata"
             onPlaying={() => setIsPlayingPreview(true)}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${
-              isPlayingPreview && !isFading ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${isPlayingPreview && !isFading ? "opacity-100" : "opacity-0"
+              }`}
           />
         )}
 
@@ -701,13 +699,13 @@ export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
   const [lang, setLang] = useState<"fr" | "en">("fr");
   const [isProjectTransitioning, setIsProjectTransitioning] = useState(false);
-  
+
   // Mobile responsive enhancements: Touch-hover and Gyroscope Guide
   const [touchHoveredIndex, setTouchHoveredIndex] = useState<number | null>(null);
   const [showGyroIndicator, setShowGyroIndicator] = useState(false);
   const touchHoverTimeout = useRef<NodeJS.Timeout | null>(null);
   const touchStartPos = useRef({ x: 0, y: 0 });
-  
+
   const [isContactTouchHovered, setIsContactTouchHovered] = useState(false);
   const contactTouchStartPos = useRef({ x: 0, y: 0 });
   const contactTouchTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -810,21 +808,21 @@ export default function Home() {
   const playHoverSfx = useCallback(() => {
     if (hoverAudioRef.current) {
       hoverAudioRef.current.currentTime = 0;
-      hoverAudioRef.current.play().catch(() => {});
+      hoverAudioRef.current.play().catch(() => { });
     }
   }, []);
 
   const playClickSfx = useCallback(() => {
     if (clickAudioRef.current) {
       clickAudioRef.current.currentTime = 0;
-      clickAudioRef.current.play().catch(() => {});
+      clickAudioRef.current.play().catch(() => { });
     }
   }, []);
 
   const playEntranceSfx = useCallback(() => {
     if (entranceAudioRef.current) {
       entranceAudioRef.current.currentTime = 0;
-      entranceAudioRef.current.play().catch(() => {});
+      entranceAudioRef.current.play().catch(() => { });
     }
   }, []);
 
@@ -1017,7 +1015,7 @@ export default function Home() {
   // Gyroscope guide icon idle detection
   useEffect(() => {
     if (!siteStarted) return;
-    
+
     let timer: NodeJS.Timeout;
     let initialGamma: number | null = null;
     let initialBeta: number | null = null;
@@ -1041,10 +1039,10 @@ export default function Home() {
         initialBeta = e.beta;
         return;
       }
-      
+
       const deltaGamma = Math.abs(e.gamma - initialGamma);
       const deltaBeta = Math.abs(e.beta - initialBeta);
-      
+
       // If phone tilts by more than 2 degrees, consider it active explorer (hide indicator and reset timer)
       if (deltaGamma > 2 || deltaBeta > 2) {
         initialGamma = e.gamma;
@@ -1122,7 +1120,7 @@ export default function Home() {
       onComplete: () => {
         // Safe navigation on same window to bypass mobile popup blockers and launch app directly
         window.location.href = "https://www.instagram.com/sachakarpaviciusss/";
-        
+
         // Safety fallback: slide curtain out after redirection starts
         gsap.to(redirectCurtainRef.current, {
           yPercent: -100,
@@ -1177,7 +1175,7 @@ export default function Home() {
     // Stagger character animations for "INSTAGRAM"
     if (redirectTextRef.current) {
       const chars = redirectTextRef.current.querySelectorAll(".reveal-char");
-      tl.fromTo(chars, 
+      tl.fromTo(chars,
         { y: 40, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.35, ease: "power3.out", stagger: 0.02 },
         0.25 // trigger when curtain covers screen
@@ -1227,7 +1225,7 @@ export default function Home() {
     img.style.width = "100%";
     img.style.height = "100%";
     img.style.objectFit = "cover";
-    
+
     // Parse objectPosition (e.g. object-[center_28%] -> center 28%)
     const rawPos = project.objectPosition || "";
     const cleanPos = rawPos.includes("[") ? rawPos.split("[")[1].split("]")[0].replace("_", " ") : "center 28%";
@@ -1493,7 +1491,7 @@ export default function Home() {
       // Mobile: Gyroscope / Tilt tracking
       const handleOrientation = (e: DeviceOrientationEvent) => {
         if (e.gamma == null || e.beta == null || isHoveringNameRef.current || isMenuOpenRef.current) return;
-        
+
         // Map tilt angles to wider translation limits (-55px to 55px) and center around normal holding angle (45-50deg)
         const xPos = gsap.utils.clamp(-55, 55, e.gamma * 1.5);
         const yPos = gsap.utils.clamp(-55, 55, (e.beta - 50) * 1.5);
@@ -1555,10 +1553,10 @@ export default function Home() {
       {/* Preloader */}
       {loading && <Preloader onComplete={onPreloaderComplete} onStart={handleStartSite} onHoverChange={setIsHoveringName} lang={lang} />}
 
-      <Navbar 
-        showUI={hasEnteredSite || siteStarted || isHoveringName} 
-        clickable={hasEnteredSite || siteStarted} 
-        lang={lang} 
+      <Navbar
+        showUI={hasEnteredSite || siteStarted || isHoveringName}
+        clickable={hasEnteredSite || siteStarted}
+        lang={lang}
         onPlayClickSfx={playClickSfx}
         onPlayHoverSfx={playHoverSfx}
         onMenuToggle={setIsMenuOpen}
@@ -1581,8 +1579,8 @@ export default function Home() {
 
       {/* Persistent Get In Touch (Bottom Left) */}
       <div ref={getInTouchRef} className={`fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference opacity-0 ${hasEnteredSite || siteStarted ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-        <a 
-          href="#contact" 
+        <a
+          href="#contact"
           onClick={(e) => {
             e.preventDefault();
             playClickSfx();
@@ -1636,7 +1634,7 @@ export default function Home() {
 
 
       {/* Awwwards Curtain Redirect Overlay */}
-      <div 
+      <div
         ref={redirectCurtainRef}
         className="fixed inset-0 z-[9999] bg-[#050505] flex flex-col items-center justify-center pointer-events-none transform-gpu"
         style={{ transform: "translateY(100%)" }}
@@ -1715,7 +1713,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ WORKS / PHOTOS SECTION (01) ═══════════════════ */}
-      <section ref={worksRef} id="photos" className="relative bg-[#0d0d0d] pt-12 md:pt-[72px] pb-20 md:pb-32 scroll-mt-0">
+      <section ref={worksRef} id="photos" className="relative bg-[#0d0d0d] pt-12 md:pt-[90px] pb-20 md:pb-32 scroll-mt-0">
         {/* Section header */}
         <div className="px-5 md:px-16 mb-8 md:mb-12">
           <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
@@ -1747,9 +1745,9 @@ export default function Home() {
               onTouchStart={(e) => {
                 const touch = e.touches[0];
                 touchStartPos.current = { x: touch.clientX, y: touch.clientY };
-                
+
                 if (touchHoverTimeout.current) clearTimeout(touchHoverTimeout.current);
-                
+
                 // Trigger touch-hover if they hold for 100ms
                 touchHoverTimeout.current = setTimeout(() => {
                   setTouchHoveredIndex(idx);
@@ -1815,7 +1813,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ PROJETS VIDÉOS SECTION (02) ═══════════════════ */}
-      <section id="videos" className="relative bg-[#050505] pt-12 md:pt-[72px] pb-20 md:pb-32 scroll-mt-0">
+      <section id="videos" className="relative bg-[#050505] pt-12 md:pt-[90px] pb-20 md:pb-32 scroll-mt-0">
         <div className="px-5 md:px-16 mb-8 md:mb-12">
           <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
@@ -1846,7 +1844,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ ABOUT SECTION (03) ═══════════════════ */}
-      <section ref={aboutRef} id="about" className="relative bg-[#0d0d0d] min-h-screen flex flex-col justify-between pt-12 md:pt-[72px] pb-12 md:pb-16 overflow-hidden scroll-mt-0">
+      <section ref={aboutRef} id="about" className="relative bg-[#0d0d0d] min-h-screen flex flex-col justify-between pt-12 md:pt-[102px] pb-12 md:pb-16 overflow-hidden scroll-mt-0">
         <div className="px-5 md:px-16 flex-1 flex flex-col justify-between">
           <div>
             <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
@@ -1871,7 +1869,7 @@ export default function Home() {
                 {/* Artistic Quote */}
                 <div className="border-l border-white/30 pl-4 py-0.5">
                   <p className="font-inter text-[14px] md:text-[16px] leading-relaxed text-white/80 tracking-tight">
-                    {lang === "fr" 
+                    {lang === "fr"
                       ? "« Créer, expérimenter et explorer de nouveaux territoires visuels pour transmettre des émotions. »"
                       : "« Creating, experimenting, and exploring new visual realms to convey authentic emotions. »"
                     }
@@ -1925,7 +1923,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ CONTACT / FOOTER (04) ═══════════════════ */}
-      <footer ref={contactRef} id="contact" className="relative bg-[#050505] pt-12 md:pt-[72px] pb-4 md:pb-12 min-h-[85vh] md:min-h-screen flex flex-col justify-between overflow-hidden scroll-mt-0">
+      <footer ref={contactRef} id="contact" className="relative bg-[#050505] pt-12 md:pt-[85px] pb-4 md:pb-12 min-h-[85vh] md:min-h-screen flex flex-col justify-between overflow-hidden scroll-mt-0">
         <div className="px-5 md:px-16 flex-1 flex flex-col justify-between">
           <div>
             <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
@@ -1958,7 +1956,7 @@ export default function Home() {
                     className="group relative inline-flex items-center justify-center overflow-hidden px-6 py-3 md:px-10 md:py-4 rounded-full border border-white/10 hover:border-white/30 bg-white/[0.02] transition-[border-color,box-shadow,opacity] duration-500 font-syne font-semibold text-[14px] sm:text-[18px] md:text-[22px] text-white cursor-pointer hover:shadow-[0_0_30px_rgba(255,255,255,0.06)]"
                   >
                     <span className="absolute w-[120%] aspect-square bg-white rounded-full scale-0 group-hover:scale-[2.2] transition-transform duration-[600ms] ease-[cubic-bezier(0.76,0,0.24,1)] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" />
-                    
+
                     <span className="btn-content relative z-10 flex items-center justify-center pointer-events-none">
                       <span className="relative overflow-hidden flex items-center h-[1.2em]">
                         <span className="inline-block transition-transform duration-500 ease-out group-hover:-translate-y-[120%]">
