@@ -503,16 +503,33 @@ function VideoCardItem({
 
   const shouldPlay = isHovered || isMobileInView;
 
-  // Handle Playback & Progress Loop
+  // Handle Playback & 60fps Micro-Smooth Progress Loop via requestAnimationFrame
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid || !previewSource) return;
+
+    let rafId: number;
+
+    const updateFrame = () => {
+      if (vid && !vid.paused) {
+        const ct = vid.currentTime || 0;
+        // Total preview is 25s (5 clips of 5s each)
+        const clipIdx = Math.min(4, Math.max(0, Math.floor(ct / 5)));
+        const prog = Math.min(1, Math.max(0, (ct % 5) / 5));
+        setActiveClipIndex(clipIdx);
+        setClipProgress(prog);
+      }
+      rafId = requestAnimationFrame(updateFrame);
+    };
 
     if (shouldPlay) {
       vid.muted = true;
       vid.currentTime = 0;
       vid.play()
-        .then(() => setIsPlayingPreview(true))
+        .then(() => {
+          setIsPlayingPreview(true);
+          rafId = requestAnimationFrame(updateFrame);
+        })
         .catch(() => {});
     } else {
       vid.pause();
@@ -521,17 +538,11 @@ function VideoCardItem({
       setActiveClipIndex(0);
       setClipProgress(0);
     }
-  }, [shouldPlay, previewSource]);
 
-  const handleTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const vid = e.currentTarget;
-    const ct = vid.currentTime || 0;
-    // Total preview is 25s (5 clips of 5s each)
-    const clipIdx = Math.min(4, Math.max(0, Math.floor(ct / 5)));
-    const prog = (ct % 5) / 5;
-    setActiveClipIndex(clipIdx);
-    setClipProgress(prog);
-  };
+    return () => {
+      cancelAnimationFrame(rafId);
+    };
+  }, [shouldPlay, previewSource]);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -598,7 +609,6 @@ function VideoCardItem({
             muted
             playsInline
             preload="auto"
-            onTimeUpdate={handleTimeUpdate}
             onPlaying={() => setIsPlayingPreview(true)}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${isPlayingPreview ? "opacity-100" : "opacity-0"
               }`}
