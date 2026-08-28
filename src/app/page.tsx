@@ -1761,7 +1761,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ PROJETS VIDÉOS SECTION (02) ═══════════════════ */}
-      <section id="videos" className="relative bg-[#050505] pt-28 md:pt-[140px] pb-24 md:pb-36 scroll-mt-0">
+      <section id="videos" className="relative bg-[#050505] pt-16 md:pt-[92px] pb-20 md:pb-32 scroll-mt-0">
         <div className="px-5 md:px-16 mb-8 md:mb-12">
           <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
@@ -1792,7 +1792,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ ABOUT SECTION (03) ═══════════════════ */}
-      <section ref={aboutRef} id="about" className="relative bg-[#0d0d0d] min-h-screen flex flex-col justify-between pt-24 md:pt-[120px] pb-8 md:pb-12 overflow-hidden scroll-mt-0">
+      <section ref={aboutRef} id="about" className="relative bg-[#0d0d0d] min-h-screen flex flex-col justify-between pt-16 md:pt-[92px] pb-8 md:pb-12 overflow-hidden scroll-mt-0">
         <div className="px-5 md:px-16 flex-1 flex flex-col justify-between">
           <div>
             <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
