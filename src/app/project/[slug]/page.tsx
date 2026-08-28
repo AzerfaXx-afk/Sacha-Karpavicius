@@ -405,13 +405,15 @@ export default function ProjectPage() {
       vid.play().then(() => {
         setIsVideoPlaying(true);
         triggerPulse("play");
+        pauseAudio(true);
       }).catch(() => {});
     } else {
       vid.pause();
       setIsVideoPlaying(false);
       triggerPulse("pause");
+      resumeAudio(true);
     }
-  }, [triggerPulse]);
+  }, [triggerPulse, pauseAudio, resumeAudio]);
 
   const toggleFullscreen = useCallback(() => {
     const container = heroRef.current;
