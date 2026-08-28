@@ -305,4 +305,14 @@ h1, h2, h3, h4, h5, h6, p, span, a {
   transform-origin: center center;
 }
 
+@keyframes progress5s {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+
 

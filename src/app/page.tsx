@@ -474,6 +474,7 @@ function VideoCardItem({
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const [isFading, setIsFading] = useState(false);
   const [isMobileInView, setIsMobileInView] = useState(false);
+  const [activeClipIndex, setActiveClipIndex] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -504,18 +505,21 @@ function VideoCardItem({
 
   const shouldPlay = isHovered || isMobileInView;
 
-  // 5 Strategic high-impact moments per video
-  const getStrategicClips = (duration: number, slug: string) => {
-    const total = duration && !isNaN(duration) && duration > 15 ? duration : 120;
+  // 5 Strategic high-impact moments per video (5s each)
+  const getStrategicClips = useCallback((duration: number, slug: string) => {
+    const total = duration && !isNaN(duration) && duration > 15 ? duration : 140;
     if (slug === "au-grand-jour") {
-      return [4, 25, 55, 90, 130].map(t => Math.min(t, Math.max(1, total - 6)));
+      // 5 strategic moments in AU GRAND JOUR
+      return [4, 24, 52, 85, 120].map(t => Math.min(t, Math.max(1, total - 6)));
     } else if (slug === "maladaptive") {
-      return [5, 30, 65, 105, 145].map(t => Math.min(t, Math.max(1, total - 6)));
+      // 5 strategic moments in MALADAPTIVE
+      return [5, 28, 62, 98, 138].map(t => Math.min(t, Math.max(1, total - 6)));
     } else if (slug === "festival-in-and-out" || slug === "nice-queer") {
-      return [4, 18, 35, 52, 70].map(t => Math.min(t, Math.max(1, total - 6)));
+      // 5 strategic moments in BANDE ANNONCE
+      return [4, 18, 34, 50, 68].map(t => Math.min(t, Math.max(1, total - 6)));
     }
     return [4, total * 0.25, total * 0.5, total * 0.72, total * 0.88];
-  };
+  }, []);
 
   useEffect(() => {
     const vid = videoRef.current;
@@ -524,9 +528,10 @@ function VideoCardItem({
     if (shouldPlay) {
       vid.muted = true;
       clipIndexRef.current = 0;
+      setActiveClipIndex(0);
       setIsFading(false);
 
-      const dur = vid.duration || 50;
+      const dur = vid.duration || 100;
       const clips = getStrategicClips(dur, project.slug || project.id);
 
       try {
@@ -540,19 +545,20 @@ function VideoCardItem({
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
 
-      // Cycle to the next strategic clip every 5 seconds with silky smooth 300ms dissolve
+      // Cycle to the next strategic clip every 5000ms with cinematic 250ms soft dissolve
       intervalRef.current = setInterval(() => {
         if (!vid) return;
 
-        // Brief cinematic soft dissolve just before keyframe jump
+        // Soft dissolve just before keyframe seek
         setIsFading(true);
 
         fadeTimeoutRef.current = setTimeout(() => {
           if (!vid) return;
-          const currentDur = vid.duration || 50;
+          const currentDur = vid.duration || 100;
           const currentClips = getStrategicClips(currentDur, project.slug || project.id);
 
           clipIndexRef.current = (clipIndexRef.current + 1) % currentClips.length;
+          setActiveClipIndex(clipIndexRef.current);
           const nextTime = currentClips[clipIndexRef.current];
 
           try {
@@ -560,10 +566,11 @@ function VideoCardItem({
             vid.play().catch(() => { });
           } catch (_) { }
 
+          // Quick recovery after frame decode
           setTimeout(() => {
             setIsFading(false);
-          }, 100);
-        }, 300);
+          }, 80);
+        }, 220);
       }, 5000);
     } else {
       if (intervalRef.current) {
@@ -578,6 +585,7 @@ function VideoCardItem({
       setIsPlayingPreview(false);
       setIsFading(false);
       clipIndexRef.current = 0;
+      setActiveClipIndex(0);
     }
 
     return () => {
@@ -590,7 +598,7 @@ function VideoCardItem({
         fadeTimeoutRef.current = null;
       }
     };
-  }, [shouldPlay, project.videoUrl, project.slug, project.id]);
+  }, [shouldPlay, project.videoUrl, project.slug, project.id, getStrategicClips]);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -656,7 +664,7 @@ function VideoCardItem({
             loop
             muted
             playsInline
-            preload="metadata"
+            preload="auto"
             onPlaying={() => setIsPlayingPreview(true)}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${isPlayingPreview && !isFading ? "opacity-100" : "opacity-0"
               }`}
@@ -665,6 +673,35 @@ function VideoCardItem({
 
         {/* Hover dark overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500 pointer-events-none z-20" />
+
+        {/* YouTube / Stories Style 5-Segment Clip Progress Bar */}
+        {project.videoUrl && (
+          <div className={`absolute bottom-4 left-6 right-6 z-30 flex items-center gap-1.5 transition-opacity duration-500 ${shouldPlay ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+            {[0, 1, 2, 3, 4].map((segIdx) => (
+              <div key={segIdx} className="flex-1 h-[3px] bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
+                <div
+                  className={`h-full bg-white transition-all duration-300 rounded-full ${
+                    segIdx < activeClipIndex
+                      ? "w-full"
+                      : segIdx === activeClipIndex
+                      ? "w-full animate-[progress5s_5s_linear]"
+                      : "w-0"
+                  }`}
+                  style={{
+                    animationDuration: segIdx === activeClipIndex ? "5000ms" : undefined,
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Top-Right Clip Counter Badge */}
+        {project.videoUrl && (
+          <div className={`absolute top-4 right-4 z-30 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 font-mono text-[9px] tracking-widest text-white/80 transition-opacity duration-500 uppercase ${shouldPlay ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+            EXTRAIT 0{activeClipIndex + 1}/05
+          </div>
+        )}
       </div>
 
       {/* Project Info Bar below card — EXACT SAME FORMAT AS PHOTO CARDS */}
