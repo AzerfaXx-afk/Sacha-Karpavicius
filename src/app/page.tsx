@@ -506,33 +506,15 @@ function VideoCardItem({
 
   // 5 Strategic high-impact moments per video
   const getStrategicClips = (duration: number, slug: string) => {
-    const total = duration && !isNaN(duration) && duration > 20 ? duration : 180;
+    const total = duration && !isNaN(duration) && duration > 15 ? duration : 120;
     if (slug === "au-grand-jour") {
-      return [
-        Math.min(15, total * 0.08),
-        Math.min(60, total * 0.28),
-        Math.min(115, total * 0.48),
-        Math.min(170, total * 0.68),
-        Math.min(220, total * 0.85),
-      ].map(t => Math.min(t, Math.max(1, total - 6)));
+      return [4, 25, 55, 90, 130].map(t => Math.min(t, Math.max(1, total - 6)));
     } else if (slug === "maladaptive") {
-      return [
-        Math.min(12, total * 0.08),
-        Math.min(45, total * 0.28),
-        Math.min(80, total * 0.48),
-        Math.min(125, total * 0.68),
-        Math.min(160, total * 0.85),
-      ].map(t => Math.min(t, Math.max(1, total - 6)));
+      return [5, 30, 65, 105, 145].map(t => Math.min(t, Math.max(1, total - 6)));
     } else if (slug === "festival-in-and-out" || slug === "nice-queer") {
-      return [
-        Math.min(6, total * 0.08),
-        Math.min(20, total * 0.28),
-        Math.min(38, total * 0.48),
-        Math.min(55, total * 0.68),
-        Math.min(75, total * 0.85),
-      ].map(t => Math.min(t, Math.max(1, total - 6)));
+      return [4, 18, 35, 52, 70].map(t => Math.min(t, Math.max(1, total - 6)));
     }
-    return [total * 0.1, total * 0.3, total * 0.5, total * 0.7, total * 0.85];
+    return [4, total * 0.25, total * 0.5, total * 0.72, total * 0.88];
   };
 
   useEffect(() => {
@@ -1779,7 +1761,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ PROJETS VIDÉOS SECTION (02) ═══════════════════ */}
-      <section id="videos" className="relative bg-[#050505] pt-10 md:pt-[66px] pb-16 scroll-mt-0">
+      <section id="videos" className="relative bg-[#050505] pt-28 md:pt-[140px] pb-24 md:pb-36 scroll-mt-0">
         <div className="px-5 md:px-16 mb-8 md:mb-12">
           <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
@@ -1810,7 +1792,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ ABOUT SECTION (03) ═══════════════════ */}
-      <section ref={aboutRef} id="about" className="relative bg-[#0d0d0d] min-h-screen flex flex-col justify-between pt-10 md:pt-[66px] pb-8 md:pb-12 overflow-hidden scroll-mt-0">
+      <section ref={aboutRef} id="about" className="relative bg-[#0d0d0d] min-h-screen flex flex-col justify-between pt-24 md:pt-[120px] pb-8 md:pb-12 overflow-hidden scroll-mt-0">
         <div className="px-5 md:px-16 flex-1 flex flex-col justify-between">
           <div>
             <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
