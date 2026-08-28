@@ -58,6 +58,7 @@ export default function ProjectPage() {
   const heroRef = useRef<HTMLDivElement>(null);
   const heroImgRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const previewThumbVideoRef = useRef<HTMLVideoElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -497,8 +498,14 @@ export default function ProjectPage() {
     const width = rect.width;
     if (width > 0 && videoDur > 0) {
       const ratio = Math.max(0, Math.min(1, clickX / width));
-      setHoverSeekTime(ratio * videoDur);
+      const targetTime = ratio * videoDur;
+      setHoverSeekTime(targetTime);
       setHoverSeekPos(clickX);
+      if (previewThumbVideoRef.current) {
+        try {
+          previewThumbVideoRef.current.currentTime = targetTime;
+        } catch (_) {}
+      }
     }
   }, [videoDur]);
 
@@ -819,13 +826,30 @@ export default function ProjectPage() {
                         }}
                         className="relative flex-1 h-1 hover:h-2 bg-white/20 hover:bg-white/35 rounded-full cursor-pointer group/scrubber transition-all duration-200 backdrop-blur-[2px]"
                       >
-                        {/* Floating Hover Time Tooltip */}
-                        {isScrubberHovered && hoverSeekTime !== null && (
+                        {/* Floating Awwwards Cinema Video Thumbnail & Time Tooltip */}
+                        {isScrubberHovered && hoverSeekTime !== null && project.videoUrl && (
                           <div
-                            className="absolute -top-8 -translate-x-1/2 bg-black/95 text-white border border-white/20 backdrop-blur-md font-mono text-[10px] px-2 py-0.5 rounded shadow-xl pointer-events-none font-semibold"
+                            className="absolute -top-32 sm:-top-36 md:-top-40 -translate-x-1/2 flex flex-col items-center pointer-events-none z-50 transition-transform duration-75 ease-out"
                             style={{ left: `${hoverSeekPos}px` }}
                           >
-                            {formatTime(hoverSeekTime)}
+                            <div className="relative w-36 sm:w-44 md:w-52 aspect-video rounded-lg overflow-hidden border border-white/25 bg-black/90 shadow-[0_15px_35px_rgba(0,0,0,0.9),0_0_20px_rgba(255,255,255,0.1)] backdrop-blur-md">
+                              <video
+                                ref={previewThumbVideoRef}
+                                src={project.videoUrl}
+                                muted
+                                playsInline
+                                preload="auto"
+                                className="w-full h-full object-cover"
+                              />
+                              {/* Bottom gradient & time pill inside thumbnail */}
+                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-1.5 flex justify-center">
+                                <span className="font-mono text-[10px] sm:text-[11px] font-bold text-white tracking-widest bg-black/60 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-sm">
+                                  {formatTime(hoverSeekTime)}
+                                </span>
+                              </div>
+                            </div>
+                            {/* Micro pointer arrow pointing to timeline */}
+                            <div className="w-2 h-2 bg-black/90 rotate-45 border-r border-b border-white/25 -mt-1 shadow-md" />
                           </div>
                         )}
 
