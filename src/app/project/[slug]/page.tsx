@@ -578,10 +578,11 @@ export default function ProjectPage() {
         project={project}
         allProjects={videoProjectsData}
         onSelectProject={(selected) => {
-          router.replace(`/project/${selected.slug}`);
+          // Handled directly inside NetflixMobilePlayer for 0ms instant playback
         }}
         onBack={() => {
           playClickSfx();
+          sessionStorage.removeItem("hasDismissedRotate");
           sessionStorage.setItem("scrollToVideos", "true");
           triggerPageTransition(router, "/#videos");
         }}

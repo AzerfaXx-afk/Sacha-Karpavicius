@@ -1,9 +1,16 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useSiteContext } from "@/context/site-context";
 
 export default function GlobalAudioSignal() {
+  const pathname = usePathname();
   const { isHideUI, isPlaying, toggleAudio, hasEnteredSite, isHoveringName } = useSiteContext();
+
+  // Never render on project or video pages
+  if (pathname && pathname.startsWith("/project")) {
+    return null;
+  }
 
   const showUI = (hasEnteredSite || isHoveringName) && !isHideUI;
 

@@ -32,7 +32,6 @@ export default function NetflixMobilePlayer({
   const [duration, setDuration] = useState(0);
   const [isUiVisible, setIsUiVisible] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isPortrait, setIsPortrait] = useState(false);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubTime, setScrubTime] = useState<number | null>(null);
   const [pulseAction, setPulseAction] = useState<"play" | "pause" | "rewind" | "skip" | null>(null);
@@ -40,11 +39,7 @@ export default function NetflixMobilePlayer({
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pulseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    setCurrentFilm(project);
-  }, [project]);
-
-  // Keep site ambient audio paused & site UI hidden on mobile video player
+  // Request Fullscreen & Screen Orientation Lock (Landscape)
   useEffect(() => {
     setIsHideUI(true);
     pauseAudio(true);
@@ -70,16 +65,7 @@ export default function NetflixMobilePlayer({
 
     tryFullscreenAndLandscape();
 
-    const checkOrientation = () => {
-      setIsPortrait(window.innerHeight > window.innerWidth);
-    };
-    checkOrientation();
-    window.addEventListener("resize", checkOrientation);
-    window.addEventListener("orientationchange", checkOrientation);
-
     return () => {
-      window.removeEventListener("resize", checkOrientation);
-      window.removeEventListener("orientationchange", checkOrientation);
       setIsHideUI(false);
       resumeAudio(true);
     };
@@ -109,7 +95,7 @@ export default function NetflixMobilePlayer({
     };
   }, [resetIdleTimer]);
 
-  // Autoplay with sound on load/change
+  // Autoplay with sound on initial load
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid) return;
@@ -221,11 +207,33 @@ export default function NetflixMobilePlayer({
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
+  // 0ms Instant film switching without page reload or intro
   const handleSelectFilm = (film: Project) => {
     setCurrentFilm(film);
     onSelectProject(film);
     setIsMenuOpen(false);
     resetIdleTimer();
+
+    const vid = videoRef.current;
+    if (vid) {
+      vid.src = film.videoUrl || "";
+      vid.currentTime = 0;
+      vid.muted = false;
+      vid.play().then(() => {
+        setIsPlaying(true);
+        pauseAudio(true);
+      }).catch(() => {
+        vid.muted = true;
+        vid.play().then(() => {
+          setIsPlaying(true);
+          pauseAudio(true);
+        }).catch(() => {});
+      });
+    }
+
+    try {
+      window.history.replaceState(null, "", `/project/${film.slug}`);
+    } catch (_) {}
   };
 
   const displayedTime = scrubTime !== null ? scrubTime : currentTime;
@@ -234,35 +242,10 @@ export default function NetflixMobilePlayer({
     <div
       ref={containerRef}
       onClick={handleContainerTap}
-      style={
-        isPortrait
-          ? {
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100vh",
-              height: "100vw",
-              transformOrigin: "0 0",
-              transform: "translate(100vw, 0) rotate(90deg)",
-              zIndex: 99999,
-              overflow: "hidden",
-              touchAction: "manipulation",
-              backgroundColor: "#000000",
-            }
-          : {
-              position: "fixed",
-              inset: 0,
-              width: "100vw",
-              height: "100vh",
-              zIndex: 99999,
-              overflow: "hidden",
-              touchAction: "manipulation",
-              backgroundColor: "#000000",
-            }
-      }
-      className="text-white flex flex-col justify-between select-none"
+      className="fixed inset-0 z-[99999] w-full h-full bg-black text-white flex flex-col justify-between overflow-hidden select-none"
+      style={{ touchAction: "manipulation", backgroundColor: "#000000" }}
     >
-      {/* 4K Cinema Video Surface (Edge-to-Edge) */}
+      {/* 4K Cinema Video Surface */}
       <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-black">
         <video
           ref={videoRef}
@@ -281,7 +264,7 @@ export default function NetflixMobilePlayer({
               setDuration(videoRef.current.duration || 0);
             }
           }}
-          className="w-full h-full object-cover sm:object-contain pointer-events-none"
+          className="w-full h-full object-contain pointer-events-none"
         />
       </div>
 
