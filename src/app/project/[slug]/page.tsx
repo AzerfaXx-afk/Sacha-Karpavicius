@@ -9,6 +9,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Navbar from "@/components/navbar";
 import ProjectNav from "@/components/project-nav";
 import RotatePhonePrompt from "@/components/rotate-phone-prompt";
+import NetflixMobilePlayer from "@/components/netflix-mobile-player";
 import { projectsData, videoProjectsData, getProjectBySlug } from "@/data/projects";
 import { useSiteContext } from "@/context/site-context";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
@@ -40,7 +41,12 @@ export default function ProjectPage() {
   // Mobile orientation & horizontal cinema state
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [isPortrait, setIsPortrait] = useState(false);
-  const [hasDismissedRotate, setHasDismissedRotate] = useState(false);
+  const [hasDismissedRotate, setHasDismissedRotate] = useState(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("hasDismissedRotate") === "true";
+    }
+    return false;
+  });
   const [isForcedLandscapeCSS, setIsForcedLandscapeCSS] = useState(false);
 
   // Video player controls state — start unmuted on project entry
@@ -551,6 +557,39 @@ export default function ProjectPage() {
     );
   }
 
+  // ══════════════════════════════════════════════════════════════
+  // MOBILE CINEMA EXPERIENCE (NETFLIX STYLE)
+  // ══════════════════════════════════════════════════════════════
+  if (isVideoProject && isMobileDevice) {
+    if (!hasDismissedRotate) {
+      return (
+        <RotatePhonePrompt
+          lang={lang}
+          onComplete={() => {
+            setHasDismissedRotate(true);
+            sessionStorage.setItem("hasDismissedRotate", "true");
+          }}
+        />
+      );
+    }
+
+    return (
+      <NetflixMobilePlayer
+        project={project}
+        allProjects={videoProjectsData}
+        onSelectProject={(selected) => {
+          router.replace(`/project/${selected.slug}`);
+        }}
+        onBack={() => {
+          playClickSfx();
+          sessionStorage.setItem("scrollToVideos", "true");
+          triggerPageTransition(router, "/#videos");
+        }}
+        lang={lang}
+      />
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden selection:bg-white selection:text-black">
       <Navbar
@@ -577,34 +616,6 @@ export default function ProjectPage() {
         </a>
       </div>
 
-      {/* Mobile Rotate Phone Video Intro Modal */}
-      {isVideoProject && isMobileDevice && !hasDismissedRotate && (
-        <RotatePhonePrompt
-          lang={lang}
-          onComplete={() => {
-            setHasDismissedRotate(true);
-            const isCurrentlyPortrait = window.innerHeight > window.innerWidth;
-            setIsForcedLandscapeCSS(isCurrentlyPortrait);
-            const vid = videoRef.current;
-            if (vid) {
-              vid.muted = false;
-              setIsVideoMuted(false);
-              vid.play().then(() => {
-                setIsVideoPlaying(true);
-                pauseAudio(true);
-              }).catch(() => {
-                vid.muted = true;
-                setIsVideoMuted(true);
-                vid.play().then(() => {
-                  setIsVideoPlaying(true);
-                  pauseAudio(true);
-                }).catch(() => {});
-              });
-            }
-          }}
-        />
-      )}
-
       <section
         ref={heroRef}
         onClick={() => {
@@ -617,21 +628,6 @@ export default function ProjectPage() {
             toggleFullscreen();
           }
         }}
-        style={
-          isForcedLandscapeCSS
-            ? {
-                position: "fixed",
-                top: 0,
-                left: 0,
-                width: "100vh",
-                height: "100vw",
-                transformOrigin: "0 0",
-                transform: "translate(100vw, 0) rotate(90deg)",
-                zIndex: 120,
-                overflow: "hidden",
-              }
-            : undefined
-        }
         className={`relative w-full h-[100vh] min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] group select-none transition-all duration-500 ${
           isIdle && isVideoPlaying ? "cursor-none" : "cursor-pointer"
         }`}
@@ -644,7 +640,7 @@ export default function ProjectPage() {
                   ref={videoRef}
                   src={project.videoUrl}
                   poster={project.coverImage || project.heroImage}
-                  autoPlay={!isMobileDevice}
+                  autoPlay
                   loop
                   muted={isVideoMuted}
                   playsInline
@@ -653,13 +649,13 @@ export default function ProjectPage() {
                     const vid = e.currentTarget;
                     setVideoDur(vid.duration || 0);
                     setVideoTime(vid.currentTime || 0);
-                    if ((!isMobileDevice || hasDismissedRotate) && vid.paused) {
+                    if (vid.paused) {
                       vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
                     }
                   }}
                   onCanPlay={(e) => {
                     const vid = e.currentTarget;
-                    if ((!isMobileDevice || hasDismissedRotate) && vid.paused) {
+                    if (vid.paused) {
                       vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
                     }
                   }}
@@ -680,7 +676,7 @@ export default function ProjectPage() {
                     setIsVideoPlaying(false);
                     resumeAudio(true);
                   }}
-                  className="object-contain w-full h-full min-h-full min-w-full transform-gpu will-change-transform"
+                  className="object-cover w-full h-full min-h-full min-w-full transform-gpu will-change-transform"
                   style={{
                     imageRendering: "crisp-edges",
                     backfaceVisibility: "hidden",
