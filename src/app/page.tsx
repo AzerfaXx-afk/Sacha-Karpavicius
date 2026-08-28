@@ -1715,7 +1715,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ WORKS / PHOTOS SECTION (01) ═══════════════════ */}
-      <section ref={worksRef} id="photos" className="relative bg-[#050505] pt-12 md:pt-[72px] pb-20 md:pb-32 scroll-mt-0">
+      <section ref={worksRef} id="photos" className="relative bg-[#0d0d0d] pt-12 md:pt-[72px] pb-20 md:pb-32 scroll-mt-0">
         {/* Section header */}
         <div className="px-5 md:px-16 mb-8 md:mb-12">
           <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
@@ -1846,7 +1846,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ ABOUT SECTION (03) ═══════════════════ */}
-      <section ref={aboutRef} id="about" className="relative bg-[#050505] min-h-screen flex flex-col justify-between pt-12 md:pt-[72px] pb-12 md:pb-16 overflow-hidden scroll-mt-0">
+      <section ref={aboutRef} id="about" className="relative bg-[#0d0d0d] min-h-screen flex flex-col justify-between pt-12 md:pt-[72px] pb-12 md:pb-16 overflow-hidden scroll-mt-0">
         <div className="px-5 md:px-16 flex-1 flex flex-col justify-between">
           <div>
             <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
