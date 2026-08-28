@@ -472,12 +472,14 @@ function VideoCardItem({
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const [isFading, setIsFading] = useState(false);
   const [isMobileInView, setIsMobileInView] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const clipIndexRef = useRef<number>(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const isPoster = project.coverImage.toLowerCase().includes("affiche");
 
@@ -522,6 +524,7 @@ function VideoCardItem({
     if (shouldPlay) {
       vid.muted = true;
       clipIndexRef.current = 0;
+      setIsFading(false);
 
       const dur = vid.duration || 50;
       const clips = getStrategicClips(dur, project.slug || project.id);
@@ -535,28 +538,45 @@ function VideoCardItem({
         .catch(() => {});
 
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
 
-      // Cycle to the next strategic clip every 5 seconds (5s per clip)
+      // Cycle to the next strategic clip every 5 seconds with silky smooth 300ms dissolve
       intervalRef.current = setInterval(() => {
         if (!vid) return;
-        const currentDur = vid.duration || 50;
-        const currentClips = getStrategicClips(currentDur, project.slug || project.id);
 
-        clipIndexRef.current = (clipIndexRef.current + 1) % currentClips.length;
-        const nextTime = currentClips[clipIndexRef.current];
+        // Brief cinematic soft dissolve just before keyframe jump
+        setIsFading(true);
 
-        try {
-          vid.currentTime = nextTime;
-          vid.play().catch(() => {});
-        } catch (_) {}
+        fadeTimeoutRef.current = setTimeout(() => {
+          if (!vid) return;
+          const currentDur = vid.duration || 50;
+          const currentClips = getStrategicClips(currentDur, project.slug || project.id);
+
+          clipIndexRef.current = (clipIndexRef.current + 1) % currentClips.length;
+          const nextTime = currentClips[clipIndexRef.current];
+
+          try {
+            vid.currentTime = nextTime;
+            vid.play().catch(() => {});
+          } catch (_) {}
+
+          setTimeout(() => {
+            setIsFading(false);
+          }, 100);
+        }, 300);
       }, 5000);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      if (fadeTimeoutRef.current) {
+        clearTimeout(fadeTimeoutRef.current);
+        fadeTimeoutRef.current = null;
+      }
       vid.pause();
       setIsPlayingPreview(false);
+      setIsFading(false);
       clipIndexRef.current = 0;
     }
 
@@ -564,6 +584,10 @@ function VideoCardItem({
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
+      }
+      if (fadeTimeoutRef.current) {
+        clearTimeout(fadeTimeoutRef.current);
+        fadeTimeoutRef.current = null;
       }
     };
   }, [shouldPlay, project.videoUrl, project.slug, project.id]);
@@ -625,7 +649,7 @@ function VideoCardItem({
           />
         </div>
 
-        {/* High-Performance Lightweight Single Video Preview */}
+        {/* High-Performance Smooth Video Preview with Soft Dissolve */}
         {project.videoUrl && (
           <video
             ref={videoRef}
@@ -635,8 +659,8 @@ function VideoCardItem({
             playsInline
             preload="metadata"
             onPlaying={() => setIsPlayingPreview(true)}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${
-              isPlayingPreview ? "opacity-100" : "opacity-0"
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${
+              isPlayingPreview && !isFading ? "opacity-100" : "opacity-0"
             }`}
           />
         )}
@@ -1637,7 +1661,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ WORKS / PHOTOS SECTION (01) ═══════════════════ */}
-      <section ref={worksRef} id="photos" className="relative bg-[#0a0a0a] pt-14 md:pt-[82px] pb-20 md:pb-32">
+      <section ref={worksRef} id="photos" className="relative bg-[#0a0a0a] pt-16 md:pt-[92px] pb-20 md:pb-32 scroll-mt-0">
         {/* Section header */}
         <div className="px-5 md:px-16 mb-8 md:mb-12">
           <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
@@ -1737,7 +1761,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ PROJETS VIDÉOS SECTION (02) ═══════════════════ */}
-      <section id="videos" className="relative bg-[#050505] pt-14 md:pt-[82px] pb-16">
+      <section id="videos" className="relative bg-[#050505] pt-16 md:pt-[92px] pb-16 scroll-mt-0">
         <div className="px-5 md:px-16 mb-8 md:mb-12">
           <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
             <span className="font-inter text-[10px] md:text-[11px] tracking-[0.3em] text-white/40 uppercase">
@@ -1768,7 +1792,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ ABOUT SECTION (03) ═══════════════════ */}
-      <section ref={aboutRef} id="about" className="relative bg-[#0d0d0d] min-h-screen flex flex-col justify-between pt-14 md:pt-[82px] pb-8 md:pb-12 overflow-hidden">
+      <section ref={aboutRef} id="about" className="relative bg-[#0d0d0d] min-h-screen flex flex-col justify-between pt-16 md:pt-[92px] pb-8 md:pb-12 overflow-hidden scroll-mt-0">
         <div className="px-5 md:px-16 flex-1 flex flex-col justify-between">
           <div>
             <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
@@ -1847,7 +1871,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════ CONTACT / FOOTER (04) ═══════════════════ */}
-      <footer ref={contactRef} id="contact" className="relative bg-[#050505] pt-14 md:pt-[82px] pb-4 md:pb-12 min-h-[85vh] md:min-h-screen flex flex-col justify-between overflow-hidden">
+      <footer ref={contactRef} id="contact" className="relative bg-[#050505] pt-16 md:pt-[92px] pb-4 md:pb-12 min-h-[85vh] md:min-h-screen flex flex-col justify-between overflow-hidden scroll-mt-0">
         <div className="px-5 md:px-16 flex-1 flex flex-col justify-between">
           <div>
             <div data-text-reveal className="flex items-center gap-6 mb-8 md:mb-10">
