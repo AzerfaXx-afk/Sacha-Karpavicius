@@ -35,8 +35,8 @@ export default function PinnedProgressNav({ lang = "fr", showUI: customShowUI }:
   // Strictly only display on homepage
   const isHomePage = pathname === "/";
   
-  // Show UI condition: must be on homepage, and UI explicitly active
-  const isVisible = isHomePage && (customShowUI !== undefined ? customShowUI : (hasEnteredSite || isHoveringName) && !isHideUI);
+  // Show UI condition: must be on homepage, NOT on mobile, and UI explicitly active
+  const isVisible = isHomePage && !isMobile && (customShowUI !== undefined ? customShowUI : (hasEnteredSite || isHoveringName) && !isHideUI);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);

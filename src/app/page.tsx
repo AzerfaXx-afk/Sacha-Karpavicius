@@ -480,7 +480,31 @@ function VideoCardItem({
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const clipIndexRef = useRef<number>(0);
 
+  const [isMobileInView, setIsMobileInView] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
   const isPoster = project.coverImage.toLowerCase().includes("affiche");
+
+  // IntersectionObserver for mobile auto-preview when centered in viewport
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches;
+    if (!isMobile || !cardRef.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsMobileInView(entry.isIntersecting);
+      },
+      {
+        threshold: 0.45,
+        rootMargin: "-10% 0px -10% 0px",
+      }
+    );
+
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const shouldPlayPreview = isHovered || isMobileInView;
 
   // Strategic high-impact timestamps per video (skipping intro black/bars/logos)
   const getStrategicClips = (duration: number, slug: string) => {
@@ -515,7 +539,7 @@ function VideoCardItem({
   useEffect(() => {
     if (!project.videoUrl) return;
 
-    if (isHovered) {
+    if (shouldPlayPreview) {
       const vidA = videoRefA.current;
       const vidB = videoRefB.current;
 
@@ -594,7 +618,7 @@ function VideoCardItem({
       setIsReadyA(false);
       setIsReadyB(false);
     }
-  }, [isHovered, project.videoUrl, project.slug, project.id]);
+  }, [shouldPlayPreview, project.videoUrl, project.slug, project.id]);
 
   useEffect(() => {
     return () => {
@@ -604,6 +628,7 @@ function VideoCardItem({
 
   return (
     <div
+      ref={cardRef}
       data-work-card
       data-cursor="PLAY"
       onClick={onClick}
@@ -658,13 +683,13 @@ function VideoCardItem({
             playsInline
             preload="metadata"
             onCanPlay={() => {
-              if (isHovered && activeVideo === "A") setIsReadyA(true);
+              if (shouldPlayPreview && activeVideo === "A") setIsReadyA(true);
             }}
             onPlaying={() => {
-              if (isHovered && activeVideo === "A") setIsReadyA(true);
+              if (shouldPlayPreview && activeVideo === "A") setIsReadyA(true);
             }}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${
-              isHovered && activeVideo === "A" && isReadyA ? "opacity-100" : "opacity-0"
+              shouldPlayPreview && activeVideo === "A" && isReadyA ? "opacity-100" : "opacity-0"
             }`}
           />
         )}
@@ -679,13 +704,13 @@ function VideoCardItem({
             playsInline
             preload="metadata"
             onCanPlay={() => {
-              if (isHovered && activeVideo === "B") setIsReadyB(true);
+              if (shouldPlayPreview && activeVideo === "B") setIsReadyB(true);
             }}
             onPlaying={() => {
-              if (isHovered && activeVideo === "B") setIsReadyB(true);
+              if (shouldPlayPreview && activeVideo === "B") setIsReadyB(true);
             }}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${
-              isHovered && activeVideo === "B" && isReadyB ? "opacity-100" : "opacity-0"
+              shouldPlayPreview && activeVideo === "B" && isReadyB ? "opacity-100" : "opacity-0"
             }`}
           />
         )}

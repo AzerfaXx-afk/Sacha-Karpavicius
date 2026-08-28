@@ -267,3 +267,42 @@ h1, h2, h3, h4, h5, h6, p, span, a {
   animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* ---- Rotate Your Phone Awwwards Animation Keyframes ---- */
+@keyframes rotatePhoneAnim {
+  0%, 15% {
+    transform: rotate(0deg) scale(1);
+  }
+  45%, 75% {
+    transform: rotate(-90deg) scale(1.06);
+  }
+  90%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes rotatePhoneArc {
+  0%, 15% {
+    opacity: 0.2;
+    transform: rotate(0deg);
+  }
+  45%, 75% {
+    opacity: 1;
+    transform: rotate(-90deg);
+  }
+  90%, 100% {
+    opacity: 0.2;
+    transform: rotate(0deg);
+  }
+}
+
+.animate-rotate-phone {
+  animation: rotatePhoneAnim 3.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  transform-origin: center center;
+}
+
+.animate-rotate-arc {
+  animation: rotatePhoneArc 3.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  transform-origin: center center;
+}
+
+

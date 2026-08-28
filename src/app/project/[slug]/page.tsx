@@ -8,6 +8,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Navbar from "@/components/navbar";
 import ProjectNav from "@/components/project-nav";
+import RotatePhonePrompt from "@/components/rotate-phone-prompt";
 import { projectsData, videoProjectsData, getProjectBySlug } from "@/data/projects";
 import { useSiteContext } from "@/context/site-context";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
@@ -35,6 +36,12 @@ export default function ProjectPage() {
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
   const [isScrollLockedState, setIsScrollLockedState] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(1);
+
+  // Mobile orientation & horizontal cinema state
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(false);
+  const [hasDismissedRotate, setHasDismissedRotate] = useState(false);
+  const [isForcedLandscapeCSS, setIsForcedLandscapeCSS] = useState(false);
 
   // Video player controls state — start unmuted on project entry
   const [isVideoMuted, setIsVideoMuted] = useState(false);
@@ -97,6 +104,28 @@ export default function ProjectPage() {
       window.removeEventListener("keydown", handleUserActivity);
     };
   }, [project?.videoUrl, setIsHideUI]);
+
+  // Mobile orientation detection
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const checkOrientation = () => {
+      const isMob = window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches;
+      setIsMobileDevice(isMob);
+      const portrait = window.innerHeight > window.innerWidth;
+      setIsPortrait(portrait);
+      if (!portrait) {
+        setIsForcedLandscapeCSS(false);
+      }
+    };
+
+    checkOrientation();
+    window.addEventListener("resize", checkOrientation);
+    window.addEventListener("orientationchange", checkOrientation);
+    return () => {
+      window.removeEventListener("resize", checkOrientation);
+      window.removeEventListener("orientationchange", checkOrientation);
+    };
+  }, []);
 
   // Clean up isHideUI & resume site background music on unmount
   useEffect(() => {
@@ -543,6 +572,19 @@ export default function ProjectPage() {
         </a>
       </div>
 
+      {/* Mobile Rotate Phone Prompt Modal */}
+      {isVideoProject && isMobileDevice && isPortrait && !hasDismissedRotate && (
+        <RotatePhonePrompt
+          lang={lang}
+          onDismiss={() => setHasDismissedRotate(true)}
+          onForceLandscape={() => {
+            setHasDismissedRotate(true);
+            setIsForcedLandscapeCSS(true);
+            toggleFullscreen();
+          }}
+        />
+      )}
+
       <section
         ref={heroRef}
         onClick={() => {
@@ -556,6 +598,10 @@ export default function ProjectPage() {
           }
         }}
         className={`relative w-full h-[100vh] min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] group select-none transition-all duration-500 ${
+          isForcedLandscapeCSS
+            ? "fixed inset-0 z-[120] w-[100vh] h-[100vw] rotate-90 origin-top-left translate-x-[100vw]"
+            : ""
+        } ${
           isIdle && isVideoPlaying ? "cursor-none" : "cursor-pointer"
         }`}
       >
