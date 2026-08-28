@@ -503,11 +503,16 @@ export default function ProjectPage() {
       setHoverSeekPos(clickX);
       if (previewThumbVideoRef.current) {
         try {
-          previewThumbVideoRef.current.currentTime = targetTime;
+          if (project?.previewVideoUrl) {
+            const previewTime = ratio * 25;
+            previewThumbVideoRef.current.currentTime = previewTime;
+          } else {
+            previewThumbVideoRef.current.currentTime = targetTime;
+          }
         } catch (_) {}
       }
     }
-  }, [videoDur]);
+  }, [videoDur, project?.previewVideoUrl]);
 
   // Keyboard shortcuts (Space: Play/Pause, F: Fullscreen, M: Mute, Left/Right Arrows: Rewind/Skip, Up/Down: Volume)
   useEffect(() => {
@@ -827,15 +832,20 @@ export default function ProjectPage() {
                         className="relative flex-1 h-1 hover:h-2 bg-white/20 hover:bg-white/35 rounded-full cursor-pointer group/scrubber transition-all duration-200 backdrop-blur-[2px]"
                       >
                         {/* Floating Awwwards Cinema Video Thumbnail & Time Tooltip */}
-                        {isScrubberHovered && hoverSeekTime !== null && project.videoUrl && (
+                        {project.videoUrl && (
                           <div
-                            className="absolute -top-32 sm:-top-36 md:-top-40 -translate-x-1/2 flex flex-col items-center pointer-events-none z-50 transition-transform duration-75 ease-out"
+                            className={`absolute -top-32 sm:-top-36 md:-top-40 -translate-x-1/2 flex flex-col items-center pointer-events-none z-50 transition-all duration-150 ease-out ${
+                              isScrubberHovered && hoverSeekTime !== null
+                                ? "opacity-100 scale-100"
+                                : "opacity-0 scale-95 pointer-events-none"
+                            }`}
                             style={{ left: `${hoverSeekPos}px` }}
                           >
                             <div className="relative w-36 sm:w-44 md:w-52 aspect-video rounded-lg overflow-hidden border border-white/25 bg-black/90 shadow-[0_15px_35px_rgba(0,0,0,0.9),0_0_20px_rgba(255,255,255,0.1)] backdrop-blur-md">
                               <video
                                 ref={previewThumbVideoRef}
-                                src={project.videoUrl}
+                                src={project.previewVideoUrl || project.videoUrl}
+                                poster={project.coverImage || project.heroImage}
                                 muted
                                 playsInline
                                 preload="auto"
@@ -844,7 +854,7 @@ export default function ProjectPage() {
                               {/* Bottom gradient & time pill inside thumbnail */}
                               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-1.5 flex justify-center">
                                 <span className="font-mono text-[10px] sm:text-[11px] font-bold text-white tracking-widest bg-black/60 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-sm">
-                                  {formatTime(hoverSeekTime)}
+                                  {hoverSeekTime !== null ? formatTime(hoverSeekTime) : "00:00"}
                                 </span>
                               </div>
                             </div>
