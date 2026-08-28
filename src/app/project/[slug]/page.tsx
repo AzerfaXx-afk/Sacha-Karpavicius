@@ -624,24 +624,35 @@ export default function ProjectPage() {
                     )}
                     {playPulseState === "rewind" && (
                       <div className="flex flex-col items-center gap-1.5 filter drop-shadow-[0_0_25px_rgba(255,255,255,0.6)] text-white">
-                        <svg className="w-14 h-14 md:w-16 md:h-16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5a7.5 7.5 0 1 0 7.06 4.98M12 4.5L9 2m3 2.5L9 7" />
+                        <svg className="w-14 h-14 md:w-16 md:h-16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 5C7.03 5 3 9.03 3 14C3 18.97 7.03 23 12 23C16.97 23 21 18.97 21 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                          <path d="M7 1L3 5L7 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <text x="12" y="16.5" fill="currentColor" fontSize="7" fontWeight="bold" fontFamily="monospace" textAnchor="middle">10</text>
                         </svg>
-                        <span className="font-mono text-xs md:text-sm font-bold tracking-widest bg-black/50 px-2 py-0.5 rounded border border-white/20">-10S</span>
+                        <span className="font-mono text-xs md:text-sm font-bold tracking-widest bg-black/60 px-2.5 py-0.5 rounded-full border border-white/20">-10S</span>
                       </div>
                     )}
                     {playPulseState === "skip" && (
                       <div className="flex flex-col items-center gap-1.5 filter drop-shadow-[0_0_25px_rgba(255,255,255,0.6)] text-white">
-                        <svg className="w-14 h-14 md:w-16 md:h-16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5a7.5 7.5 0 1 1-7.06 4.98M12 4.5L15 2m-3 2.5l3 2.5" />
+                        <svg className="w-14 h-14 md:w-16 md:h-16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 5C16.97 5 21 9.03 21 14C21 18.97 16.97 23 12 23C7.03 23 3 18.97 3 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                          <path d="M17 1L21 5L17 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <text x="12" y="16.5" fill="currentColor" fontSize="7" fontWeight="bold" fontFamily="monospace" textAnchor="middle">10</text>
                         </svg>
-                        <span className="font-mono text-xs md:text-sm font-bold tracking-widest bg-black/50 px-2 py-0.5 rounded border border-white/20">+10S</span>
+                        <span className="font-mono text-xs md:text-sm font-bold tracking-widest bg-black/60 px-2.5 py-0.5 rounded-full border border-white/20">+10S</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Minimal Paused Info Card (Clean, unobtrusive, without dark full overlay) */}
+                {/* Dynamic Cinema Bottom Gradient (Smoothly visible when paused, fades out when playing) */}
+                <div
+                  className={`absolute inset-x-0 bottom-0 pointer-events-none h-80 sm:h-96 md:h-[440px] bg-gradient-to-t from-black/95 via-black/50 to-transparent transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] z-15 ${
+                    !isVideoPlaying ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+
+                {/* Minimal Paused Info Card (Clean, unobtrusive, positioned above the bottom controls) */}
                 <div
                   className={`absolute inset-0 z-20 pointer-events-none flex flex-col justify-end p-8 md:p-16 pb-36 md:pb-40 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                     !isVideoPlaying
@@ -653,7 +664,7 @@ export default function ProjectPage() {
                 >
                   <div className="max-w-xl md:max-w-2xl space-y-3 pointer-events-auto">
                     <div className="flex items-center gap-2">
-                      <span className="font-inter text-xs md:text-sm tracking-widest uppercase text-white/70 font-semibold">
+                      <span className="font-inter text-xs md:text-sm tracking-widest uppercase text-white/70 font-semibold drop-shadow-md">
                         {lang === "fr" ? "Vous regardez" : "Now watching"}
                       </span>
                     </div>
@@ -679,7 +690,7 @@ export default function ProjectPage() {
                   </div>
                 </div>
 
-                {/* Awwwards Centered Cinema Bottom HUD (Positioned symmetrically between Contactez-moi & Audio visualizer) */}
+                {/* Awwwards Seamless Cinema Bottom HUD (No box/rectangle, pure floating elegance centered between Contact & Audio) */}
                 <div
                   onClick={(e) => { e.stopPropagation(); }}
                   onMouseDown={(e) => { e.stopPropagation(); }}
@@ -691,10 +702,10 @@ export default function ProjectPage() {
                       : "opacity-100 translate-y-0"
                   }`}
                 >
-                  <div className="w-full max-w-4xl lg:max-w-5xl bg-black/65 backdrop-blur-xl border border-white/15 hover:border-white/25 rounded-2xl px-4 sm:px-6 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.85)] flex flex-col gap-2.5 transition-all duration-300 pointer-events-auto">
-                    {/* Centered Timeline Progress Scrubber Bar */}
+                  <div className="w-full max-w-4xl lg:max-w-5xl flex flex-col gap-3 pointer-events-auto">
+                    {/* Centered Timeline Progress Scrubber Bar with Delicate Fading & Glow */}
                     <div className="relative w-full flex items-center gap-3">
-                      <span className="font-mono text-[10px] sm:text-[11px] text-white/75 shrink-0 font-semibold tracking-wider select-none">
+                      <span className="font-mono text-[10px] sm:text-[11px] text-white/75 shrink-0 font-semibold tracking-wider select-none drop-shadow">
                         {formatTime(videoTime)}
                       </span>
 
@@ -709,12 +720,12 @@ export default function ProjectPage() {
                           setIsScrubberHovered(false);
                           setHoverSeekTime(null);
                         }}
-                        className="relative flex-1 h-1.5 hover:h-2.5 bg-white/20 hover:bg-white/30 rounded-full cursor-pointer group/scrubber transition-all duration-200"
+                        className="relative flex-1 h-1 hover:h-2 bg-white/20 hover:bg-white/35 rounded-full cursor-pointer group/scrubber transition-all duration-200 backdrop-blur-[2px]"
                       >
                         {/* Floating Hover Time Tooltip */}
                         {isScrubberHovered && hoverSeekTime !== null && (
                           <div
-                            className="absolute -top-8 -translate-x-1/2 bg-black/90 text-white border border-white/20 backdrop-blur-md font-mono text-[10px] px-2 py-0.5 rounded shadow-xl pointer-events-none font-semibold"
+                            className="absolute -top-8 -translate-x-1/2 bg-black/95 text-white border border-white/20 backdrop-blur-md font-mono text-[10px] px-2 py-0.5 rounded shadow-xl pointer-events-none font-semibold"
                             style={{ left: `${hoverSeekPos}px` }}
                           >
                             {formatTime(hoverSeekTime)}
@@ -723,79 +734,81 @@ export default function ProjectPage() {
 
                         {/* Progress Fill with Pure White Glow */}
                         <div
-                          className="h-full bg-white rounded-full relative transition-all duration-75 origin-left shadow-[0_0_12px_rgba(255,255,255,0.8)]"
+                          className="h-full bg-gradient-to-r from-white/75 via-white to-white rounded-full relative transition-all duration-75 origin-left shadow-[0_0_12px_rgba(255,255,255,0.9)]"
                           style={{ width: `${videoDur > 0 ? (videoTime / videoDur) * 100 : 0}%` }}
                         >
                           {/* Scrubber Thumb */}
-                          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,1)] transform scale-0 group-hover/scrubber:scale-100 transition-transform duration-200" />
+                          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,1)] transform scale-0 group-hover/scrubber:scale-100 transition-transform duration-200" />
                         </div>
                       </div>
 
                       {/* Remaining Time Readout */}
-                      <span className="font-mono text-[10px] sm:text-[11px] text-white/75 shrink-0 font-semibold tracking-wider select-none">
+                      <span className="font-mono text-[10px] sm:text-[11px] text-white/75 shrink-0 font-semibold tracking-wider select-none drop-shadow">
                         {videoDur > 0 ? `-${formatTime(Math.max(0, videoDur - videoTime))}` : "00:00"}
                       </span>
                     </div>
 
-                    {/* Controls Row */}
-                    <div className="relative flex items-center justify-between w-full pt-0.5">
+                    {/* Controls Row (Pure floating elements, no rectangle border) */}
+                    <div className="relative flex items-center justify-between w-full">
                       {/* Left Group */}
-                      <div className="flex items-center gap-1.5 sm:gap-3 z-10">
+                      <div className="flex items-center gap-1 sm:gap-2.5 z-10">
                         {/* Play / Pause button */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             togglePlayVideo();
                           }}
-                          className="text-white hover:text-white/80 p-1.5 cursor-pointer transition-all duration-200 hover:scale-115 active:scale-90 flex items-center justify-center group/playbtn"
+                          className="text-white hover:text-white/80 p-1 cursor-pointer transition-all duration-200 hover:scale-115 active:scale-90 flex items-center justify-center group/playbtn drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
                           title={isVideoPlaying ? "Pause (Espace)" : "Lecture (Espace)"}
                         >
                           {isVideoPlaying ? (
-                            <svg className="w-5 h-5 fill-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 fill-white" viewBox="0 0 24 24">
                               <path d="M6 4.5h4.5v15H6v-15zm7.5 0H18v15h-4.5v-15z" />
                             </svg>
                           ) : (
-                            <svg className="w-5 h-5 fill-white translate-x-0.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 fill-white translate-x-0.5" viewBox="0 0 24 24">
                               <path d="M7 4.5v15l13-7.5L7 4.5z" />
                             </svg>
                           )}
                         </button>
 
-                        {/* Rewind 10s (Left Arrow shortcut ←) */}
+                        {/* Rewind 10s (Left button: Counter-Clockwise Arrow pointing Left with 10 - matching Netflix) */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             seekRelative(-10);
                           }}
-                          className="text-white/80 hover:text-white p-1.5 cursor-pointer transition-transform hover:scale-110 active:scale-90 relative flex items-center justify-center group"
+                          className="text-white/85 hover:text-white p-1 cursor-pointer transition-transform hover:scale-110 active:scale-90 flex items-center justify-center group drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
                           title="Reculer de 10s (←)"
                         >
-                          <svg className="w-5 h-5 sm:w-5.5 sm:h-5.5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5a7.5 7.5 0 1 0 7.06 4.98M12 4.5L9 2m3 2.5L9 7" />
+                          <svg className="w-5 h-5 sm:w-5.5 sm:h-5.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 5C7.03 5 3 9.03 3 14C3 18.97 7.03 23 12 23C16.97 23 21 18.97 21 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                            <path d="M7 1L3 5L7 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                            <text x="12" y="16.5" fill="currentColor" fontSize="7" fontWeight="bold" fontFamily="monospace" textAnchor="middle">10</text>
                           </svg>
-                          <span className="absolute font-mono text-[8px] font-bold text-white pt-1">10</span>
                         </button>
 
-                        {/* Skip 10s (Right Arrow shortcut →) */}
+                        {/* Skip 10s (Right button: Clockwise Arrow pointing Right with 10 - matching Netflix) */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             seekRelative(10);
                           }}
-                          className="text-white/80 hover:text-white p-1.5 cursor-pointer transition-transform hover:scale-110 active:scale-90 relative flex items-center justify-center group"
+                          className="text-white/85 hover:text-white p-1 cursor-pointer transition-transform hover:scale-110 active:scale-90 flex items-center justify-center group drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
                           title="Avancer de 10s (→)"
                         >
-                          <svg className="w-5 h-5 sm:w-5.5 sm:h-5.5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5a7.5 7.5 0 1 1-7.06 4.98M12 4.5L15 2m-3 2.5l3 2.5" />
+                          <svg className="w-5 h-5 sm:w-5.5 sm:h-5.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 5C16.97 5 21 9.03 21 14C21 18.97 16.97 23 12 23C7.03 23 3 18.97 3 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                            <path d="M17 1L21 5L17 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                            <text x="12" y="16.5" fill="currentColor" fontSize="7" fontWeight="bold" fontFamily="monospace" textAnchor="middle">10</text>
                           </svg>
-                          <span className="absolute font-mono text-[8px] font-bold text-white pt-1">10</span>
                         </button>
 
                         {/* Ultra-Stylized Awwwards Speaker & Volume Control */}
                         <div className="flex items-center gap-1.5 group/vol pl-1">
                           <button
                             onClick={toggleMuteVideo}
-                            className="text-white/80 hover:text-white p-1.5 cursor-pointer transition-transform hover:scale-110 active:scale-95 flex items-center justify-center"
+                            className="text-white/85 hover:text-white p-1 cursor-pointer transition-transform hover:scale-110 active:scale-95 flex items-center justify-center drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
                             title={isVideoMuted || videoVolume === 0 ? "Activer le son (M)" : "Couper le son (M)"}
                           >
                             {isVideoMuted || videoVolume === 0 ? (
@@ -830,11 +843,11 @@ export default function ProjectPage() {
                             onPointerMove={(e) => {
                               if (e.buttons === 1) handleVolumePointer(e);
                             }}
-                            className="relative w-12 sm:w-16 h-1.5 bg-white/20 rounded-full cursor-pointer overflow-hidden transition-all duration-300 hover:h-2 group-hover/vol:bg-white/30"
+                            className="relative w-12 sm:w-16 h-1 bg-white/20 rounded-full cursor-pointer overflow-hidden transition-all duration-300 hover:h-1.5 group-hover/vol:bg-white/35 backdrop-blur-[2px]"
                             title={`Volume: ${Math.round((isVideoMuted ? 0 : videoVolume) * 100)}%`}
                           >
                             <div
-                              className="h-full bg-white rounded-full transition-all duration-75 origin-left shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                              className="h-full bg-white rounded-full transition-all duration-75 origin-left shadow-[0_0_8px_rgba(255,255,255,0.9)]"
                               style={{ width: `${isVideoMuted ? 0 : videoVolume * 100}%` }}
                             />
                           </div>
@@ -843,7 +856,7 @@ export default function ProjectPage() {
 
                       {/* Video Title Perfectly Centered in Bottom Controls */}
                       <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none px-2 max-w-[45%] text-center">
-                        <span className="font-syne font-bold text-xs sm:text-sm tracking-wider text-white uppercase truncate drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+                        <span className="font-syne font-bold text-xs sm:text-sm tracking-wider text-white uppercase truncate drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]">
                           {project.title}
                         </span>
                       </div>
@@ -853,7 +866,7 @@ export default function ProjectPage() {
                         {/* Playback Speed Button */}
                         <button
                           onClick={cyclePlaybackRate}
-                          className="font-mono text-[10px] sm:text-[11px] font-semibold text-white/80 hover:text-white px-2 py-0.5 rounded border border-white/20 hover:border-white/50 bg-white/5 hover:bg-white/10 transition-all cursor-pointer"
+                          className="font-mono text-[10px] sm:text-[11px] font-semibold text-white/85 hover:text-white px-2 py-0.5 rounded border border-white/20 hover:border-white/50 bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-all cursor-pointer drop-shadow"
                           title="Vitesse de lecture"
                         >
                           {playbackRate}x
@@ -862,7 +875,7 @@ export default function ProjectPage() {
                         {/* Fullscreen Button */}
                         <button
                           onClick={toggleFullscreen}
-                          className="text-white/80 hover:text-white p-1.5 cursor-pointer transition-transform hover:scale-110 active:scale-95 flex items-center justify-center"
+                          className="text-white/85 hover:text-white p-1 cursor-pointer transition-transform hover:scale-110 active:scale-95 flex items-center justify-center drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
                           title={isFullscreen ? "Quitter le plein écran (F)" : "Plein écran (F)"}
                         >
                           {isFullscreen ? (
