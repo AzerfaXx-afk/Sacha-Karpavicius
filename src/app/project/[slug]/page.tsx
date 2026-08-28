@@ -285,10 +285,34 @@ export default function ProjectPage() {
   useEffect(() => {
     if (typeof document === "undefined") return;
     const onFsChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
+      const isFs = Boolean(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).mozFullScreenElement ||
+        (document as any).msFullscreenElement
+      );
+      setIsFullscreen(isFs);
+
+      if (!isFs) {
+        // Smoothly ensure hero is in view when exiting fullscreen
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        const lenis = (window as any).__lenis;
+        if (lenis && typeof lenis.scrollTo === "function") {
+          lenis.scrollTo(0, { immediate: true });
+        }
+        setTimeout(() => {
+          ScrollTrigger.refresh();
+        }, 100);
+      }
     };
     document.addEventListener("fullscreenchange", onFsChange);
-    return () => document.removeEventListener("fullscreenchange", onFsChange);
+    document.addEventListener("webkitfullscreenchange", onFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFsChange);
+      document.removeEventListener("webkitfullscreenchange", onFsChange);
+    };
   }, []);
 
   // Preload & GPU-decode all gallery images into browser cache
@@ -534,7 +558,7 @@ export default function ProjectPage() {
         }}
         className={`relative w-full h-[100vh] min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] group select-none transition-all duration-500 ${
           isIdle && isVideoPlaying ? "cursor-none" : "cursor-pointer"
-        } ${isFullscreen ? "fixed inset-0 z-[9999] w-screen h-screen" : ""}`}
+        }`}
       >
         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
           <div className="relative w-full h-full">
@@ -623,32 +647,30 @@ export default function ProjectPage() {
                       </svg>
                     )}
                     {playPulseState === "rewind" && (
-                      <div className="flex flex-col items-center gap-1.5 filter drop-shadow-[0_0_25px_rgba(255,255,255,0.6)] text-white">
-                        <svg className="w-14 h-14 md:w-16 md:h-16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M12 5C7.03 5 3 9.03 3 14C3 18.97 7.03 23 12 23C16.97 23 21 18.97 21 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                          <path d="M7 1L3 5L7 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          <text x="12" y="16.5" fill="currentColor" fontSize="7" fontWeight="bold" fontFamily="monospace" textAnchor="middle">10</text>
+                      <div className="relative flex items-center justify-center filter drop-shadow-[0_0_25px_rgba(255,255,255,0.7)] text-white">
+                        <svg className="w-16 h-16 md:w-20 md:h-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                          <path d="M3 3v5h5" />
                         </svg>
-                        <span className="font-mono text-xs md:text-sm font-bold tracking-widest bg-black/60 px-2.5 py-0.5 rounded-full border border-white/20">-10S</span>
+                        <span className="absolute font-mono text-sm md:text-base font-bold text-white pt-1 pointer-events-none">10</span>
                       </div>
                     )}
                     {playPulseState === "skip" && (
-                      <div className="flex flex-col items-center gap-1.5 filter drop-shadow-[0_0_25px_rgba(255,255,255,0.6)] text-white">
-                        <svg className="w-14 h-14 md:w-16 md:h-16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M12 5C16.97 5 21 9.03 21 14C21 18.97 16.97 23 12 23C7.03 23 3 18.97 3 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                          <path d="M17 1L21 5L17 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          <text x="12" y="16.5" fill="currentColor" fontSize="7" fontWeight="bold" fontFamily="monospace" textAnchor="middle">10</text>
+                      <div className="relative flex items-center justify-center filter drop-shadow-[0_0_25px_rgba(255,255,255,0.7)] text-white">
+                        <svg className="w-16 h-16 md:w-20 md:h-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.99 6.74 2.74L21 8" />
+                          <path d="M21 3v5h-5" />
                         </svg>
-                        <span className="font-mono text-xs md:text-sm font-bold tracking-widest bg-black/60 px-2.5 py-0.5 rounded-full border border-white/20">+10S</span>
+                        <span className="absolute font-mono text-sm md:text-base font-bold text-white pt-1 pointer-events-none">10</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Dynamic Cinema Bottom Gradient (Smoothly visible when paused, fades out when playing) */}
+                {/* Dynamic Cinema Bottom Gradient (Smoothly visible when UI is visible or paused, fades out when idle & playing) */}
                 <div
                   className={`absolute inset-x-0 bottom-0 pointer-events-none h-80 sm:h-96 md:h-[440px] bg-gradient-to-t from-black/95 via-black/50 to-transparent transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] z-15 ${
-                    !isVideoPlaying ? "opacity-100" : "opacity-0"
+                    !isIdle || !isVideoPlaying ? "opacity-100" : "opacity-0"
                   }`}
                 />
 
@@ -696,7 +718,7 @@ export default function ProjectPage() {
                   onMouseDown={(e) => { e.stopPropagation(); }}
                   onTouchStart={(e) => { e.stopPropagation(); }}
                   onDoubleClick={(e) => { e.stopPropagation(); }}
-                  className={`fixed inset-x-0 bottom-6 md:bottom-10 z-[90] px-4 sm:px-8 md:px-44 lg:px-56 xl:px-64 flex flex-col items-center justify-end pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  className={`absolute inset-x-0 bottom-6 md:bottom-10 z-40 px-4 sm:px-8 md:px-44 lg:px-56 xl:px-64 flex flex-col items-center justify-end pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                     isIdle && isVideoPlaying
                       ? "opacity-0 translate-y-6"
                       : "opacity-100 translate-y-0"
@@ -772,36 +794,40 @@ export default function ProjectPage() {
                           )}
                         </button>
 
-                        {/* Rewind 10s (Left button: Counter-Clockwise Arrow pointing Left with 10 - matching Netflix) */}
+                        {/* Rewind 10s (Left button: Counter-Clockwise Arrow pointing Left with 10) */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             seekRelative(-10);
                           }}
-                          className="text-white/85 hover:text-white p-1 cursor-pointer transition-transform hover:scale-110 active:scale-90 flex items-center justify-center group drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                          className="text-white/85 hover:text-white p-1 cursor-pointer transition-transform hover:scale-110 active:scale-90 flex items-center justify-center group drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] relative"
                           title="Reculer de 10s (←)"
                         >
-                          <svg className="w-5 h-5 sm:w-5.5 sm:h-5.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 5C7.03 5 3 9.03 3 14C3 18.97 7.03 23 12 23C16.97 23 21 18.97 21 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                            <path d="M7 1L3 5L7 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                            <text x="12" y="16.5" fill="currentColor" fontSize="7" fontWeight="bold" fontFamily="monospace" textAnchor="middle">10</text>
-                          </svg>
+                          <div className="relative flex items-center justify-center">
+                            <svg className="w-5 h-5 sm:w-5.5 sm:h-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                              <path d="M3 3v5h5" />
+                            </svg>
+                            <span className="absolute font-mono text-[8px] font-bold text-white leading-none pt-0.5 pointer-events-none">10</span>
+                          </div>
                         </button>
 
-                        {/* Skip 10s (Right button: Clockwise Arrow pointing Right with 10 - matching Netflix) */}
+                        {/* Skip 10s (Right button: Clockwise Arrow pointing Right with 10) */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             seekRelative(10);
                           }}
-                          className="text-white/85 hover:text-white p-1 cursor-pointer transition-transform hover:scale-110 active:scale-90 flex items-center justify-center group drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                          className="text-white/85 hover:text-white p-1 cursor-pointer transition-transform hover:scale-110 active:scale-90 flex items-center justify-center group drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] relative"
                           title="Avancer de 10s (→)"
                         >
-                          <svg className="w-5 h-5 sm:w-5.5 sm:h-5.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 5C16.97 5 21 9.03 21 14C21 18.97 16.97 23 12 23C7.03 23 3 18.97 3 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                            <path d="M17 1L21 5L17 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                            <text x="12" y="16.5" fill="currentColor" fontSize="7" fontWeight="bold" fontFamily="monospace" textAnchor="middle">10</text>
-                          </svg>
+                          <div className="relative flex items-center justify-center">
+                            <svg className="w-5 h-5 sm:w-5.5 sm:h-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.99 6.74 2.74L21 8" />
+                              <path d="M21 3v5h-5" />
+                            </svg>
+                            <span className="absolute font-mono text-[8px] font-bold text-white leading-none pt-0.5 pointer-events-none">10</span>
+                          </div>
                         </button>
 
                         {/* Ultra-Stylized Awwwards Speaker & Volume Control */}
