@@ -24,6 +24,7 @@ export interface Project {
   heroImage: string;
   objectPosition?: string;
   videoUrl?: string;
+  previewVideoUrl?: string;
   isVideo?: boolean;
   gallery: string[];
   descriptionFr: string;
@@ -45,6 +46,7 @@ export const videoProjectsData: Project[] = [
     heroImage: "/Videos/maladaptive-cover.jpg",
     objectPosition: "object-center",
     videoUrl: "https://github.com/AzerfaXx-afk/Sacha-Karpavicius/releases/download/v1.0.0/MALADAPTIVE.mp4",
+    previewVideoUrl: "/Videos/maladaptive-preview.mp4",
     isVideo: true,
     gallery: [],
     descriptionFr: "Projet visuel expérimental",
@@ -74,6 +76,7 @@ export const videoProjectsData: Project[] = [
     heroImage: "/Videos/in-and-out-cover.jpg",
     objectPosition: "object-center",
     videoUrl: "https://github.com/AzerfaXx-afk/Sacha-Karpavicius/releases/download/v1.0.0/Bande.annonce.de.lExposition.NICE.QUEER.UNE.HISTOIRE.A.ECRIRE.mp4",
+    previewVideoUrl: "/Videos/festival-in-and-out-preview.mp4",
     isVideo: true,
     gallery: [],
     descriptionFr: "Bande annonce pour le festival In&Out 2026 à Nice.",
@@ -103,6 +106,7 @@ export const videoProjectsData: Project[] = [
     heroImage: "/Videos/AFFICHE.png",
     objectPosition: "object-center",
     videoUrl: "https://github.com/AzerfaXx-afk/Sacha-Karpavicius/releases/download/v1.0.0/AU.GRAND.JOUR.mp4",
+    previewVideoUrl: "/Videos/au-grand-jour-preview.mp4",
     isVideo: true,
     gallery: [],
     descriptionFr: "Court métrage de fin de première année.",

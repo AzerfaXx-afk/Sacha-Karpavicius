@@ -472,18 +472,15 @@ function VideoCardItem({
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
-  const [isFading, setIsFading] = useState(false);
   const [isMobileInView, setIsMobileInView] = useState(false);
   const [activeClipIndex, setActiveClipIndex] = useState(0);
   const [clipProgress, setClipProgress] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const clipIndexRef = useRef<number>(0);
-  const clipStartTimeRef = useRef<number>(0);
-  const rafRef = useRef<number | null>(null);
 
   const isPoster = project.coverImage.toLowerCase().includes("affiche");
+  const previewSource = project.previewVideoUrl || project.videoUrl;
 
   // Mobile viewport detection — only active when card is clearly visible
   useEffect(() => {
@@ -506,105 +503,35 @@ function VideoCardItem({
 
   const shouldPlay = isHovered || isMobileInView;
 
-  // 5 Strategic high-impact moments per video (deep inside the action, 5s each)
-  const getStrategicClips = useCallback((duration: number, slug: string) => {
-    const total = duration && !isNaN(duration) && duration > 20 ? duration : 180;
-    if (slug === "au-grand-jour") {
-      // 5 strategic core scenes in AU GRAND JOUR
-      return [35, 70, 105, 145, 185].map(t => Math.min(t, Math.max(2, total - 7)));
-    } else if (slug === "maladaptive") {
-      // 5 strategic core scenes in MALADAPTIVE
-      return [22, 50, 85, 120, 160].map(t => Math.min(t, Math.max(2, total - 7)));
-    } else if (slug === "festival-in-and-out" || slug === "nice-queer") {
-      // 5 strategic core scenes in BANDE ANNONCE
-      return [12, 26, 42, 58, 74].map(t => Math.min(t, Math.max(2, total - 7)));
-    }
-    return [total * 0.15, total * 0.35, total * 0.55, total * 0.72, total * 0.88];
-  }, []);
-
+  // Handle Playback & Progress Loop
   useEffect(() => {
     const vid = videoRef.current;
-    if (!vid || !project.videoUrl) return;
+    if (!vid || !previewSource) return;
 
     if (shouldPlay) {
       vid.muted = true;
-      clipIndexRef.current = 0;
-      setActiveClipIndex(0);
-      setClipProgress(0);
-      setIsFading(false);
-
-      const dur = vid.duration || 120;
-      const clips = getStrategicClips(dur, project.slug || project.id);
-
-      try {
-        vid.currentTime = clips[0];
-      } catch (_) { }
-
+      vid.currentTime = 0;
       vid.play()
-        .then(() => {
-          setIsPlayingPreview(true);
-          clipStartTimeRef.current = performance.now();
-        })
-        .catch(() => { });
-
-      clipStartTimeRef.current = performance.now();
-
-      // Real-time animation frame loop for progressive 5s segment filling and flawless clip switching
-      const loop = (now: number) => {
-        const elapsed = now - clipStartTimeRef.current;
-        const clipDurationMs = 5000;
-        const progress = Math.min(1, Math.max(0, elapsed / clipDurationMs));
-        setClipProgress(progress);
-
-        // Soft dissolve 200ms before clip ends
-        if (elapsed >= clipDurationMs - 200 && !isFading) {
-          setIsFading(true);
-        }
-
-        if (elapsed >= clipDurationMs) {
-          const currentDur = vid.duration || 120;
-          const currentClips = getStrategicClips(currentDur, project.slug || project.id);
-
-          clipIndexRef.current = (clipIndexRef.current + 1) % currentClips.length;
-          setActiveClipIndex(clipIndexRef.current);
-          clipStartTimeRef.current = now;
-          setClipProgress(0);
-
-          const nextTime = currentClips[clipIndexRef.current];
-          try {
-            vid.currentTime = nextTime;
-            vid.play().catch(() => { });
-          } catch (_) { }
-
-          setTimeout(() => {
-            setIsFading(false);
-          }, 80);
-        }
-
-        rafRef.current = requestAnimationFrame(loop);
-      };
-
-      rafRef.current = requestAnimationFrame(loop);
+        .then(() => setIsPlayingPreview(true))
+        .catch(() => {});
     } else {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
       vid.pause();
+      vid.currentTime = 0;
       setIsPlayingPreview(false);
-      setIsFading(false);
-      clipIndexRef.current = 0;
       setActiveClipIndex(0);
       setClipProgress(0);
     }
+  }, [shouldPlay, previewSource]);
 
-    return () => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-    };
-  }, [shouldPlay, project.videoUrl, project.slug, project.id, isFading, getStrategicClips]);
+  const handleTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const vid = e.currentTarget;
+    const ct = vid.currentTime || 0;
+    // Total preview is 25s (5 clips of 5s each)
+    const clipIdx = Math.min(4, Math.max(0, Math.floor(ct / 5)));
+    const prog = (ct % 5) / 5;
+    setActiveClipIndex(clipIdx);
+    setClipProgress(prog);
+  };
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -662,17 +589,18 @@ function VideoCardItem({
           />
         </div>
 
-        {/* High-Performance Smooth Video Preview with Soft Dissolve */}
-        {project.videoUrl && (
+        {/* High-Performance Smooth Video Preview with 0ms Latency */}
+        {previewSource && (
           <video
             ref={videoRef}
-            src={project.videoUrl}
+            src={previewSource}
             loop
             muted
             playsInline
             preload="auto"
+            onTimeUpdate={handleTimeUpdate}
             onPlaying={() => setIsPlayingPreview(true)}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${isPlayingPreview && !isFading ? "opacity-100" : "opacity-0"
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${isPlayingPreview ? "opacity-100" : "opacity-0"
               }`}
           />
         )}
@@ -681,7 +609,7 @@ function VideoCardItem({
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500 pointer-events-none z-20" />
 
         {/* YouTube / Stories Style 5-Segment Clip Progress Bar with Real-Time Smooth Filling */}
-        {project.videoUrl && (
+        {previewSource && (
           <div className={`absolute bottom-4 left-6 right-6 z-30 flex items-center gap-1.5 transition-opacity duration-500 ${shouldPlay ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
             {[0, 1, 2, 3, 4].map((segIdx) => {
               const widthPct =
@@ -1355,12 +1283,13 @@ export default function Home() {
 
     // Background warmup of video elements to ensure instant playback without lag
     videoProjectsData.forEach((vp) => {
-      if (vp.videoUrl) {
+      const src = vp.previewVideoUrl || vp.videoUrl;
+      if (src) {
         const v = document.createElement("video");
         v.preload = "auto";
         v.muted = true;
         v.playsInline = true;
-        v.src = vp.videoUrl;
+        v.src = src;
         v.load();
       }
     });
