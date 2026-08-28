@@ -135,10 +135,15 @@ export default function ProjectPage() {
     };
   }, [setIsHideUI, resumeAudio]);
 
-  // Launch video directly on enter with robust instant playback (like Netflix)
+  // Launch video directly on enter (on desktop immediately; on mobile only after intro video finishes)
   useEffect(() => {
     if (!project?.videoUrl) {
       resumeAudio(true);
+      return;
+    }
+
+    // On mobile, do NOT start the main video until the Rotate Phone intro finishes
+    if (isMobileDevice && !hasDismissedRotate) {
       return;
     }
 
@@ -171,7 +176,7 @@ export default function ProjectPage() {
     return () => {
       resumeAudio(true);
     };
-  }, [project?.slug, project?.videoUrl, pauseAudio, resumeAudio]);
+  }, [project?.slug, project?.videoUrl, isMobileDevice, hasDismissedRotate, pauseAudio, resumeAudio]);
 
   // Ensure scroll position is reset on page entry
   useEffect(() => {
@@ -599,11 +604,22 @@ export default function ProjectPage() {
             toggleFullscreen();
           }
         }}
-        className={`relative w-full h-[100vh] min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] group select-none transition-all duration-500 ${
+        style={
           isForcedLandscapeCSS
-            ? "fixed inset-0 z-[120] w-[100vh] h-[100vw] rotate-90 origin-top-left translate-x-[100vw]"
-            : ""
-        } ${
+            ? {
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vh",
+                height: "100vw",
+                transformOrigin: "0 0",
+                transform: "translate(100vw, 0) rotate(90deg)",
+                zIndex: 120,
+                overflow: "hidden",
+              }
+            : undefined
+        }
+        className={`relative w-full h-[100vh] min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] group select-none transition-all duration-500 ${
           isIdle && isVideoPlaying ? "cursor-none" : "cursor-pointer"
         }`}
       >
