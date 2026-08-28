@@ -500,26 +500,12 @@ function VideoCardItem({
 
   const shouldPlay = isHovered || isMobileInView;
 
-  // Strategic start timestamps
-  const getStartTime = (slug: string) => {
-    if (slug === "au-grand-jour") return 45;
-    if (slug === "maladaptive") return 15;
-    if (slug === "festival-in-and-out" || slug === "nice-queer") return 10;
-    return 5;
-  };
-
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid || !project.videoUrl) return;
 
     if (shouldPlay) {
       vid.muted = true;
-      try {
-        if (vid.currentTime < 2) {
-          vid.currentTime = getStartTime(project.slug || project.id);
-        }
-      } catch (_) {}
-
       vid.play()
         .then(() => setIsPlayingPreview(true))
         .catch(() => {});
@@ -527,7 +513,7 @@ function VideoCardItem({
       vid.pause();
       setIsPlayingPreview(false);
     }
-  }, [shouldPlay, project.videoUrl, project.slug, project.id]);
+  }, [shouldPlay, project.videoUrl]);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -1547,7 +1533,10 @@ export default function Home() {
         id="hero"
         className="relative w-full h-screen overflow-hidden bg-[#050505] touch-pan-y"
       >
-        <PhysicsCoins containerRef={heroRef} portraitRef={heroImgRef} siteStarted={siteStarted || hasEnteredSite} />
+        {/* Physics Coins (Desktop Only to save mobile CPU/GPU) */}
+        <div className="hidden md:block absolute inset-0 pointer-events-none">
+          <PhysicsCoins containerRef={heroRef} portraitRef={heroImgRef} siteStarted={siteStarted || hasEnteredSite} />
+        </div>
 
         {/* Central Image Container (Awwwards Profile Portrait) */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-6 md:mt-0 touch-pan-y" style={{ perspective: "1000px" }}>
@@ -1590,20 +1579,6 @@ export default function Home() {
                 </>
               )}
             </h1>
-          </div>
-          
-          {/* Gyroscope Idle Guide Prompt (Discrete Styled Icon, No Text) */}
-          <div 
-            className={`absolute top-full mt-4 left-1/2 -translate-x-1/2 flex flex-col items-center transition-all duration-1000 ease-in-out md:hidden ${
-              showGyroIndicator ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-90 pointer-events-none'
-            }`}
-          >
-            <div className="w-10 h-10 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-md flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.03)] text-white/45 animate-phone-tilt">
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <rect x="7" y="3" width="10" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-                <line x1="11" y1="19" x2="13" y2="19" strokeLinecap="round" />
-              </svg>
-            </div>
           </div>
         </div>
       </section>
