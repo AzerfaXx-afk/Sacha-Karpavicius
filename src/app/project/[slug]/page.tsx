@@ -572,15 +572,17 @@ export default function ProjectPage() {
         </a>
       </div>
 
-      {/* Mobile Rotate Phone Prompt Modal */}
-      {isVideoProject && isMobileDevice && isPortrait && !hasDismissedRotate && (
+      {/* Mobile Rotate Phone Video Intro Modal */}
+      {isVideoProject && isMobileDevice && !hasDismissedRotate && (
         <RotatePhonePrompt
           lang={lang}
-          onDismiss={() => setHasDismissedRotate(true)}
-          onForceLandscape={() => {
+          onComplete={() => {
             setHasDismissedRotate(true);
-            setIsForcedLandscapeCSS(true);
-            toggleFullscreen();
+            setIsForcedLandscapeCSS(isPortrait);
+            const vid = videoRef.current;
+            if (vid) {
+              vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+            }
           }}
         />
       )}
