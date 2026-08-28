@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
+import { useSiteContext } from "@/context/site-context";
 
 interface RotatePhonePromptProps {
   onComplete: () => void;
@@ -11,6 +12,7 @@ export default function RotatePhonePrompt({
   onComplete,
   lang = "fr",
 }: RotatePhonePromptProps) {
+  const { pauseAudio, setIsHideUI } = useSiteContext();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isFadingOut, setIsFadingOut] = useState(false);
 
@@ -23,6 +25,10 @@ export default function RotatePhonePrompt({
   };
 
   useEffect(() => {
+    // Cut off background site ambient music immediately
+    pauseAudio(true);
+    setIsHideUI(true);
+
     const vid = videoRef.current;
     if (vid) {
       vid.currentTime = 0;
@@ -31,7 +37,7 @@ export default function RotatePhonePrompt({
         vid.play().catch(() => {});
       });
     }
-  }, []);
+  }, [pauseAudio, setIsHideUI]);
 
   return (
     <div

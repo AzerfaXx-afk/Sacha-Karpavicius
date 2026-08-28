@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Project } from "@/data/projects";
+import { useSiteContext } from "@/context/site-context";
 
 interface NetflixMobilePlayerProps {
   project: Project;
@@ -19,6 +20,8 @@ export default function NetflixMobilePlayer({
   onBack,
   lang = "fr",
 }: NetflixMobilePlayerProps) {
+  const { pauseAudio, resumeAudio, setIsHideUI } = useSiteContext();
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
@@ -26,10 +29,35 @@ export default function NetflixMobilePlayer({
   const [duration, setDuration] = useState(0);
   const [isUiVisible, setIsUiVisible] = useState(true);
   const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(false);
   const [pulseAction, setPulseAction] = useState<"play" | "pause" | "rewind" | "skip" | null>(null);
 
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pulseTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Detect orientation to force horizontal cinema mode
+  useEffect(() => {
+    const checkOrientation = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth);
+    };
+    checkOrientation();
+    window.addEventListener("resize", checkOrientation);
+    window.addEventListener("orientationchange", checkOrientation);
+    return () => {
+      window.removeEventListener("resize", checkOrientation);
+      window.removeEventListener("orientationchange", checkOrientation);
+    };
+  }, []);
+
+  // Guarantee site UI is hidden & background music paused
+  useEffect(() => {
+    setIsHideUI(true);
+    pauseAudio(true);
+    return () => {
+      setIsHideUI(false);
+      resumeAudio(true);
+    };
+  }, [setIsHideUI, pauseAudio, resumeAudio]);
 
   const triggerPulse = (type: "play" | "pause" | "rewind" | "skip") => {
     setPulseAction(type);
@@ -63,13 +91,19 @@ export default function NetflixMobilePlayer({
     vid.currentTime = 0;
     vid.muted = isMuted;
     vid.play()
-      .then(() => setIsPlaying(true))
+      .then(() => {
+        setIsPlaying(true);
+        pauseAudio(true);
+      })
       .catch(() => {
         vid.muted = true;
         setIsMuted(true);
-        vid.play().then(() => setIsPlaying(true)).catch(() => {});
+        vid.play().then(() => {
+          setIsPlaying(true);
+          pauseAudio(true);
+        }).catch(() => {});
       });
-  }, [project.videoUrl]);
+  }, [project.videoUrl, pauseAudio]);
 
   const togglePlay = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -80,12 +114,14 @@ export default function NetflixMobilePlayer({
         setIsPlaying(true);
         triggerPulse("play");
         resetIdleTimer();
+        pauseAudio(true);
       }).catch(() => {});
     } else {
       vid.pause();
       setIsPlaying(false);
       triggerPulse("pause");
       setIsUiVisible(true);
+      resumeAudio(true);
     }
   };
 
@@ -105,17 +141,6 @@ export default function NetflixMobilePlayer({
     if (!vid) return;
     vid.muted = !vid.muted;
     setIsMuted(vid.muted);
-    resetIdleTimer();
-  };
-
-  const toggleFullscreen = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const container = document.documentElement;
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {});
-    } else if (container.requestFullscreen) {
-      container.requestFullscreen().catch(() => {});
-    }
     resetIdleTimer();
   };
 
@@ -144,8 +169,33 @@ export default function NetflixMobilePlayer({
   return (
     <div
       onClick={resetIdleTimer}
-      className="fixed inset-0 z-[9999] bg-black text-white flex flex-col justify-between overflow-hidden select-none"
-      style={{ touchAction: "manipulation" }}
+      style={
+        isPortrait
+          ? {
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100vh",
+              height: "100vw",
+              transformOrigin: "0 0",
+              transform: "translate(100vw, 0) rotate(90deg)",
+              zIndex: 99999,
+              overflow: "hidden",
+              touchAction: "manipulation",
+              backgroundColor: "#000000",
+            }
+          : {
+              position: "fixed",
+              inset: 0,
+              width: "100vw",
+              height: "100vh",
+              zIndex: 99999,
+              overflow: "hidden",
+              touchAction: "manipulation",
+              backgroundColor: "#000000",
+            }
+      }
+      className="text-white flex flex-col justify-between select-none"
     >
       {/* 4K Video Surface */}
       <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-black">
@@ -184,13 +234,13 @@ export default function NetflixMobilePlayer({
           isUiVisible || !isPlaying ? "opacity-100" : "opacity-0"
         }`}
       >
-        <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-black/90 via-black/40 to-transparent" />
-        <div className="absolute bottom-0 inset-x-0 h-36 bg-gradient-to-t from-black/95 via-black/60 to-transparent" />
+        <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-black/90 via-black/40 to-transparent" />
+        <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-black/95 via-black/60 to-transparent" />
       </div>
 
       {/* ═══════════════ TOP BAR (NETFLIX STYLE) ═══════════════ */}
       <header
-        className={`relative z-30 w-full px-4 sm:px-8 pt-4 sm:pt-6 flex items-center justify-between transition-all duration-300 ${
+        className={`relative z-30 w-full px-5 pt-4 sm:pt-5 flex items-center justify-between transition-all duration-300 ${
           isUiVisible || !isPlaying ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-4 pointer-events-none"
         }`}
       >
@@ -200,7 +250,7 @@ export default function NetflixMobilePlayer({
             e.stopPropagation();
             onBack();
           }}
-          className="p-2 -ml-2 text-white/90 hover:text-white active:scale-90 transition-transform cursor-pointer"
+          className="p-2 -ml-2 text-white/90 hover:text-white active:scale-90 transition-transform cursor-pointer flex items-center gap-1.5"
           aria-label="Retour"
         >
           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -210,7 +260,7 @@ export default function NetflixMobilePlayer({
         </button>
 
         {/* Center: Title */}
-        <div className="flex flex-col items-center text-center px-4 max-w-[60%]">
+        <div className="flex flex-col items-center text-center px-4 max-w-[70%]">
           <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/60 font-semibold">
             {lang === "fr" ? "Projet Vidéo" : "Film"}
           </span>
@@ -219,23 +269,8 @@ export default function NetflixMobilePlayer({
           </h1>
         </div>
 
-        {/* Right: Stacked Cards Playlist Icon (Exact Icon Provided by User) */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsPlaylistOpen(true);
-            setIsUiVisible(true);
-          }}
-          className="p-2 -mr-2 text-white/90 hover:text-white active:scale-90 transition-transform cursor-pointer relative group"
-          aria-label="Liste des vidéos"
-          title="Autres films"
-        >
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="7" width="15" height="11" rx="2" ry="2" />
-            <path d="M5 4h14a2 2 0 0 1 2 2v10" />
-            <path d="M9 1h12a2 2 0 0 1 2 2v10" />
-          </svg>
-        </button>
+        {/* Right: Balance Spacer */}
+        <div className="w-8" />
       </header>
 
       {/* ═══════════════ CENTER CONTROLS (NETFLIX STYLE) ═══════════════ */}
@@ -262,15 +297,15 @@ export default function NetflixMobilePlayer({
         {/* Big Center Play / Pause */}
         <button
           onClick={togglePlay}
-          className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white text-black active:scale-90 transition-all flex items-center justify-center shadow-[0_0_40px_rgba(255,255,255,0.4)] cursor-pointer"
+          className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white text-black active:scale-90 transition-all flex items-center justify-center shadow-[0_0_35px_rgba(255,255,255,0.4)] cursor-pointer"
           aria-label={isPlaying ? "Pause" : "Lecture"}
         >
           {isPlaying ? (
-            <svg className="w-8 h-8 fill-black" viewBox="0 0 24 24">
+            <svg className="w-7 h-7 fill-black" viewBox="0 0 24 24">
               <path d="M6 4.5h4.5v15H6v-15zm7.5 0H18v15h-4.5v-15z" />
             </svg>
           ) : (
-            <svg className="w-8 h-8 fill-black translate-x-0.5" viewBox="0 0 24 24">
+            <svg className="w-7 h-7 fill-black translate-x-0.5" viewBox="0 0 24 24">
               <path d="M7 4.5v15l13-7.5L7 4.5z" />
             </svg>
           )}
@@ -292,9 +327,9 @@ export default function NetflixMobilePlayer({
         </button>
       </div>
 
-      {/* ═══════════════ BOTTOM TIMELINE BAR (NETFLIX STYLE) ═══════════════ */}
+      {/* ═══════════════ BOTTOM BAR (TIMELINE + VOLUME + PLAYLIST) ═══════════════ */}
       <footer
-        className={`relative z-30 w-full px-4 sm:px-8 pb-4 sm:pb-6 flex flex-col gap-2.5 transition-all duration-300 ${
+        className={`relative z-30 w-full px-5 pb-3 sm:pb-4 flex flex-col gap-2 transition-all duration-300 ${
           isUiVisible || !isPlaying ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"
         }`}
       >
@@ -302,7 +337,7 @@ export default function NetflixMobilePlayer({
         <div
           onTouchStart={handleScrubberTouch}
           onClick={handleScrubberTouch}
-          className="relative w-full h-6 flex items-center cursor-pointer group py-2"
+          className="relative w-full h-5 flex items-center cursor-pointer group py-1.5"
         >
           <div className="w-full h-1 bg-white/25 rounded-full overflow-hidden relative">
             <div
@@ -312,16 +347,16 @@ export default function NetflixMobilePlayer({
           </div>
         </div>
 
-        {/* Readouts & Secondary Buttons */}
+        {/* Readouts & Actions */}
         <div className="flex items-center justify-between font-mono text-xs text-white/80">
           {/* Time Readout */}
-          <div className="flex items-center gap-1.5 font-semibold tracking-wider">
+          <div className="flex items-center gap-1.5 font-semibold tracking-wider text-[11px]">
             <span>{formatTime(currentTime)}</span>
             <span className="text-white/40">/</span>
             <span className="text-white/60">{formatTime(duration)}</span>
           </div>
 
-          {/* Right Action Icons (Mute & Fullscreen) */}
+          {/* Right Action Icons (Volume + Playlist Drawer Button in bottom right) */}
           <div className="flex items-center gap-3">
             {/* Audio Mute */}
             <button
@@ -343,15 +378,25 @@ export default function NetflixMobilePlayer({
               )}
             </button>
 
-            {/* Fullscreen */}
+            {/* Stacked Cards Playlist Button in Bottom Right */}
             <button
-              onClick={toggleFullscreen}
-              className="p-1.5 text-white/90 hover:text-white active:scale-90 transition-transform cursor-pointer"
-              aria-label="Plein écran"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsPlaylistOpen(true);
+                setIsUiVisible(true);
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 active:scale-90 text-white transition-all cursor-pointer border border-white/15"
+              aria-label="Liste des vidéos"
+              title="Autres films"
             >
-              <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" />
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="7" width="15" height="11" rx="2" ry="2" />
+                <path d="M5 4h14a2 2 0 0 1 2 2v10" />
+                <path d="M9 1h12a2 2 0 0 1 2 2v10" />
               </svg>
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-wider">
+                {lang === "fr" ? "Films" : "Videos"}
+              </span>
             </button>
           </div>
         </div>
