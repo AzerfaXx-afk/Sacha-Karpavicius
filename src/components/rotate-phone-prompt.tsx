@@ -57,7 +57,7 @@ export default function RotatePhonePrompt({
         playsInline
         preload="auto"
         onEnded={handleFinish}
-        className="w-full h-full object-contain pointer-events-none"
+        className="w-full h-full object-cover sm:object-contain pointer-events-none scale-105 sm:scale-100"
         style={{
           imageRendering: "crisp-edges",
         }}

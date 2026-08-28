@@ -24,6 +24,7 @@ export default function NetflixMobilePlayer({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const scrubberRef = useRef<HTMLDivElement>(null);
 
   const [currentFilm, setCurrentFilm] = useState<Project>(project);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -32,17 +33,18 @@ export default function NetflixMobilePlayer({
   const [isUiVisible, setIsUiVisible] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPortrait, setIsPortrait] = useState(false);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [scrubTime, setScrubTime] = useState<number | null>(null);
   const [pulseAction, setPulseAction] = useState<"play" | "pause" | "rewind" | "skip" | null>(null);
 
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pulseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Update currentFilm if prop changes
   useEffect(() => {
     setCurrentFilm(project);
   }, [project]);
 
-  // Request Fullscreen & Lock Landscape
+  // Keep site ambient audio paused & site UI hidden on mobile video player
   useEffect(() => {
     setIsHideUI(true);
     pauseAudio(true);
@@ -92,14 +94,13 @@ export default function NetflixMobilePlayer({
   };
 
   const resetIdleTimer = useCallback(() => {
-    setIsUiVisible(true);
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    if (isPlaying && !isMenuOpen) {
+    if (isPlaying && !isMenuOpen && !isScrubbing) {
       idleTimerRef.current = setTimeout(() => {
         setIsUiVisible(false);
       }, 3500);
     }
-  }, [isPlaying, isMenuOpen]);
+  }, [isPlaying, isMenuOpen, isScrubbing]);
 
   useEffect(() => {
     resetIdleTimer();
@@ -108,7 +109,7 @@ export default function NetflixMobilePlayer({
     };
   }, [resetIdleTimer]);
 
-  // Play video smoothly when film changes
+  // Autoplay with sound on load/change
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid) return;
@@ -145,7 +146,6 @@ export default function NetflixMobilePlayer({
       setIsPlaying(false);
       triggerPulse("pause");
       setIsUiVisible(true);
-      resumeAudio(true);
     }
   };
 
@@ -159,18 +159,44 @@ export default function NetflixMobilePlayer({
     resetIdleTimer();
   };
 
-  const handleScrubberTouch = (e: React.TouchEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+  // Robust touch scrubber handling
+  const handleScrubberChange = (clientX: number) => {
+    if (!scrubberRef.current || duration <= 0) return;
+    const rect = scrubberRef.current.getBoundingClientRect();
     const clickX = clientX - rect.left;
     const ratio = Math.max(0, Math.min(1, clickX / rect.width));
     const targetTime = ratio * duration;
+    setScrubTime(targetTime);
     const vid = videoRef.current;
     if (vid) {
       vid.currentTime = targetTime;
       setCurrentTime(targetTime);
     }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    setIsScrubbing(true);
+    handleScrubberChange(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (isScrubbing) {
+      handleScrubberChange(e.touches[0].clientX);
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    setIsScrubbing(false);
+    setScrubTime(null);
+    resetIdleTimer();
+  };
+
+  const handleClickScrubber = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    handleScrubberChange(e.clientX);
     resetIdleTimer();
   };
 
@@ -187,6 +213,8 @@ export default function NetflixMobilePlayer({
     setIsMenuOpen(false);
     resetIdleTimer();
   };
+
+  const displayedTime = scrubTime !== null ? scrubTime : currentTime;
 
   return (
     <div
@@ -227,7 +255,7 @@ export default function NetflixMobilePlayer({
       }
       className="text-white flex flex-col justify-between select-none"
     >
-      {/* 4K Cinema Video Surface */}
+      {/* 4K Cinema Video Surface (Edge-to-Edge) */}
       <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-black">
         <video
           ref={videoRef}
@@ -236,7 +264,7 @@ export default function NetflixMobilePlayer({
           autoPlay
           loop
           onTimeUpdate={() => {
-            if (videoRef.current) {
+            if (videoRef.current && !isScrubbing) {
               setCurrentTime(videoRef.current.currentTime);
               setDuration(videoRef.current.duration || 0);
             }
@@ -246,7 +274,7 @@ export default function NetflixMobilePlayer({
               setDuration(videoRef.current.duration || 0);
             }
           }}
-          className="w-full h-full object-contain pointer-events-none"
+          className="w-full h-full object-cover sm:object-contain pointer-events-none"
         />
       </div>
 
@@ -364,25 +392,33 @@ export default function NetflixMobilePlayer({
             : "opacity-0 translate-y-4 pointer-events-none"
         }`}
       >
-        {/* Scrubber Progress Bar */}
+        {/* Touch Scrubber Progress Bar */}
         <div
-          onTouchStart={handleScrubberTouch}
-          onClick={handleScrubberTouch}
-          className="relative w-full h-5 flex items-center cursor-pointer group py-1.5"
+          ref={scrubberRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onClick={handleClickScrubber}
+          className="relative w-full h-8 -my-2 flex items-center cursor-pointer touch-none group"
         >
-          <div className="w-full h-1 bg-white/25 rounded-full overflow-hidden relative">
+          <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden relative">
             <div
-              className="h-full bg-red-600 rounded-full transition-all duration-75 relative shadow-[0_0_10px_rgba(220,38,38,0.8)]"
-              style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+              className="h-full bg-red-600 rounded-full transition-all duration-75 relative shadow-[0_0_12px_rgba(220,38,38,0.9)]"
+              style={{ width: `${duration > 0 ? (displayedTime / duration) * 100 : 0}%` }}
             />
           </div>
+          {/* Scrubber Thumb */}
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-[0_0_10px_rgba(0,0,0,0.8)] border border-red-600 pointer-events-none"
+            style={{ left: `calc(${duration > 0 ? (displayedTime / duration) * 100 : 0}% - 8px)` }}
+          />
         </div>
 
         {/* Readouts & Films Playlist Dropdown Button */}
         <div className="flex items-center justify-between font-mono text-xs text-white/80">
           {/* Time Readout */}
           <div className="flex items-center gap-1.5 font-semibold tracking-wider text-[11px]">
-            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(displayedTime)}</span>
             <span className="text-white/40">/</span>
             <span className="text-white/60">{formatTime(duration)}</span>
           </div>

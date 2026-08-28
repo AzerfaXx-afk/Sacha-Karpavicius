@@ -495,8 +495,8 @@ function VideoCardItem({
         setIsMobileInView(entry.isIntersecting);
       },
       {
-        threshold: 0.2,
-        rootMargin: "50px 0px 50px 0px",
+        threshold: 0.15,
+        rootMargin: "100px 0px 100px 0px",
       }
     );
 
@@ -634,6 +634,7 @@ function VideoCardItem({
       onClick={onClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onTouchStart={() => setIsHovered(true)}
       className="group relative cursor-pointer mb-24 md:mb-32"
     >
       {/* Cinema Ambient Backlight Bloom */}
