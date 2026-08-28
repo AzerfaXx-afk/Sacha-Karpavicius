@@ -2,17 +2,23 @@
 
 import { usePathname } from "next/navigation";
 import { useSiteContext } from "@/context/site-context";
+import { videoProjectsData } from "@/data/projects";
 
 export default function GlobalAudioSignal() {
   const pathname = usePathname();
   const { isHideUI, isPlaying, toggleAudio, hasEnteredSite, isHoveringName } = useSiteContext();
 
-  // Never render on project or video pages
-  if (pathname && pathname.startsWith("/project")) {
+  // Hide ONLY on video pages; keep visible on homepage and photo/image gallery projects!
+  const isVideoPage = videoProjectsData.some(
+    (p) => pathname?.includes(`/project/${p.slug}`) || pathname?.includes(`/project/${p.id}`)
+  );
+  if (isVideoPage) {
     return null;
   }
 
-  const showUI = (hasEnteredSite || isHoveringName) && !isHideUI;
+  // On photo project pages or homepage, show whenever UI is not hidden
+  const isPhotoProject = pathname?.startsWith("/project/");
+  const showUI = (hasEnteredSite || isHoveringName || isPhotoProject) && !isHideUI;
 
   return (
     <div
