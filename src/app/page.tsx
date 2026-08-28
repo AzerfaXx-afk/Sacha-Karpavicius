@@ -471,21 +471,15 @@ function VideoCardItem({
   playHoverSfx?: () => void;
 }) {
   const [isHovered, setIsHovered] = useState(false);
-  const [activeVideo, setActiveVideo] = useState<"A" | "B">("A");
-  const [isReadyA, setIsReadyA] = useState(false);
-  const [isReadyB, setIsReadyB] = useState(false);
-
-  const videoRefA = useRef<HTMLVideoElement>(null);
-  const videoRefB = useRef<HTMLVideoElement>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const clipIndexRef = useRef<number>(0);
-
+  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const [isMobileInView, setIsMobileInView] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const isPoster = project.coverImage.toLowerCase().includes("affiche");
 
-  // IntersectionObserver for mobile auto-preview when in viewport
+  // Mobile viewport detection — only active when card is clearly visible
   useEffect(() => {
     const isMobile = window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches;
     if (!isMobile || !cardRef.current) return;
@@ -495,8 +489,8 @@ function VideoCardItem({
         setIsMobileInView(entry.isIntersecting);
       },
       {
-        threshold: 0.15,
-        rootMargin: "100px 0px 100px 0px",
+        threshold: 0.35,
+        rootMargin: "0px",
       }
     );
 
@@ -504,20 +498,36 @@ function VideoCardItem({
     return () => observer.disconnect();
   }, []);
 
-  const shouldPlayPreview = isHovered || isMobileInView;
+  const shouldPlay = isHovered || isMobileInView;
 
-  // Strategic high-impact timestamps per video (skipping intro black/bars/logos)
-  const getStrategicClips = (duration: number, slug: string) => {
-    if (slug === "au-grand-jour") {
-      return [45, 120, 240, 360, 480];
-    } else if (slug === "maladaptive") {
-      return [12, 35, 60, 85, 110];
-    } else if (slug === "festival-in-and-out" || slug === "nice-queer") {
-      return [8, 18, 32, 48, 65];
-    }
-    const dur = duration && !isNaN(duration) && duration > 5 ? duration : 40;
-    return [dur * 0.20, dur * 0.40, dur * 0.60, dur * 0.80, dur * 0.92];
+  // Strategic start timestamps
+  const getStartTime = (slug: string) => {
+    if (slug === "au-grand-jour") return 45;
+    if (slug === "maladaptive") return 15;
+    if (slug === "festival-in-and-out" || slug === "nice-queer") return 10;
+    return 5;
   };
+
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid || !project.videoUrl) return;
+
+    if (shouldPlay) {
+      vid.muted = true;
+      try {
+        if (vid.currentTime < 2) {
+          vid.currentTime = getStartTime(project.slug || project.id);
+        }
+      } catch (_) {}
+
+      vid.play()
+        .then(() => setIsPlayingPreview(true))
+        .catch(() => {});
+    } else {
+      vid.pause();
+      setIsPlayingPreview(false);
+    }
+  }, [shouldPlay, project.videoUrl, project.slug, project.id]);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -526,105 +536,7 @@ function VideoCardItem({
 
   const handleMouseLeave = () => {
     setIsHovered(false);
-    setIsReadyA(false);
-    setIsReadyB(false);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    if (videoRefA.current) videoRefA.current.pause();
-    if (videoRefB.current) videoRefB.current.pause();
   };
-
-  useEffect(() => {
-    if (!project.videoUrl) return;
-
-    if (shouldPlayPreview) {
-      const vidA = videoRefA.current;
-      const vidB = videoRefB.current;
-
-      if (vidA) {
-        vidA.muted = true;
-        vidA.defaultMuted = true;
-      }
-      if (vidB) {
-        vidB.muted = true;
-        vidB.defaultMuted = true;
-      }
-
-      clipIndexRef.current = 0;
-      setActiveVideo("A");
-
-      // Start 1st clip on Video A
-      if (vidA) {
-        const dur = vidA.duration || 40;
-        const clips = getStrategicClips(dur, project.slug || project.id);
-        try {
-          vidA.currentTime = clips[0];
-        } catch (_) {}
-
-        vidA.play()
-          .then(() => setIsReadyA(true))
-          .catch(() => {});
-      }
-
-      if (intervalRef.current) clearInterval(intervalRef.current);
-
-      // Cycle 5 strategic clips every 2.7 seconds with seamless cross-fade
-      intervalRef.current = setInterval(() => {
-        const activeVid = activeVideo === "A" ? videoRefA.current : videoRefB.current;
-        const nextVid = activeVideo === "A" ? videoRefB.current : videoRefA.current;
-
-        if (!nextVid) return;
-
-        const dur = (activeVid && activeVid.duration) || 40;
-        const clips = getStrategicClips(dur, project.slug || project.id);
-        
-        clipIndexRef.current = (clipIndexRef.current + 1) % clips.length;
-        const targetTime = clips[clipIndexRef.current];
-
-        nextVid.muted = true;
-        nextVid.defaultMuted = true;
-
-        try {
-          nextVid.currentTime = targetTime;
-        } catch (_) {}
-
-        nextVid.play()
-          .then(() => {
-            if (activeVideo === "A") {
-              setIsReadyB(true);
-              setActiveVideo("B");
-              setTimeout(() => {
-                if (videoRefA.current) videoRefA.current.pause();
-              }, 700);
-            } else {
-              setIsReadyA(true);
-              setActiveVideo("A");
-              setTimeout(() => {
-                if (videoRefB.current) videoRefB.current.pause();
-              }, 700);
-            }
-          })
-          .catch(() => {});
-      }, 2700);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      if (videoRefA.current) videoRefA.current.pause();
-      if (videoRefB.current) videoRefB.current.pause();
-      setIsReadyA(false);
-      setIsReadyB(false);
-    }
-  }, [shouldPlayPreview, project.videoUrl, project.slug, project.id]);
-
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
 
   return (
     <div
@@ -674,44 +586,18 @@ function VideoCardItem({
           />
         </div>
 
-        {/* Dual-Video Cross-Fade Strategic 5 Clips Reader (Video A) */}
+        {/* High-Performance Lightweight Single Video Preview */}
         {project.videoUrl && (
           <video
-            ref={videoRefA}
+            ref={videoRef}
             src={project.videoUrl}
             loop
             muted
             playsInline
-            preload="auto"
-            onCanPlay={() => {
-              if (shouldPlayPreview && activeVideo === "A") setIsReadyA(true);
-            }}
-            onPlaying={() => {
-              if (shouldPlayPreview && activeVideo === "A") setIsReadyA(true);
-            }}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${
-              shouldPlayPreview && activeVideo === "A" && isReadyA ? "opacity-100" : "opacity-0"
-            }`}
-          />
-        )}
-
-        {/* Dual-Video Cross-Fade Strategic 5 Clips Reader (Video B) */}
-        {project.videoUrl && (
-          <video
-            ref={videoRefB}
-            src={project.videoUrl}
-            loop
-            muted
-            playsInline
-            preload="auto"
-            onCanPlay={() => {
-              if (shouldPlayPreview && activeVideo === "B") setIsReadyB(true);
-            }}
-            onPlaying={() => {
-              if (shouldPlayPreview && activeVideo === "B") setIsReadyB(true);
-            }}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${
-              shouldPlayPreview && activeVideo === "B" && isReadyB ? "opacity-100" : "opacity-0"
+            preload="metadata"
+            onPlaying={() => setIsPlayingPreview(true)}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${
+              isPlayingPreview ? "opacity-100" : "opacity-0"
             }`}
           />
         )}

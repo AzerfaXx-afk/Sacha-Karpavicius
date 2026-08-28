@@ -32,6 +32,7 @@ export default function NetflixMobilePlayer({
   const [duration, setDuration] = useState(0);
   const [isUiVisible, setIsUiVisible] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubTime, setScrubTime] = useState<number | null>(null);
   const [pulseAction, setPulseAction] = useState<"play" | "pause" | "rewind" | "skip" | null>(null);
@@ -39,33 +40,23 @@ export default function NetflixMobilePlayer({
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pulseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Request Fullscreen & Screen Orientation Lock (Landscape)
+  // Sync fullscreen state
   useEffect(() => {
     setIsHideUI(true);
     pauseAudio(true);
 
-    const tryFullscreenAndLandscape = async () => {
-      try {
-        const elem = containerRef.current || document.documentElement;
-        if (elem.requestFullscreen) {
-          await elem.requestFullscreen();
-        } else if ((elem as unknown as { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen) {
-          await (elem as unknown as { webkitRequestFullscreen: () => Promise<void> }).webkitRequestFullscreen();
-        }
-      } catch (_) {}
-
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const screenAny = screen as any;
-        if (screenAny?.orientation?.lock) {
-          await screenAny.orientation.lock("landscape");
-        }
-      } catch (_) {}
+    const handleFullscreenChange = () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const isFull = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+      setIsFullscreen(isFull);
     };
 
-    tryFullscreenAndLandscape();
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
 
     return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
       setIsHideUI(false);
       resumeAudio(true);
     };
@@ -156,6 +147,48 @@ export default function NetflixMobilePlayer({
     vid.currentTime = Math.max(0, Math.min(vid.duration || 0, vid.currentTime + seconds));
     setCurrentTime(vid.currentTime);
     triggerPulse(seconds < 0 ? "rewind" : "skip");
+    resetIdleTimer();
+  };
+
+  const toggleFullscreen = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    try {
+      const elem = containerRef.current || document.documentElement;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+        if (elem.requestFullscreen) {
+          await elem.requestFullscreen();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } else if ((elem as any).webkitRequestFullscreen) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (elem as any).webkitRequestFullscreen();
+        }
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const screenAny = screen as any;
+          if (screenAny?.orientation?.lock) {
+            await screenAny.orientation.lock("landscape");
+          }
+        } catch (_) {}
+        setIsFullscreen(true);
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } else if ((document as any).webkitExitFullscreen) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (document as any).webkitExitFullscreen();
+        }
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const screenAny = screen as any;
+          if (screenAny?.orientation?.unlock) {
+            screenAny.orientation.unlock();
+          }
+        } catch (_) {}
+        setIsFullscreen(false);
+      }
+    } catch (_) {}
     resetIdleTimer();
   };
 
@@ -374,7 +407,7 @@ export default function NetflixMobilePlayer({
         </button>
       </div>
 
-      {/* ═══════════════ BOTTOM BAR (TIMELINE + FILMS PLAYLIST BUTTON) ═══════════════ */}
+      {/* ═══════════════ BOTTOM BAR (TIMELINE + FILMS + FULLSCREEN BUTTON) ═══════════════ */}
       <footer
         className={`relative z-30 w-full px-5 pb-3 sm:pb-4 flex flex-col gap-2 transition-all duration-300 ${
           isUiVisible || !isPlaying || isMenuOpen
@@ -404,7 +437,7 @@ export default function NetflixMobilePlayer({
           />
         </div>
 
-        {/* Readouts & Films Playlist Dropdown Button */}
+        {/* Readouts & Films Playlist + Fullscreen Buttons */}
         <div className="flex items-center justify-between font-mono text-xs text-white/80">
           {/* Time Readout */}
           <div className="flex items-center gap-1.5 font-semibold tracking-wider text-[11px]">
@@ -413,106 +446,122 @@ export default function NetflixMobilePlayer({
             <span className="text-white/60">{formatTime(duration)}</span>
           </div>
 
-          {/* Films Playlist Menu Toggle in Bottom Right */}
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsMenuOpen((prev) => !prev);
-                setIsUiVisible(true);
-              }}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg active:scale-95 text-white transition-all cursor-pointer border ${
-                isMenuOpen
-                  ? "bg-red-600 border-red-500 shadow-[0_0_20px_rgba(220,38,38,0.5)]"
-                  : "bg-white/10 hover:bg-white/20 border-white/20 shadow-lg"
-              }`}
-              aria-label="Liste des films"
-              title="Autres films"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="7" width="15" height="11" rx="2" ry="2" />
-                <path d="M5 4h14a2 2 0 0 1 2 2v10" />
-                <path d="M9 1h12a2 2 0 0 1 2 2v10" />
-              </svg>
-              <span className="font-mono text-[11px] font-bold uppercase tracking-wider">
-                {lang === "fr" ? "Films" : "Videos"}
-              </span>
-              <svg className={`w-3 h-3 transition-transform duration-200 ${isMenuOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-
-            {/* ═══════════════ FLOATING PLAYLIST DROPDOWN MENU ═══════════════ */}
-            {isMenuOpen && (
-              <div
-                onClick={(e) => e.stopPropagation()}
-                className="absolute bottom-12 right-0 z-50 w-72 sm:w-80 bg-black/95 backdrop-blur-2xl border border-white/20 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.95)] p-3 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-150"
+          {/* Buttons: Films Playlist & Fullscreen */}
+          <div className="flex items-center gap-2">
+            {/* Films Playlist Menu Toggle */}
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMenuOpen((prev) => !prev);
+                  setIsUiVisible(true);
+                }}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg active:scale-95 text-white transition-all cursor-pointer border ${
+                  isMenuOpen
+                    ? "bg-red-600 border-red-500 shadow-[0_0_20px_rgba(220,38,38,0.5)]"
+                    : "bg-white/10 hover:bg-white/20 border-white/20 shadow-lg"
+                }`}
+                aria-label="Autres films"
+                title="Autres films"
               >
-                {/* Header */}
-                <div className="flex items-center justify-between pb-2 border-b border-white/10 px-1">
-                  <span className="font-syne font-extrabold text-[11px] uppercase tracking-wider text-white/90">
-                    {lang === "fr" ? "Sélectionner un film" : "Select a film"}
-                  </span>
-                  <button
-                    onClick={() => setIsMenuOpen(false)}
-                    className="w-5 h-5 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 text-[10px] cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="7" width="15" height="11" rx="2" ry="2" />
+                  <path d="M5 4h14a2 2 0 0 1 2 2v10" />
+                  <path d="M9 1h12a2 2 0 0 1 2 2v10" />
+                </svg>
+                <span className="font-mono text-[11px] font-bold uppercase tracking-wider">
+                  {lang === "fr" ? "Films" : "Videos"}
+                </span>
+                <svg className={`w-3 h-3 transition-transform duration-200 ${isMenuOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
 
-                {/* Vertical Film Options */}
-                <div className="flex flex-col gap-2 max-h-56 overflow-y-auto">
-                  {allProjects.map((film) => {
-                    const isCurrent = film.slug === currentFilm.slug;
-                    return (
-                      <div
-                        key={film.slug}
-                        onClick={() => handleSelectFilm(film)}
-                        className={`relative rounded-xl p-2 flex items-center gap-3 border transition-all cursor-pointer ${
-                          isCurrent
-                            ? "bg-white/15 border-red-500/80 shadow-[0_0_20px_rgba(220,38,38,0.3)]"
-                            : "bg-white/5 border-white/10 hover:bg-white/10 active:scale-98"
-                        }`}
-                      >
-                        {/* Thumbnail */}
-                        <div className="relative w-16 h-10 rounded-lg overflow-hidden bg-black shrink-0">
-                          <Image
-                            src={film.coverImage || film.heroImage}
-                            alt={film.title}
-                            fill
-                            className="object-cover"
-                            sizes="80px"
-                          />
-                          {isCurrent && (
-                            <div className="absolute inset-0 bg-red-600/30 flex items-center justify-center">
-                              <div className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-                            </div>
-                          )}
-                        </div>
+              {/* ═══════════════ FLOATING PLAYLIST DROPDOWN MENU ═══════════════ */}
+              {isMenuOpen && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute bottom-12 right-0 z-50 w-72 sm:w-80 bg-black/95 backdrop-blur-2xl border border-white/20 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.95)] p-3 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-150"
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between pb-2 border-b border-white/10 px-1">
+                    <span className="font-syne font-extrabold text-[11px] uppercase tracking-wider text-white/90">
+                      {lang === "fr" ? "Autres films" : "Other films"}
+                    </span>
+                    <button
+                      onClick={() => setIsMenuOpen(false)}
+                      className="w-5 h-5 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 text-[10px] cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
 
-                        {/* Metadata */}
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <h4 className="font-syne font-bold text-xs uppercase text-white truncate">
-                            {film.title}
-                          </h4>
-                          <div className="flex items-center gap-1.5 font-mono text-[9px] text-white/60">
-                            <span>{film.year}</span>
-                            <span>•</span>
-                            <span className="truncate">{film.category || "Vidéo"}</span>
+                  {/* Vertical Film Options */}
+                  <div className="flex flex-col gap-2 max-h-56 overflow-y-auto">
+                    {allProjects.map((film) => {
+                      const isCurrent = film.slug === currentFilm.slug;
+                      return (
+                        <div
+                          key={film.slug}
+                          onClick={() => handleSelectFilm(film)}
+                          className={`relative rounded-xl p-2 flex items-center gap-3 border transition-all cursor-pointer ${
+                            isCurrent
+                              ? "bg-white/15 border-red-500/80 shadow-[0_0_15px_rgba(220,38,38,0.25)]"
+                              : "bg-white/5 border-white/10 hover:bg-white/10 active:scale-98"
+                          }`}
+                        >
+                          {/* Thumbnail */}
+                          <div className="relative w-16 h-10 rounded-lg overflow-hidden bg-black shrink-0">
+                            <Image
+                              src={film.coverImage || film.heroImage}
+                              alt={film.title}
+                              fill
+                              className="object-cover"
+                              sizes="80px"
+                            />
                           </div>
-                          {isCurrent && (
-                            <span className="font-mono text-[8px] uppercase tracking-wider text-red-400 font-bold mt-0.5">
-                              ▶ {lang === "fr" ? "En cours" : "Playing"}
-                            </span>
-                          )}
+
+                          {/* Metadata */}
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <h4 className="font-syne font-bold text-xs uppercase text-white truncate">
+                              {film.title}
+                            </h4>
+                            <div className="flex items-center gap-1.5 font-mono text-[9px] text-white/60">
+                              <span>{film.year}</span>
+                              <span>•</span>
+                              <span className="truncate">{film.category || "Vidéo"}</span>
+                            </div>
+                            {isCurrent && (
+                              <span className="font-mono text-[8px] uppercase tracking-wider text-red-400 font-bold mt-0.5">
+                                ▶ {lang === "fr" ? "En cours" : "Playing"}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* Fullscreen Button to the right of Films */}
+            <button
+              onClick={toggleFullscreen}
+              className="flex items-center justify-center p-2 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white border border-white/20 transition-all cursor-pointer shadow-lg"
+              aria-label={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+              title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+            >
+              {isFullscreen ? (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
       </footer>
