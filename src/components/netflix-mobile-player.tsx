@@ -24,35 +24,29 @@ export default function NetflixMobilePlayer({
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isUiVisible, setIsUiVisible] = useState(true);
   const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
-  const [isPortrait, setIsPortrait] = useState(false);
   const [pulseAction, setPulseAction] = useState<"play" | "pause" | "rewind" | "skip" | null>(null);
 
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pulseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Detect orientation to force horizontal cinema mode
-  useEffect(() => {
-    const checkOrientation = () => {
-      setIsPortrait(window.innerHeight > window.innerWidth);
-    };
-    checkOrientation();
-    window.addEventListener("resize", checkOrientation);
-    window.addEventListener("orientationchange", checkOrientation);
-    return () => {
-      window.removeEventListener("resize", checkOrientation);
-      window.removeEventListener("orientationchange", checkOrientation);
-    };
-  }, []);
-
   // Guarantee site UI is hidden & background music paused
   useEffect(() => {
     setIsHideUI(true);
     pauseAudio(true);
+
+    // Try locking screen orientation to landscape if supported
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const screenAny = screen as any;
+      if (screenAny?.orientation?.lock) {
+        screenAny.orientation.lock("landscape").catch(() => {});
+      }
+    } catch (_) {}
+
     return () => {
       setIsHideUI(false);
       resumeAudio(true);
@@ -89,7 +83,7 @@ export default function NetflixMobilePlayer({
     if (!vid) return;
 
     vid.currentTime = 0;
-    vid.muted = isMuted;
+    vid.muted = false;
     vid.play()
       .then(() => {
         setIsPlaying(true);
@@ -97,7 +91,6 @@ export default function NetflixMobilePlayer({
       })
       .catch(() => {
         vid.muted = true;
-        setIsMuted(true);
         vid.play().then(() => {
           setIsPlaying(true);
           pauseAudio(true);
@@ -135,15 +128,6 @@ export default function NetflixMobilePlayer({
     resetIdleTimer();
   };
 
-  const toggleMute = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const vid = videoRef.current;
-    if (!vid) return;
-    vid.muted = !vid.muted;
-    setIsMuted(vid.muted);
-    resetIdleTimer();
-  };
-
   const handleScrubberTouch = (e: React.TouchEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
@@ -169,35 +153,10 @@ export default function NetflixMobilePlayer({
   return (
     <div
       onClick={resetIdleTimer}
-      style={
-        isPortrait
-          ? {
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100vh",
-              height: "100vw",
-              transformOrigin: "0 0",
-              transform: "translate(100vw, 0) rotate(90deg)",
-              zIndex: 99999,
-              overflow: "hidden",
-              touchAction: "manipulation",
-              backgroundColor: "#000000",
-            }
-          : {
-              position: "fixed",
-              inset: 0,
-              width: "100vw",
-              height: "100vh",
-              zIndex: 99999,
-              overflow: "hidden",
-              touchAction: "manipulation",
-              backgroundColor: "#000000",
-            }
-      }
-      className="text-white flex flex-col justify-between select-none"
+      className="fixed inset-0 z-[99999] bg-black text-white flex flex-col justify-between overflow-hidden select-none"
+      style={{ touchAction: "manipulation" }}
     >
-      {/* 4K Video Surface */}
+      {/* 4K Cinema Video Frame */}
       <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-black">
         <video
           ref={videoRef}
@@ -206,7 +165,6 @@ export default function NetflixMobilePlayer({
           playsInline
           autoPlay
           loop
-          muted={isMuted}
           onTimeUpdate={() => {
             if (videoRef.current) {
               setCurrentTime(videoRef.current.currentTime);
@@ -240,7 +198,7 @@ export default function NetflixMobilePlayer({
 
       {/* ═══════════════ TOP BAR (NETFLIX STYLE) ═══════════════ */}
       <header
-        className={`relative z-30 w-full px-5 pt-4 sm:pt-5 flex items-center justify-between transition-all duration-300 ${
+        className={`relative z-30 w-full px-5 pt-4 sm:pt-6 flex items-center justify-between transition-all duration-300 ${
           isUiVisible || !isPlaying ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-4 pointer-events-none"
         }`}
       >
@@ -269,7 +227,7 @@ export default function NetflixMobilePlayer({
           </h1>
         </div>
 
-        {/* Right: Balance Spacer */}
+        {/* Right Balance Spacer */}
         <div className="w-8" />
       </header>
 
@@ -327,9 +285,9 @@ export default function NetflixMobilePlayer({
         </button>
       </div>
 
-      {/* ═══════════════ BOTTOM BAR (TIMELINE + VOLUME + PLAYLIST) ═══════════════ */}
+      {/* ═══════════════ BOTTOM BAR (TIMELINE + FILMS PLAYLIST BUTTON) ═══════════════ */}
       <footer
-        className={`relative z-30 w-full px-5 pb-3 sm:pb-4 flex flex-col gap-2 transition-all duration-300 ${
+        className={`relative z-30 w-full px-5 pb-4 sm:pb-6 flex flex-col gap-2 transition-all duration-300 ${
           isUiVisible || !isPlaying ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"
         }`}
       >
@@ -347,7 +305,7 @@ export default function NetflixMobilePlayer({
           </div>
         </div>
 
-        {/* Readouts & Actions */}
+        {/* Readouts & Films Drawer Button */}
         <div className="flex items-center justify-between font-mono text-xs text-white/80">
           {/* Time Readout */}
           <div className="flex items-center gap-1.5 font-semibold tracking-wider text-[11px]">
@@ -356,53 +314,30 @@ export default function NetflixMobilePlayer({
             <span className="text-white/60">{formatTime(duration)}</span>
           </div>
 
-          {/* Right Action Icons (Volume + Playlist Drawer Button in bottom right) */}
-          <div className="flex items-center gap-3">
-            {/* Audio Mute */}
-            <button
-              onClick={toggleMute}
-              className="p-1.5 text-white/90 hover:text-white active:scale-90 transition-transform cursor-pointer"
-              aria-label={isMuted ? "Activer le son" : "Couper le son"}
-            >
-              {isMuted ? (
-                <svg className="w-5 h-5 text-white/50" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25M9.75 6.75l-4.5 3.75H3a.75.75 0 00-.75.75v1.5c0 .414.336.75.75.75h2.25l4.5 3.75V6.75z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 6.75l-4.5 3.75H3a.75.75 0 00-.75.75v1.5c0 .414.336.75.75.75h2.25l4.5 3.75V6.75z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12a7.5 7.5 0 00-2.2-5.3" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12a4.5 4.5 0 00-1.32-3.18" />
-                </svg>
-              )}
-            </button>
-
-            {/* Stacked Cards Playlist Button in Bottom Right */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsPlaylistOpen(true);
-                setIsUiVisible(true);
-              }}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 active:scale-90 text-white transition-all cursor-pointer border border-white/15"
-              aria-label="Liste des vidéos"
-              title="Autres films"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="7" width="15" height="11" rx="2" ry="2" />
-                <path d="M5 4h14a2 2 0 0 1 2 2v10" />
-                <path d="M9 1h12a2 2 0 0 1 2 2v10" />
-              </svg>
-              <span className="font-mono text-[10px] font-semibold uppercase tracking-wider">
-                {lang === "fr" ? "Films" : "Videos"}
-              </span>
-            </button>
-          </div>
+          {/* Films Playlist Button in Bottom Right */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsPlaylistOpen(true);
+              setIsUiVisible(true);
+            }}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 active:scale-90 text-white transition-all cursor-pointer border border-white/20 shadow-lg"
+            aria-label="Liste des films"
+            title="Autres films"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="7" width="15" height="11" rx="2" ry="2" />
+              <path d="M5 4h14a2 2 0 0 1 2 2v10" />
+              <path d="M9 1h12a2 2 0 0 1 2 2v10" />
+            </svg>
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider">
+              {lang === "fr" ? "Films" : "Videos"}
+            </span>
+          </button>
         </div>
       </footer>
 
-      {/* ═══════════════ PLAYLIST / OTHER VIDEOS DRAWER (MODAL) ═══════════════ */}
+      {/* ═══════════════ PLAYLIST DRAWER (CLEAN VERTICAL LIST) ═══════════════ */}
       {isPlaylistOpen && (
         <div
           onClick={(e) => {
@@ -413,9 +348,9 @@ export default function NetflixMobilePlayer({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-h-[85vh] bg-[#111111] border-t border-white/15 rounded-t-3xl p-5 sm:p-7 flex flex-col gap-4 overflow-y-auto"
+            className="w-full max-h-[80vh] bg-[#121212] border-t border-white/15 rounded-t-3xl p-5 sm:p-6 flex flex-col gap-4 overflow-y-auto"
           >
-            {/* Drawer Header */}
+            {/* Header */}
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <svg className="w-5 h-5 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -424,7 +359,7 @@ export default function NetflixMobilePlayer({
                   <path d="M9 1h12a2 2 0 0 1 2 2v10" />
                 </svg>
                 <h3 className="font-syne font-extrabold text-sm uppercase tracking-wider text-white">
-                  {lang === "fr" ? "Autres Projets Vidéos" : "Other Films"}
+                  {lang === "fr" ? "Autres Films & Vidéos" : "Other Films"}
                 </h3>
               </div>
 
@@ -436,8 +371,8 @@ export default function NetflixMobilePlayer({
               </button>
             </div>
 
-            {/* Video Items List */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Vertical Cards List */}
+            <div className="flex flex-col gap-2.5">
               {allProjects.map((p) => {
                 const isCurrent = p.slug === project.slug;
                 return (
@@ -447,41 +382,41 @@ export default function NetflixMobilePlayer({
                       onSelectProject(p);
                       setIsPlaylistOpen(false);
                     }}
-                    className={`relative rounded-xl overflow-hidden p-2.5 flex items-center gap-3 border transition-all cursor-pointer ${
+                    className={`relative rounded-xl overflow-hidden p-2.5 flex items-center gap-3.5 border transition-all cursor-pointer ${
                       isCurrent
-                        ? "bg-white/15 border-red-500/80 shadow-[0_0_20px_rgba(220,38,38,0.3)]"
+                        ? "bg-white/15 border-red-500/80 shadow-[0_0_25px_rgba(220,38,38,0.3)]"
                         : "bg-white/5 border-white/10 hover:bg-white/10 active:scale-98"
                     }`}
                   >
                     {/* Thumbnail */}
-                    <div className="relative w-20 h-12 rounded-lg overflow-hidden bg-black shrink-0">
+                    <div className="relative w-24 h-14 rounded-lg overflow-hidden bg-black shrink-0">
                       <Image
                         src={p.coverImage || p.heroImage}
                         alt={p.title}
                         fill
                         className="object-cover"
-                        sizes="100px"
+                        sizes="120px"
                       />
                       {isCurrent && (
                         <div className="absolute inset-0 bg-red-600/30 flex items-center justify-center">
-                          <div className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                          <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
                         </div>
                       )}
                     </div>
 
-                    {/* Metadata */}
+                    {/* Info */}
                     <div className="flex flex-col min-w-0 flex-1">
-                      <h4 className="font-syne font-bold text-xs uppercase text-white truncate">
+                      <h4 className="font-syne font-bold text-xs sm:text-sm uppercase text-white truncate">
                         {p.title}
                       </h4>
-                      <div className="flex items-center gap-2 font-mono text-[10px] text-white/60">
+                      <div className="flex items-center gap-2 font-mono text-[10px] text-white/60 pt-0.5">
                         <span>{p.year}</span>
                         <span>•</span>
                         <span className="truncate">{p.category || "Vidéo"}</span>
                       </div>
                       {isCurrent && (
-                        <span className="font-mono text-[9px] uppercase tracking-wider text-red-400 font-bold mt-0.5">
-                          ▶ {lang === "fr" ? "En cours" : "Playing"}
+                        <span className="font-mono text-[9px] uppercase tracking-wider text-red-400 font-bold mt-1">
+                          ▶ {lang === "fr" ? "En cours de lecture" : "Currently playing"}
                         </span>
                       )}
                     </div>

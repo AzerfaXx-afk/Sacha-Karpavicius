@@ -485,7 +485,7 @@ function VideoCardItem({
 
   const isPoster = project.coverImage.toLowerCase().includes("affiche");
 
-  // IntersectionObserver for mobile auto-preview when centered in viewport
+  // IntersectionObserver for mobile auto-preview when in viewport
   useEffect(() => {
     const isMobile = window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches;
     if (!isMobile || !cardRef.current) return;
@@ -495,8 +495,8 @@ function VideoCardItem({
         setIsMobileInView(entry.isIntersecting);
       },
       {
-        threshold: 0.45,
-        rootMargin: "-10% 0px -10% 0px",
+        threshold: 0.2,
+        rootMargin: "50px 0px 50px 0px",
       }
     );
 
@@ -508,14 +508,14 @@ function VideoCardItem({
 
   // Strategic high-impact timestamps per video (skipping intro black/bars/logos)
   const getStrategicClips = (duration: number, slug: string) => {
-    const dur = duration && !isNaN(duration) && duration > 5 ? duration : 40;
-    if (slug === "maladaptive") {
-      return [dur * 0.20, dur * 0.40, dur * 0.58, dur * 0.75, dur * 0.88];
+    if (slug === "au-grand-jour") {
+      return [45, 120, 240, 360, 480];
+    } else if (slug === "maladaptive") {
+      return [12, 35, 60, 85, 110];
     } else if (slug === "festival-in-and-out" || slug === "nice-queer") {
-      return [dur * 0.22, dur * 0.40, dur * 0.58, dur * 0.75, dur * 0.90];
-    } else if (slug === "au-grand-jour") {
-      return [dur * 0.18, dur * 0.35, dur * 0.52, dur * 0.70, dur * 0.85];
+      return [8, 18, 32, 48, 65];
     }
+    const dur = duration && !isNaN(duration) && duration > 5 ? duration : 40;
     return [dur * 0.20, dur * 0.40, dur * 0.60, dur * 0.80, dur * 0.92];
   };
 
@@ -681,7 +681,7 @@ function VideoCardItem({
             loop
             muted
             playsInline
-            preload="metadata"
+            preload="auto"
             onCanPlay={() => {
               if (shouldPlayPreview && activeVideo === "A") setIsReadyA(true);
             }}
@@ -702,7 +702,7 @@ function VideoCardItem({
             loop
             muted
             playsInline
-            preload="metadata"
+            preload="auto"
             onCanPlay={() => {
               if (shouldPlayPreview && activeVideo === "B") setIsReadyB(true);
             }}
