@@ -130,10 +130,24 @@ export default function NetflixMobilePlayer({
       });
   }, [currentFilm.videoUrl, pauseAudio]);
 
+  const handleContainerTap = () => {
+    const vid = videoRef.current;
+    if (vid && vid.muted) {
+      vid.muted = false;
+    }
+    if (isMenuOpen) {
+      setIsMenuOpen(false);
+    } else {
+      setIsUiVisible((prev) => !prev);
+    }
+    resetIdleTimer();
+  };
+
   const togglePlay = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     const vid = videoRef.current;
     if (!vid) return;
+    if (vid.muted) vid.muted = false;
     if (vid.paused || vid.ended) {
       vid.play().then(() => {
         setIsPlaying(true);
@@ -219,14 +233,7 @@ export default function NetflixMobilePlayer({
   return (
     <div
       ref={containerRef}
-      onClick={() => {
-        if (isMenuOpen) {
-          setIsMenuOpen(false);
-        } else {
-          setIsUiVisible((prev) => !prev);
-        }
-        resetIdleTimer();
-      }}
+      onClick={handleContainerTap}
       style={
         isPortrait
           ? {
