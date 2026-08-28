@@ -476,6 +476,8 @@ function VideoCardItem({
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const clipIndexRef = useRef<number>(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const isPoster = project.coverImage.toLowerCase().includes("affiche");
 
@@ -500,20 +502,71 @@ function VideoCardItem({
 
   const shouldPlay = isHovered || isMobileInView;
 
+  // 5 Strategic high-impact moments per video
+  const getStrategicClips = (duration: number, slug: string) => {
+    if (slug === "au-grand-jour") {
+      return [45, 120, 240, 360, 480];
+    } else if (slug === "maladaptive") {
+      return [15, 55, 95, 140, 190];
+    } else if (slug === "festival-in-and-out" || slug === "nice-queer") {
+      return [8, 25, 45, 68, 90];
+    }
+    const dur = duration && !isNaN(duration) && duration > 25 ? duration : 50;
+    return [dur * 0.15, dur * 0.35, dur * 0.55, dur * 0.75, dur * 0.90];
+  };
+
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid || !project.videoUrl) return;
 
     if (shouldPlay) {
       vid.muted = true;
+      clipIndexRef.current = 0;
+
+      const dur = vid.duration || 50;
+      const clips = getStrategicClips(dur, project.slug || project.id);
+
+      try {
+        vid.currentTime = clips[0];
+      } catch (_) {}
+
       vid.play()
         .then(() => setIsPlayingPreview(true))
         .catch(() => {});
+
+      if (intervalRef.current) clearInterval(intervalRef.current);
+
+      // Cycle to the next strategic clip every 5 seconds (5s per clip)
+      intervalRef.current = setInterval(() => {
+        if (!vid) return;
+        const currentDur = vid.duration || 50;
+        const currentClips = getStrategicClips(currentDur, project.slug || project.id);
+
+        clipIndexRef.current = (clipIndexRef.current + 1) % currentClips.length;
+        const nextTime = currentClips[clipIndexRef.current];
+
+        try {
+          vid.currentTime = nextTime;
+          vid.play().catch(() => {});
+        } catch (_) {}
+      }, 5000);
     } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
       vid.pause();
       setIsPlayingPreview(false);
+      clipIndexRef.current = 0;
     }
-  }, [shouldPlay, project.videoUrl]);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [shouldPlay, project.videoUrl, project.slug, project.id]);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
