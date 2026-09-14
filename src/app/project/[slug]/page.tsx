@@ -231,16 +231,35 @@ export default function ProjectPage() {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
+      const targetHeroElem = heroImgRef.current || heroRef.current;
+      if (targetHeroElem) {
+        tl.fromTo(
+          targetHeroElem,
+          { scale: 1.15, filter: "brightness(0.65)" },
+          { scale: 1.0, filter: "brightness(1)", duration: 1.6, ease: "power2.out" }
+        );
+      }
+
       tl.fromTo(
-        heroRef.current,
-        { scale: 1.08, filter: "brightness(0.5)" },
-        { scale: 1, filter: "brightness(1)", duration: 1.4, ease: "power2.out" }
-      ).fromTo(
         titleRef.current,
-        { opacity: 0, y: 35 },
-        { opacity: 1, y: 0, duration: 1.1, ease: "power4.out" },
-        "-=0.9"
+        { opacity: 0, y: 40 },
+        { opacity: 1, y: 0, duration: 1.2, ease: "power4.out" },
+        "-=1.1"
       );
+
+      // Subtle scroll parallax on the hero image
+      if (heroImgRef.current && heroRef.current) {
+        gsap.to(heroImgRef.current, {
+          yPercent: 15,
+          ease: "none",
+          scrollTrigger: {
+            trigger: heroRef.current,
+            start: "top top",
+            end: "bottom top",
+            scrub: true,
+          },
+        });
+      }
 
       if (
         project?.gallery?.length > 0 &&
@@ -1028,49 +1047,26 @@ export default function ProjectPage() {
                   </div>
                 </div>
               </>
-            ) : project.heroFit === "contain" ? (
-              <>
-                {/* Ambient background glow */}
-                <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
-                  <Image
-                    src={project.heroImage}
-                    alt=""
-                    fill
-                    priority
-                    quality={30}
-                    sizes="100vw"
-                    className="object-cover w-full h-full scale-125 filter blur-3xl opacity-25 brightness-50 transform-gpu"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-[#050505]" />
-                </div>
-                {/* Crisp uncropped central hero image */}
-                <div className="relative w-full h-full flex flex-col items-center justify-center pt-14 sm:pt-16 md:pt-20 pb-44 sm:pb-48 md:pb-40 z-5 px-4 sm:px-8 md:px-12 pointer-events-none">
-                  <div className="relative w-full h-full max-h-[54vh] sm:max-h-[58vh] md:max-h-[62vh] flex items-center justify-center pointer-events-auto">
-                    <Image
-                      src={project.heroImage}
-                      alt={project.title}
-                      fill
-                      priority
-                      quality={98}
-                      sizes="(max-width: 768px) 95vw, 85vw"
-                      className="object-contain rounded-lg drop-shadow-[0_25px_60px_rgba(0,0,0,0.9)] transform-gpu transition-transform duration-700 hover:scale-[1.02]"
-                    />
-                  </div>
-                </div>
-              </>
             ) : (
-              <Image
-                src={project.heroImage}
-                alt={project.title}
-                fill
-                priority
-                quality={96}
-                sizes="100vw"
-                className={`object-cover ${project.objectPosition || "object-[center_35%]"} w-full h-full min-h-full min-w-full`}
-              />
+              <div ref={heroImgRef} className="relative w-full h-full will-change-transform">
+                <Image
+                  src={project.heroImage}
+                  alt={project.title}
+                  fill
+                  priority
+                  quality={96}
+                  sizes="100vw"
+                  className={`object-cover ${project.objectPosition || "object-[center_35%]"} w-full h-full min-h-full min-w-full transform-gpu`}
+                />
+              </div>
             )}
             {!project.videoUrl && (
-              <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-black/20 pointer-events-none" />
+              <>
+                {/* Top ambient gradient for crisp navbar & logo contrast */}
+                <div className="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-black/80 via-black/35 to-transparent pointer-events-none z-10" />
+                {/* Bottom cinematic gradient for title & metadata readability */}
+                <div className="absolute inset-x-0 bottom-0 h-[480px] bg-gradient-to-t from-[#050505] via-[#050505]/75 to-transparent pointer-events-none z-10" />
+              </>
             )}
           </div>
         </div>

@@ -438,7 +438,6 @@ export const projectsData: Project[] = [
     year: "2026",
     coverImage: "/Photos/projet9/4.jpg",
     heroImage: "/Photos/projet9/4.jpg",
-    heroFit: "contain",
     objectPosition: "object-[center_51%]",
     gallery: [
       "/Photos/projet9/1.jpg",
