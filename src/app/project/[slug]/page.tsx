@@ -1028,6 +1028,36 @@ export default function ProjectPage() {
                   </div>
                 </div>
               </>
+            ) : project.heroFit === "contain" ? (
+              <>
+                {/* Ambient background glow */}
+                <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
+                  <Image
+                    src={project.heroImage}
+                    alt=""
+                    fill
+                    priority
+                    quality={30}
+                    sizes="100vw"
+                    className="object-cover w-full h-full scale-125 filter blur-3xl opacity-25 brightness-50 transform-gpu"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-[#050505]" />
+                </div>
+                {/* Crisp uncropped central hero image */}
+                <div className="relative w-full h-full flex flex-col items-center justify-center pt-14 sm:pt-16 md:pt-20 pb-44 sm:pb-48 md:pb-40 z-5 px-4 sm:px-8 md:px-12 pointer-events-none">
+                  <div className="relative w-full h-full max-h-[54vh] sm:max-h-[58vh] md:max-h-[62vh] flex items-center justify-center pointer-events-auto">
+                    <Image
+                      src={project.heroImage}
+                      alt={project.title}
+                      fill
+                      priority
+                      quality={98}
+                      sizes="(max-width: 768px) 95vw, 85vw"
+                      className="object-contain rounded-lg drop-shadow-[0_25px_60px_rgba(0,0,0,0.9)] transform-gpu transition-transform duration-700 hover:scale-[1.02]"
+                    />
+                  </div>
+                </div>
+              </>
             ) : (
               <Image
                 src={project.heroImage}
@@ -1060,9 +1090,9 @@ export default function ProjectPage() {
               <h1 className="font-syne font-extrabold text-[7.5vw] sm:text-[5vw] md:text-[2.2vw] leading-[0.95] uppercase tracking-tight text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.95)]">
                 {project.title}
               </h1>
-              {project.descriptionFr && (
+              {(project.subtitle || project.descriptionFr) && (
                 <p className="font-inter text-[12px] sm:text-[13px] md:text-[14px] leading-relaxed text-white/80 max-w-xl md:max-w-2xl font-light pt-1 drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
-                  {lang === "fr" ? project.descriptionFr : (project.descriptionEn || project.descriptionFr)}
+                  {lang === "fr" ? (project.subtitle || project.descriptionFr) : (project.descriptionEn || project.subtitle || project.descriptionFr)}
                 </p>
               )}
             </div>

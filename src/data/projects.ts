@@ -23,6 +23,8 @@ export interface Project {
   coverImage: string;
   heroImage: string;
   objectPosition?: string;
+  heroFit?: "cover" | "contain";
+  coverFit?: "cover" | "contain";
   videoUrl?: string;
   previewVideoUrl?: string;
   isVideo?: boolean;
@@ -422,6 +424,40 @@ export const projectsData: Project[] = [
       shutterSpeed: "1/250s",
       location: "London, UK",
       date: "Avril 2026"
+    },
+    credits: [
+      { role: "Photographie", name: "Sacha Karpavicius" }
+    ]
+  },
+  {
+    id: "projet-9",
+    slug: "souvenirs-de-croatie-juillet-2026",
+    title: "Souvenirs de Croatie, juillet 2026",
+    subtitle: "Série de photos réalisée lors d'un voyage en Croatie",
+    category: "Voyage",
+    year: "2026",
+    coverImage: "/Photos/projet9/4.jpg",
+    heroImage: "/Photos/projet9/4.jpg",
+    heroFit: "contain",
+    objectPosition: "object-[center_51%]",
+    gallery: [
+      "/Photos/projet9/1.jpg",
+      "/Photos/projet9/2.jpg",
+      "/Photos/projet9/3.jpg",
+      "/Photos/projet9/5.jpg",
+      "/Photos/projet9/6.jpg"
+    ],
+    descriptionFr: "Série de photos réalisée lors d'un voyage en Croatie",
+    descriptionEn: "Photo series created during a trip to Croatia",
+    client: "Voyage / Croatia Series",
+    exif: {
+      camera: "Leica M11-P",
+      lens: "Summilux-M 35mm f/1.4 ASPH",
+      iso: "ISO 100",
+      aperture: "f/1.4",
+      shutterSpeed: "1/500s",
+      location: "Croatie",
+      date: "Juillet 2026"
     },
     credits: [
       { role: "Photographie", name: "Sacha Karpavicius" }

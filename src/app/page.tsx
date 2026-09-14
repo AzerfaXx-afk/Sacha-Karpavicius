@@ -1760,17 +1760,38 @@ export default function Home() {
               >
                 <div
                   data-parallax-img
-                  className="absolute -top-[10%] left-0 w-full h-[120%] will-change-transform"
+                  className="absolute -top-[10%] left-0 w-full h-[120%] will-change-transform flex items-center justify-center"
                 >
-                  <Image
-                    src={project.coverImage}
-                    alt={project.title}
-                    fill
-                    className={`object-cover ${project.objectPosition || "object-[center_35%]"} transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-105 group-data-[touch-hover=true]:scale-105 brightness-[1.02] contrast-[1.02] saturate-[1.02] transform-gpu`}
-                    quality={96}
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 1200px"
-                    priority={idx < 2}
-                  />
+                  {project.coverFit === "contain" ? (
+                    <>
+                      <Image
+                        src={project.coverImage}
+                        alt=""
+                        fill
+                        className="object-cover blur-2xl opacity-20 scale-125"
+                      />
+                      <div className="relative w-full h-full p-4 sm:p-6 flex items-center justify-center">
+                        <Image
+                          src={project.coverImage}
+                          alt={project.title}
+                          fill
+                          className="object-contain p-2 transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-105 group-data-[touch-hover=true]:scale-105 brightness-[1.02] contrast-[1.02] saturate-[1.02] transform-gpu drop-shadow-xl"
+                          quality={96}
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 1200px"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <Image
+                      src={project.coverImage}
+                      alt={project.title}
+                      fill
+                      className={`object-cover ${project.objectPosition || "object-[center_35%]"} transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-105 group-data-[touch-hover=true]:scale-105 brightness-[1.02] contrast-[1.02] saturate-[1.02] transform-gpu`}
+                      quality={96}
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 1200px"
+                      priority={idx < 2}
+                    />
+                  )}
                 </div>
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 group-data-[touch-hover=true]:bg-black/30 transition-colors duration-500" />
@@ -1791,7 +1812,7 @@ export default function Home() {
 
                   {/* Number & Arrow sliding smoothly from left to right */}
                   <span className="text-[12px] font-mono text-white/70 opacity-0 group-hover:opacity-100 group-data-[touch-hover=true]:opacity-100 -translate-x-3 group-hover:translate-x-0 group-data-[touch-hover=true]:translate-x-0 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] delay-75 shrink-0">
-                    0{idx + 1} ↗
+                    {String(idx + 1).padStart(2, "0")} ↗
                   </span>
                 </div>
               </div>
