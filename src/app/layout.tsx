@@ -64,19 +64,6 @@ export default function RootLayout({
           <GlobalAudioSignal />
           <PwaInstallPrompt />
         </SiteProvider>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js').then(function(reg) {
-                  console.log('SW registered:', reg.scope);
-                }).catch(function(err) {
-                  console.log('SW registration failed:', err);
-                });
-              }
-            `
-          }}
-        />
       </body>
     </html>
   );
