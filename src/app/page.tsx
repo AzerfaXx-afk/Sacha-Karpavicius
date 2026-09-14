@@ -698,10 +698,16 @@ export default function Home() {
   const isMenuOpenRef = useRef(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Magnetic Precision Section Landing: aligns manual scrolling with exact menu targets
+  // Magnetic Precision Section Landing: aligns manual scrolling with exact section boundaries
   useEffect(() => {
     let scrollTimeout: NodeJS.Timeout | null = null;
     let isAutoSnapping = false;
+
+    // Instant unlock if user interacts with wheel or touch (no locking feeling)
+    const cancelSnap = () => {
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+      isAutoSnapping = false;
+    };
 
     const handleScrollSnap = () => {
       if (isAutoSnapping || isMenuOpenRef.current) return;
@@ -713,15 +719,43 @@ export default function Home() {
           .filter(Boolean) as HTMLElement[];
 
         const currentY = window.scrollY;
-        // Calibrated landing zone: catches section entries smoothly without trapping inside card grids
-        const threshold = window.innerWidth < 768 ? 160 : 280;
+        const vh = window.innerHeight;
+        const isMobile = window.innerWidth < 768;
+
+        // Arrival zone: when transitioning to next section (up to ~52% of viewport height)
+        const approachThreshold = isMobile ? 240 : Math.min(520, vh * 0.52);
+        // Overshoot zone: cushion if scrolled slightly past header
+        const overshootThreshold = isMobile ? 120 : 180;
+
+        // Check snap back to Hero (top of page)
+        if (currentY > 6 && currentY <= (isMobile ? 180 : 320)) {
+          const lenis = (window as any).__lenis;
+          isAutoSnapping = true;
+          if (lenis && typeof lenis.scrollTo === "function") {
+            lenis.scrollTo(0, {
+              duration: 0.85,
+              easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+              onComplete: () => {
+                setTimeout(() => { isAutoSnapping = false; }, 120);
+              },
+            });
+          } else {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            setTimeout(() => { isAutoSnapping = false; }, 400);
+          }
+          return;
+        }
 
         for (const sec of sections) {
           const targetY = sec.offsetTop;
           const diff = currentY - targetY;
 
-          // If user stopped near the section header anchor, glide into pixel-perfect alignment
-          if (Math.abs(diff) > 4 && Math.abs(diff) <= threshold) {
+          // diff < 0: user is at the end of previous section, approaching the new section boundary
+          // diff > 0: user stopped slightly past the header
+          const isEntering = diff < -4 && -diff <= approachThreshold;
+          const isJustPast = diff > 4 && diff <= overshootThreshold;
+
+          if (isEntering || isJustPast) {
             const lenis = (window as any).__lenis;
             isAutoSnapping = true;
             if (lenis && typeof lenis.scrollTo === "function") {
@@ -738,18 +772,23 @@ export default function Home() {
               window.scrollTo({ top: targetY, behavior: "smooth" });
               setTimeout(() => {
                 isAutoSnapping = false;
-              }, 500);
+              }, 400);
             }
             break;
           }
         }
-      }, 160);
+      }, 130);
     };
 
     window.addEventListener("scroll", handleScrollSnap, { passive: true });
+    window.addEventListener("wheel", cancelSnap, { passive: true });
+    window.addEventListener("touchstart", cancelSnap, { passive: true });
+
     return () => {
       if (scrollTimeout) clearTimeout(scrollTimeout);
       window.removeEventListener("scroll", handleScrollSnap);
+      window.removeEventListener("wheel", cancelSnap);
+      window.removeEventListener("touchstart", cancelSnap);
     };
   }, []);
 
