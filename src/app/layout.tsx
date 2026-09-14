@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Syne, Inter } from "next/font/google";
 import "./globals.css";
-import SmoothScrollProvider from "@/components/smooth-scroll-provider";
 import { SiteProvider } from "@/context/site-context";
+import SmoothScrollProvider from "@/components/smooth-scroll-provider";
 import GlobalAudioSignal from "@/components/global-audio-signal";
 import PwaInstallPrompt from "@/components/pwa-install-prompt";
 

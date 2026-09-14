@@ -14,17 +14,14 @@ export default function GlobalAudioSignal() {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return null;
-  }
-
   const isVideoPage = videoProjectsData.some(
     (p) => pathname?.includes(`/project/${p.slug}`) || pathname?.includes(`/project/${p.id}`)
   );
 
   // On photo project pages, video project pages (PC only), or homepage: show whenever UI is active
   const isProjectPage = pathname?.startsWith("/project/");
-  const showUI = (hasEnteredSite || isHoveringName || isProjectPage) && !isHideUI;
+  // During SSR and initial hydration (mounted=false), always render hidden to ensure 100% server/client HTML match
+  const showUI = mounted && (hasEnteredSite || isHoveringName || isProjectPage) && !isHideUI;
 
   // On mobile on video pages, hide to prevent overlay clutter; on PC, keep visible so user can control site audio!
   const responsiveDisplay = isVideoPage ? "hidden md:flex" : "flex";
@@ -41,28 +38,28 @@ export default function GlobalAudioSignal() {
     >
       <div
         className={`w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${
-          isPlaying
+          mounted && isPlaying
             ? "bg-white animate-sound-1"
             : "bg-white/40 h-[3px] group-hover:h-[6px] group-hover:bg-white"
         }`}
       />
       <div
         className={`w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${
-          isPlaying
+          mounted && isPlaying
             ? "bg-white animate-sound-2"
             : "bg-white/40 h-[3px] group-hover:h-[10px] group-hover:bg-white"
         }`}
       />
       <div
         className={`w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${
-          isPlaying
+          mounted && isPlaying
             ? "bg-white animate-sound-3"
             : "bg-white/40 h-[3px] group-hover:h-[6px] group-hover:bg-white"
         }`}
       />
       <div
         className={`w-[3px] rounded-full transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${
-          isPlaying
+          mounted && isPlaying
             ? "bg-white animate-sound-4"
             : "bg-white/40 h-[3px] group-hover:h-[8px] group-hover:bg-white"
         }`}
