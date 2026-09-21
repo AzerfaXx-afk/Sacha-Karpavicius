@@ -4,6 +4,7 @@ import "./globals.css";
 import { SiteProvider } from "@/context/site-context";
 import SmoothScrollProvider from "@/components/smooth-scroll-provider";
 import GlobalAudioSignal from "@/components/global-audio-signal";
+import MobileAppDock from "@/components/mobile-app-dock";
 import PwaInstallPrompt from "@/components/pwa-install-prompt";
 
 const syne = Syne({
@@ -62,6 +63,7 @@ export default function RootLayout({
             <main className="flex-1 flex flex-col">{children}</main>
           </SmoothScrollProvider>
           <GlobalAudioSignal />
+          <MobileAppDock />
           <PwaInstallPrompt />
         </SiteProvider>
       </body>

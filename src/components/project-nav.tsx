@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Project } from "@/data/projects";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
 import { triggerPageTransition } from "@/utils/page-transition";
+import { useSiteContext } from "@/context/site-context";
 
 interface ProjectNavProps {
   prevProject: Project;
@@ -24,6 +25,7 @@ export default function ProjectNav({
   onPlayHoverSfx,
 }: ProjectNavProps) {
   const router = useRouter();
+  const { stopAllVideos } = useSiteContext();
   const containerRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
   const arrowRef = useRef<HTMLDivElement>(null);
@@ -181,8 +183,9 @@ export default function ProjectNav({
         }}
         onClick={(e) => {
           e.preventDefault();
+          stopAllVideos();
           onPlayClickSfx();
-          lockScrollForNavigation(2000);
+          lockScrollForNavigation(200);
           triggerPageTransition(router, `/project/${prevProject.slug}`);
         }}
         className="group relative w-full md:w-[52%] h-[240px] sm:h-[280px] md:h-full flex flex-col justify-between p-6 sm:p-8 md:p-16 overflow-hidden cursor-pointer md:cursor-none z-10 shrink-0 pinked-left active:scale-[0.985] transition-transform duration-300 ease-out border-b border-white/10 md:border-b-0"
@@ -235,8 +238,9 @@ export default function ProjectNav({
         }}
         onClick={(e) => {
           e.preventDefault();
+          stopAllVideos();
           onPlayClickSfx();
-          lockScrollForNavigation(2000);
+          lockScrollForNavigation(200);
           triggerPageTransition(router, `/project/${nextProject.slug}`);
         }}
         className="group relative w-full md:w-[52%] md:-ml-[4%] h-[240px] sm:h-[280px] md:h-full flex flex-col justify-between p-6 sm:p-8 md:p-16 overflow-hidden cursor-pointer md:cursor-none z-10 shrink-0 pinked-right active:scale-[0.985] transition-transform duration-300 ease-out"

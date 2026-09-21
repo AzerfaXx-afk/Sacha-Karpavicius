@@ -8,7 +8,6 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Preloader from "@/components/preloader";
 import Navbar from "@/components/navbar";
-import CustomCursor from "@/components/custom-cursor";
 import { projectsData, videoProjectsData } from "@/data/projects";
 import { useSiteContext } from "@/context/site-context";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
@@ -558,6 +557,7 @@ function VideoCardItem({
       ref={cardRef}
       data-work-card
       data-cursor="PLAY"
+      data-cursor-text="PLAY"
       onClick={onClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -608,6 +608,7 @@ function VideoCardItem({
             loop
             muted
             playsInline
+            {...({ "webkit-playsinline": "true" } as any)}
             preload="auto"
             onPlaying={() => setIsPlayingPreview(true)}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 pointer-events-none ${isPlayingPreview ? "opacity-100" : "opacity-0"
@@ -880,8 +881,41 @@ export default function Home() {
       }
     }
 
+    // Dynamic scroll-based URL synchronization (updating /#photos, /#videos, /#about, /#contact)
+    const sectionIds = ["photos", "videos", "about", "contact"];
+    let lastHash = window.location.hash || "";
 
+    const handleScrollUpdate = () => {
+      if (window.scrollY < 250) {
+        if (lastHash !== "") {
+          lastHash = "";
+          try {
+            window.history.replaceState(null, "", window.location.pathname);
+          } catch (_) {}
+        }
+        return;
+      }
 
+      for (let i = sectionIds.length - 1; i >= 0; i--) {
+        const id = sectionIds[i];
+        const el = document.getElementById(id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= window.innerHeight * 0.45) {
+            const hash = `#${id}`;
+            if (lastHash !== hash) {
+              lastHash = hash;
+              try {
+                window.history.replaceState(null, "", hash);
+              } catch (_) {}
+            }
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScrollUpdate, { passive: true });
     // Initialize SFX
     hoverAudioRef.current = new Audio("/hover.mp3");
     hoverAudioRef.current.volume = 0.08;
@@ -893,8 +927,9 @@ export default function Home() {
 
     entranceAudioRef.current = new Audio("/entrance.mp3");
     entranceAudioRef.current.volume = 0.3;
-    entranceAudioRef.current.preload = "auto";
-
+    return () => {
+      window.removeEventListener("scroll", handleScrollUpdate);
+    };
   }, [hasEnteredSite]);
 
   // Keep isHoveringNameRef synced and reset image center on hover
@@ -1115,11 +1150,20 @@ export default function Home() {
     if (typeof window !== "undefined") {
       sessionStorage.setItem("spa_nav", "true");
     }
-    lockScrollForNavigation(2000);
+    lockScrollForNavigation(200);
     setHasEnteredSite(true);
     setIsProjectTransitioning(true);
     setIsHideUI(true);
     playClickSfx();
+
+    const isMob = typeof window !== "undefined" && (window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches);
+    if (isMob) {
+      router.push(`/project/${targetSlug}`);
+      setTimeout(() => {
+        setIsProjectTransitioning(false);
+      }, 300);
+      return;
+    }
 
     // Call router.push IMMEDIATELY so Next.js swaps to the prefetched route instantly
     router.push(`/project/${targetSlug}`);
@@ -1484,7 +1528,6 @@ export default function Home() {
 
   return (
     <>
-      <CustomCursor />
       <PinnedProgressNav lang={lang} showUI={!loading && (hasEnteredSite || siteStarted || isHoveringName) && !isHideUI} />
       {/* Preloader */}
       {loading && <Preloader onComplete={onPreloaderComplete} onStart={handleStartSite} onHoverChange={setIsHoveringName} lang={lang} />}
@@ -1676,6 +1719,7 @@ export default function Home() {
               key={project.id}
               data-work-card
               data-cursor="VIEW"
+              data-cursor-text="VIEW"
               onClick={(e) => handleProjectClick(e, project)}
               data-touch-hover={touchHoveredIndex === idx}
               onTouchStart={(e) => {

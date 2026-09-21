@@ -141,11 +141,9 @@ img, video {
 }
 
 
-/* ---- Smooth resize transitions ---- */
+/* ---- Smooth hardware accelerated text rendering ---- */
 h1, h2, h3, h4, h5, h6, p, span, a {
-  transition-property: font-size;
-  transition-duration: 0.3s;
-  transition-timing-function: cubic-bezier(.77, 0, .18, 1);
+  text-rendering: optimizeLegibility;
 }
 
 /* ---- Scroll indicator keyframe ---- */

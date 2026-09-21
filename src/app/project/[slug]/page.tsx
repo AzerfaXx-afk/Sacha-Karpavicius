@@ -22,7 +22,7 @@ export default function ProjectPage() {
   const router = useRouter();
   const slug = params?.slug as string;
 
-  const { hasEnteredSite, setHasEnteredSite, isPlaying, toggleAudio, pauseAudio, resumeAudio, playClickSfx, playHoverSfx, setIsHideUI } = useSiteContext();
+  const { hasEnteredSite, setHasEnteredSite, isPlaying, toggleAudio, pauseAudio, resumeAudio, playClickSfx, playHoverSfx, setIsHideUI, stopAllVideos } = useSiteContext();
 
   const project = getProjectBySlug(slug) || projectsData[0];
   const isVideoProject = Boolean(project?.isVideo || project?.videoUrl);
@@ -35,18 +35,13 @@ export default function ProjectPage() {
   const [lang, setLang] = useState<"fr" | "en">("fr");
   const [isIdle, setIsIdle] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
-  const [isScrollLockedState, setIsScrollLockedState] = useState(true);
+  const [isScrollLockedState, setIsScrollLockedState] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(1);
 
   // Mobile orientation & horizontal cinema state
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [isPortrait, setIsPortrait] = useState(false);
-  const [hasDismissedRotate, setHasDismissedRotate] = useState(() => {
-    if (typeof window !== "undefined") {
-      return sessionStorage.getItem("hasDismissedRotate") === "true";
-    }
-    return false;
-  });
+  const [hasDismissedRotate, setHasDismissedRotate] = useState(false);
   const [isForcedLandscapeCSS, setIsForcedLandscapeCSS] = useState(false);
 
   // Video player controls state — start unmuted on project entry
@@ -206,13 +201,13 @@ export default function ProjectPage() {
       }
     }
 
-    lockScrollForNavigation(2000);
-    setIsScrollLockedState(true);
+    lockScrollForNavigation(200);
+    setIsScrollLockedState(false);
     setIsHideUI(false);
 
     const lockTimer = setTimeout(() => {
       setIsScrollLockedState(false);
-    }, 2000);
+    }, 200);
 
     const handleLockChange = (e: CustomEvent) => {
       setIsScrollLockedState(Boolean(e.detail?.isLocked));
@@ -598,9 +593,9 @@ export default function ProjectPage() {
       return (
         <RotatePhonePrompt
           lang={lang}
+          filmTitle={project.title}
           onComplete={() => {
             setHasDismissedRotate(true);
-            sessionStorage.setItem("hasDismissedRotate", "true");
           }}
         />
       );
@@ -614,8 +609,8 @@ export default function ProjectPage() {
           // Handled directly inside NetflixMobilePlayer for 0ms instant playback
         }}
         onBack={() => {
+          stopAllVideos();
           playClickSfx();
-          sessionStorage.removeItem("hasDismissedRotate");
           sessionStorage.setItem("scrollToVideos", "true");
           triggerPageTransition(router, "/#videos");
         }}
@@ -679,6 +674,14 @@ export default function ProjectPage() {
                   muted={isVideoMuted}
                   playsInline
                   preload="auto"
+                  onError={(e) => {
+                    const vid = e.currentTarget;
+                    if (project.mobileVideoUrl && vid.src !== project.mobileVideoUrl) {
+                      vid.src = project.mobileVideoUrl;
+                      vid.load();
+                      vid.play().catch(() => {});
+                    }
+                  }}
                   onLoadedMetadata={(e) => {
                     const vid = e.currentTarget;
                     setVideoDur(vid.duration || 0);

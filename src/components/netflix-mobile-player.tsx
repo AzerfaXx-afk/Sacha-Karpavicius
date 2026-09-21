@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Project } from "@/data/projects";
 import { useSiteContext } from "@/context/site-context";
+import RotatePhonePrompt from "@/components/rotate-phone-prompt";
 
 interface NetflixMobilePlayerProps {
   project: Project;
@@ -27,6 +28,8 @@ export default function NetflixMobilePlayer({
   const scrubberRef = useRef<HTMLDivElement>(null);
 
   const [currentFilm, setCurrentFilm] = useState<Project>(project);
+  const [pendingFilm, setPendingFilm] = useState<Project | null>(null);
+  const [showRotateTransition, setShowRotateTransition] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -240,16 +243,32 @@ export default function NetflixMobilePlayer({
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  // 0ms Instant film switching without page reload or intro
+  // Transition film with rotate phone animation
   const handleSelectFilm = (film: Project) => {
+    if (film.slug === currentFilm.slug) {
+      setIsMenuOpen(false);
+      return;
+    }
+    setIsMenuOpen(false);
+    setPendingFilm(film);
+    setShowRotateTransition(true);
+  };
+
+  const handleRotateTransitionComplete = () => {
+    if (!pendingFilm) {
+      setShowRotateTransition(false);
+      return;
+    }
+    const film = pendingFilm;
     setCurrentFilm(film);
     onSelectProject(film);
-    setIsMenuOpen(false);
+    setShowRotateTransition(false);
+    setPendingFilm(null);
     resetIdleTimer();
 
     const vid = videoRef.current;
     if (vid) {
-      vid.src = film.videoUrl || "";
+      vid.src = film.mobileVideoUrl || film.videoUrl || "";
       vid.currentTime = 0;
       vid.muted = false;
       vid.play().then(() => {
@@ -278,11 +297,20 @@ export default function NetflixMobilePlayer({
       className="fixed inset-0 z-[99999] w-full h-full bg-black text-white flex flex-col justify-between overflow-hidden select-none"
       style={{ touchAction: "manipulation", backgroundColor: "#000000" }}
     >
+      {/* Dynamic Rotate Phone Transition on Film Switch */}
+      {showRotateTransition && pendingFilm && (
+        <RotatePhonePrompt
+          filmTitle={pendingFilm.title}
+          lang={lang}
+          onComplete={handleRotateTransitionComplete}
+        />
+      )}
+
       {/* 4K Cinema Video Surface */}
       <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-black">
         <video
           ref={videoRef}
-          src={currentFilm.videoUrl}
+          src={currentFilm.mobileVideoUrl || currentFilm.videoUrl}
           playsInline
           autoPlay
           loop

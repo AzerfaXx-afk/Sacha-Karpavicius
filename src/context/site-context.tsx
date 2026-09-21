@@ -16,6 +16,8 @@ interface SiteContextType {
   playEntrance: () => void;
   playClickSfx: () => void;
   playHoverSfx: () => void;
+  stopAllVideos: () => void;
+  stopAllMedia: () => void;
 }
 
 const SiteContext = createContext<SiteContextType>({
@@ -32,6 +34,8 @@ const SiteContext = createContext<SiteContextType>({
   playEntrance: () => {},
   playClickSfx: () => {},
   playHoverSfx: () => {},
+  stopAllVideos: () => {},
+  stopAllMedia: () => {},
 });
 
 
@@ -76,6 +80,24 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
+  const stopAllVideos = useCallback(() => {
+    if (typeof document === "undefined") return;
+    document.querySelectorAll("video").forEach((vid) => {
+      try {
+        vid.pause();
+        vid.currentTime = 0;
+      } catch (_) {}
+    });
+  }, []);
+
+  const stopAllMedia = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    setIsPlaying(false);
+    stopAllVideos();
+  }, [stopAllVideos]);
+
   const handleBackground = useCallback(() => {
     if (isAutoPausedRef.current) return;
 
@@ -92,7 +114,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
       setIsPlaying(false);
     }
 
-    // Pause all videos when tab is hidden or user leaves app
+    // Pause all videos immediately when tab or app is hidden/backgrounded
     if (typeof document !== "undefined") {
       document.querySelectorAll("video").forEach((vid) => {
         try { vid.pause(); } catch (_) {}
@@ -104,7 +126,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
     if (!isAutoPausedRef.current) return;
 
     const audio = audioRef.current;
-    if (wasPlayingBeforeBackgroundRef.current && audio) {
+    if (wasPlayingBeforeBackgroundRef.current && audio && userWantsAudioRef.current) {
       audio
         .play()
         .then(() => {
@@ -119,7 +141,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
     isAutoPausedRef.current = false;
   }, []);
 
-  // Listen to tab switching & document visibility change
+  // Centralized listeners: tab switching, mobile app minimize, lock screen, pagehide, freeze
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
 
@@ -131,10 +153,17 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
+    const onPageHide = () => handleBackground();
+    const onFreeze = () => handleBackground();
+
     document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("freeze" as any, onFreeze);
 
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("freeze" as any, onFreeze);
     };
   }, [handleBackground, handleForeground]);
 
@@ -281,6 +310,8 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
         playEntrance,
         playClickSfx,
         playHoverSfx,
+        stopAllVideos,
+        stopAllMedia,
       }}
     >
       {children}

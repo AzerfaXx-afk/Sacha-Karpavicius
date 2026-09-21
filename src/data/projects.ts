@@ -26,6 +26,7 @@ export interface Project {
   heroFit?: "cover" | "contain";
   coverFit?: "cover" | "contain";
   videoUrl?: string;
+  mobileVideoUrl?: string;
   previewVideoUrl?: string;
   isVideo?: boolean;
   gallery: string[];
@@ -48,6 +49,7 @@ export const videoProjectsData: Project[] = [
     heroImage: "/Videos/maladaptive-cover.jpg",
     objectPosition: "object-center",
     videoUrl: "https://github.com/AzerfaXx-afk/Sacha-Karpavicius/releases/download/v1.0.0/MALADAPTIVE.mp4",
+    mobileVideoUrl: "/Videos/maladaptive_stream.mp4",
     previewVideoUrl: "/Videos/maladaptive-preview.mp4",
     isVideo: true,
     gallery: [],
@@ -78,6 +80,7 @@ export const videoProjectsData: Project[] = [
     heroImage: "/Videos/in-and-out-cover.jpg",
     objectPosition: "object-center",
     videoUrl: "https://github.com/AzerfaXx-afk/Sacha-Karpavicius/releases/download/v1.0.0/Bande.annonce.de.lExposition.NICE.QUEER.UNE.HISTOIRE.A.ECRIRE.mp4",
+    mobileVideoUrl: "/Videos/nice_queer_stream.mp4",
     previewVideoUrl: "/Videos/festival-in-and-out-preview.mp4",
     isVideo: true,
     gallery: [],
@@ -108,6 +111,7 @@ export const videoProjectsData: Project[] = [
     heroImage: "/Videos/AFFICHE.png",
     objectPosition: "object-center",
     videoUrl: "https://github.com/AzerfaXx-afk/Sacha-Karpavicius/releases/download/v1.0.0/AU.GRAND.JOUR.mp4",
+    mobileVideoUrl: "/Videos/au_grand_jour_stream.mp4",
     previewVideoUrl: "/Videos/au-grand-jour-preview.mp4",
     isVideo: true,
     gallery: [],

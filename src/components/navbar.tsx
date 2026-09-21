@@ -6,6 +6,7 @@ import { gsap } from "gsap";
 import { useLenis } from "@studio-freight/react-lenis";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
 import { triggerPageTransition } from "@/utils/page-transition";
+import { useSiteContext } from "@/context/site-context";
 
 const AnimatedLink = ({ 
   text, 
@@ -98,12 +99,14 @@ const AnimatedLink = ({
 
   const router = useRouter();
   const pathname = usePathname();
+  const { stopAllVideos } = useSiteContext();
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     onClick();
     setTimeout(() => {
       if (pathname !== "/") {
+        stopAllVideos();
         sessionStorage.setItem("targetSection", href);
         triggerPageTransition(router, "/" + href);
       } else {
@@ -118,6 +121,9 @@ const AnimatedLink = ({
           } else {
             target.scrollIntoView({ behavior: 'smooth' });
           }
+          try {
+            window.history.replaceState(null, "", href);
+          } catch (_) {}
         }
       }
     }, 450);
@@ -196,6 +202,7 @@ export default function Navbar({
   const router = useRouter();
   const pathname = usePathname();
   const lenis = useLenis();
+  const { stopAllVideos } = useSiteContext();
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -502,6 +509,7 @@ export default function Navbar({
               onPlayClickSfx?.();
               handleLinkClick();
               if (pathname !== "/") {
+                stopAllVideos();
                 sessionStorage.setItem("spa_nav", "true");
                 triggerPageTransition(router, "/");
               } else {
