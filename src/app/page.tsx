@@ -562,7 +562,6 @@ function VideoCardItem({
       onClick={onClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onTouchStart={() => setIsHovered(true)}
       className="group relative cursor-pointer mb-24 md:mb-32"
     >
       {/* Cinema Ambient Backlight Bloom */}
@@ -1208,7 +1207,12 @@ export default function Home() {
         v.load();
       } catch (_) {}
     });
-  }, []);
+
+    // Next.js route prefetching for instant page transitions
+    [...projectsData, ...videoProjectsData].forEach((p) => {
+      try { router.prefetch(`/project/${p.slug}`); } catch (_) {}
+    });
+  }, [router]);
 
   const triggerHeroRevealAnimation = useCallback(() => {
     if (!heroImgRef.current || !heroTitleRef.current) return;
@@ -1735,6 +1739,7 @@ export default function Home() {
                 project={project}
                 idx={idx}
                 playHoverSfx={playHoverSfx}
+                onClick={(e) => handleProjectClick(e, project)}
               />
             </Link>
           ))}

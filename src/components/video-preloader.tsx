@@ -1,21 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useSiteContext } from "@/context/site-context";
+import { useEffect, useState } from "react";
 import { videoProjectsData } from "@/data/projects";
 
 export default function VideoPreloader() {
-  const { hasEnteredSite } = useSiteContext();
   const [shouldWarmup, setShouldWarmup] = useState(false);
-  const warmedRef = useRef(false);
 
   useEffect(() => {
-    // Start warmup either when user enters site or after initial delay
-    if (hasEnteredSite && !warmedRef.current) {
-      warmedRef.current = true;
-      setShouldWarmup(true);
-    }
-  }, [hasEnteredSite]);
+    // Start warming up video cache immediately — don't wait for site entry
+    const timer = setTimeout(() => setShouldWarmup(true), 200);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (!shouldWarmup || typeof document === "undefined") return;
