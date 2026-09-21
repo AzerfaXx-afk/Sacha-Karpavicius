@@ -562,6 +562,7 @@ function VideoCardItem({
       onClick={onClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onTouchStart={() => setIsHovered(true)}
       className="group relative cursor-pointer mb-24 md:mb-32"
     >
       {/* Cinema Ambient Backlight Bloom */}
@@ -1149,17 +1150,13 @@ export default function Home() {
     stopAllVideos();
     setIsHideUI(true);
 
-    try {
-      router.prefetch(`/project/${targetSlug}`);
-    } catch (_) {}
-
     triggerPageTransition(router, `/project/${targetSlug}`, () => {
       lockScrollForNavigation(350);
     });
 
     setTimeout(() => {
       setIsProjectTransitioning(false);
-    }, 600);
+    }, 800);
   };
 
 
@@ -1211,14 +1208,7 @@ export default function Home() {
         v.load();
       } catch (_) {}
     });
-
-    // Next.js SPA Route prefetching for 0ms page transitions
-    [...projectsData, ...videoProjectsData].forEach((p) => {
-      try {
-        router.prefetch(`/project/${p.slug}`);
-      } catch (_) {}
-    });
-  }, [router]);
+  }, []);
 
   const triggerHeroRevealAnimation = useCallback(() => {
     if (!heroImgRef.current || !heroTitleRef.current) return;
@@ -1745,7 +1735,6 @@ export default function Home() {
                 project={project}
                 idx={idx}
                 playHoverSfx={playHoverSfx}
-                onClick={(e) => handleProjectClick(e, project)}
               />
             </Link>
           ))}
