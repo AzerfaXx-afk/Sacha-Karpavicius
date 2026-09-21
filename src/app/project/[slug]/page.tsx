@@ -195,12 +195,14 @@ export default function ProjectPage() {
         );
       }
 
-      tl.fromTo(
-        titleRef.current,
-        { opacity: 0, y: 40 },
-        { opacity: 1, y: 0, duration: 1.2, ease: "power4.out" },
-        "-=1.1"
-      );
+      if (titleRef.current) {
+        tl.fromTo(
+          titleRef.current,
+          { opacity: 0, y: 40 },
+          { opacity: 1, y: 0, duration: 1.2, ease: "power4.out" },
+          "-=1.1"
+        );
+      }
 
       // Subtle scroll parallax on the hero image
       if (heroImgRef.current && heroRef.current) {

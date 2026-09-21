@@ -11,6 +11,7 @@ import Navbar from "@/components/navbar";
 import { projectsData, videoProjectsData } from "@/data/projects";
 import { useSiteContext } from "@/context/site-context";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
+import { triggerPageTransition } from "@/utils/page-transition";
 
 import PhysicsCoins from "@/components/physics-coins";
 import PinnedProgressNav from "@/components/pinned-progress-nav";
@@ -466,7 +467,7 @@ function VideoCardItem({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   project: any;
   idx: number;
-  onClick: (e: React.MouseEvent) => void;
+  onClick?: (e: React.MouseEvent) => void;
   playHoverSfx?: () => void;
 }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -665,7 +666,7 @@ function VideoCardItem({
 
 export default function Home() {
   const router = useRouter();
-  const { hasEnteredSite, setHasEnteredSite, isHoveringName, setIsHoveringName, isHideUI, setIsHideUI, isPlaying, toggleAudio, playEntrance } = useSiteContext();
+  const { hasEnteredSite, setHasEnteredSite, isHoveringName, setIsHoveringName, isHideUI, setIsHideUI, isPlaying, toggleAudio, playEntrance, stopAllVideos } = useSiteContext();
   const [loading, setLoading] = useState(true);
   const [siteStarted, setSiteStarted] = useState(false);
   const isHoveringNameRef = useRef(isHoveringName);
@@ -841,9 +842,6 @@ export default function Home() {
         setLoading(false);
         setSiteStarted(true);
         setHasEnteredSite(true);
-        window.scrollTo(0, 0);
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
       } else {
         setLoading(true);
         setSiteStarted(false);
@@ -1141,115 +1139,24 @@ export default function Home() {
     }
   };
 
-  // FLIP Zoom Transition to Project Page (Instant Prefetched Awwwards Handoff)
+  // Awwwards Seamless Navigation to Project Page
   const handleProjectClick = (e: React.MouseEvent, project: any) => {
     e.preventDefault();
     if (isProjectTransitioning) return;
     const targetSlug = project.slug || "editorial-1";
 
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("spa_nav", "true");
-    }
-    lockScrollForNavigation(200);
-    setHasEnteredSite(true);
-    setIsProjectTransitioning(true);
-    setIsHideUI(true);
     playClickSfx();
+    setIsProjectTransitioning(true);
+    stopAllVideos();
+    setIsHideUI(true);
 
-    const isMob = typeof window !== "undefined" && (window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches);
-    if (isMob) {
-      router.push(`/project/${targetSlug}`);
-      setTimeout(() => {
-        setIsProjectTransitioning(false);
-      }, 300);
-      return;
-    }
+    triggerPageTransition(router, `/project/${targetSlug}`, () => {
+      lockScrollForNavigation(350);
+    });
 
-    // Call router.push IMMEDIATELY so Next.js swaps to the prefetched route instantly
-    router.push(`/project/${targetSlug}`);
-
-    const cardElement = e.currentTarget as HTMLElement;
-    const imgElement = cardElement.querySelector("img");
-    const rect = (imgElement || cardElement).getBoundingClientRect();
-
-    // Create fixed clone container for smooth FLIP zoom
-    const clone = document.createElement("div");
-    clone.style.position = "fixed";
-    clone.style.top = `${rect.top}px`;
-    clone.style.left = `${rect.left}px`;
-    clone.style.width = `${rect.width}px`;
-    clone.style.height = `${rect.height}px`;
-    clone.style.zIndex = "99998";
-    clone.style.overflow = "hidden";
-    clone.style.borderRadius = "8px";
-    clone.style.boxShadow = "0 35px 70px -15px rgba(0,0,0,0.9)";
-    clone.style.pointerEvents = "none";
-    clone.style.willChange = "transform, width, height, top, left, border-radius, opacity";
-    clone.style.transformOrigin = "center center";
-
-    const img = document.createElement("img");
-    img.src = project.coverImage || project.src || "/2.jpg";
-    img.style.width = "100%";
-    img.style.height = "100%";
-    img.style.objectFit = "cover";
-
-    // Parse objectPosition (e.g. object-[center_28%] -> center 28%)
-    const rawPos = project.objectPosition || "";
-    const cleanPos = rawPos.includes("[") ? rawPos.split("[")[1].split("]")[0].replace("_", " ") : "center 28%";
-    img.style.objectPosition = cleanPos || "center 28%";
-    img.style.transition = "none";
-
-    clone.appendChild(img);
-    document.body.appendChild(clone);
-
-    // Background curtain overlay — 100% solid dark backdrop
-    const overlay = document.createElement("div");
-    overlay.style.position = "fixed";
-    overlay.style.inset = "0";
-    overlay.style.backgroundColor = "#050505";
-    overlay.style.opacity = "0";
-    overlay.style.zIndex = "99997";
-    overlay.style.pointerEvents = "none";
-    document.body.appendChild(overlay);
-
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    const tl = gsap.timeline();
-
-    // 1. Darken background overlay to pure black (0.4s)
-    tl.to(overlay, {
-      opacity: 1,
-      duration: 0.4,
-      ease: "power2.out"
-    }, 0);
-
-    // 2. Expand cover card smoothly to 100vw x 100vh (0.85s slow Awwwards transition)
-    tl.to(clone, {
-      top: 0,
-      left: 0,
-      width: viewportWidth,
-      height: viewportHeight,
-      borderRadius: "0px",
-      boxShadow: "none",
-      duration: 0.85,
-      ease: "cubic-bezier(0.76, 0, 0.24, 1)",
-      onComplete: () => {
-        setTimeout(() => {
-          gsap.to([clone, overlay], {
-            opacity: 0,
-            duration: 0.35,
-            ease: "power2.out",
-            onComplete: () => {
-              clone.remove();
-              overlay.remove();
-              setIsProjectTransitioning(false);
-            }
-          });
-        }, 120);
-      }
-    }, 0);
-
+    setTimeout(() => {
+      setIsProjectTransitioning(false);
+    }, 800);
   };
 
 
@@ -1715,8 +1622,9 @@ export default function Home() {
         {/* Works grid */}
         <div className="px-5 md:px-16 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {projectsData.map((project, idx) => (
-            <div
+            <Link
               key={project.id}
+              href={`/project/${project.slug}`}
               data-work-card
               data-cursor="VIEW"
               data-cursor-text="VIEW"
@@ -1745,33 +1653,32 @@ export default function Home() {
               onMouseEnter={() => {
                 if (playHoverSfx) playHoverSfx();
               }}
-              className="group relative overflow-hidden cursor-pointer"
+              className="group relative overflow-hidden cursor-pointer block focus:outline-none"
             >
               <div
-                className="relative w-full overflow-hidden bg-[#0d0d0d] rounded-xl border border-white/10 aspect-[16/11] md:aspect-[16/10]"
+                data-parallax-container
+                className="relative aspect-[4/5] overflow-hidden bg-[#111] rounded-xl will-change-transform shadow-2xl"
               >
                 <div
                   data-parallax-img
-                  className="absolute -top-[10%] left-0 w-full h-[120%] will-change-transform"
+                  className="absolute -top-[12%] left-0 w-full h-[124%] will-change-transform"
                 >
                   <Image
                     src={project.coverImage}
                     alt={project.title}
                     fill
-                    className={`object-cover ${project.objectPosition || "object-[center_35%]"} transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-105 group-data-[touch-hover=true]:scale-105 brightness-[1.02] contrast-[1.02] saturate-[1.02] transform-gpu`}
-                    quality={96}
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 1200px"
+                    className={`object-cover ${project.objectPosition || "object-[center_28%]"} transform-gpu group-hover:scale-105 group-data-[touch-hover=true]:scale-105 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] brightness-[1.03] contrast-[1.05]`}
+                    sizes="(max-width: 768px) 100vw, 50vw"
                     priority={idx < 2}
                   />
                 </div>
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 group-data-[touch-hover=true]:bg-black/30 transition-colors duration-500" />
+                {/* Gentle vignette around borders */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
               </div>
 
-              {/* Project info */}
+              {/* Minimal Project Info Bar below image */}
               <div className="mt-4 relative overflow-hidden">
                 <div className="flex items-center justify-between py-1">
-                  {/* Title with ultra-smooth left-to-right letter spacing expansion */}
                   <h3 className="font-syne font-bold text-[15px] md:text-[18px] tracking-tight group-hover:tracking-[0.15em] group-data-[touch-hover=true]:tracking-[0.15em] text-white/90 group-hover:text-white group-data-[touch-hover=true]:text-white uppercase transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
                     {project.title}
                   </h3>
@@ -1781,13 +1688,12 @@ export default function Home() {
                     <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/50 to-white/90 scale-x-0 group-hover:scale-x-100 group-data-[touch-hover=true]:scale-x-100 origin-left transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]" />
                   </div>
 
-                  {/* Number & Arrow sliding smoothly from left to right */}
                   <span className="text-[12px] font-mono text-white/70 opacity-0 group-hover:opacity-100 group-data-[touch-hover=true]:opacity-100 -translate-x-3 group-hover:translate-x-0 group-data-[touch-hover=true]:translate-x-0 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] delay-75 shrink-0">
                     {String(idx + 1).padStart(2, "0")} ↗
                   </span>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
@@ -1812,13 +1718,18 @@ export default function Home() {
         {/* Video projects full-width cinema cards */}
         <div className="px-5 md:px-16 space-y-12 md:space-y-16">
           {videoProjectsData.map((project, idx) => (
-            <VideoCardItem
+            <Link
               key={project.id}
-              project={project}
-              idx={idx}
+              href={`/project/${project.slug}`}
               onClick={(e) => handleProjectClick(e, project)}
-              playHoverSfx={playHoverSfx}
-            />
+              className="block cursor-pointer focus:outline-none"
+            >
+              <VideoCardItem
+                project={project}
+                idx={idx}
+                playHoverSfx={playHoverSfx}
+              />
+            </Link>
           ))}
         </div>
       </section>
