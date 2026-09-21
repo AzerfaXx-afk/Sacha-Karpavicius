@@ -8,8 +8,6 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Navbar from "@/components/navbar";
 import ProjectNav from "@/components/project-nav";
-import RotatePhonePrompt from "@/components/rotate-phone-prompt";
-import NetflixMobilePlayer from "@/components/netflix-mobile-player";
 import { projectsData, videoProjectsData, getProjectBySlug } from "@/data/projects";
 import { useSiteContext } from "@/context/site-context";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
@@ -37,12 +35,6 @@ export default function ProjectPage() {
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
   const [isScrollLockedState, setIsScrollLockedState] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(1);
-
-  // Mobile orientation & horizontal cinema state
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
-  const [isPortrait, setIsPortrait] = useState(false);
-  const [hasDismissedRotate, setHasDismissedRotate] = useState(false);
-  const [isForcedLandscapeCSS, setIsForcedLandscapeCSS] = useState(false);
 
   // Video player controls state — start unmuted on project entry
   const [isVideoMuted, setIsVideoMuted] = useState(false);
@@ -100,27 +92,7 @@ export default function ProjectPage() {
     };
   }, [project?.videoUrl, setIsHideUI]);
 
-  // Mobile orientation detection
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const checkOrientation = () => {
-      const isMob = window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches;
-      setIsMobileDevice(isMob);
-      const portrait = window.innerHeight > window.innerWidth;
-      setIsPortrait(portrait);
-      if (!portrait) {
-        setIsForcedLandscapeCSS(false);
-      }
-    };
 
-    checkOrientation();
-    window.addEventListener("resize", checkOrientation);
-    window.addEventListener("orientationchange", checkOrientation);
-    return () => {
-      window.removeEventListener("resize", checkOrientation);
-      window.removeEventListener("orientationchange", checkOrientation);
-    };
-  }, []);
 
   // Clean up isHideUI & resume site background music on unmount
   useEffect(() => {
@@ -130,15 +102,10 @@ export default function ProjectPage() {
     };
   }, [setIsHideUI, resumeAudio]);
 
-  // Launch video directly on enter (on desktop immediately; on mobile only after intro video finishes)
+  // Launch video directly on enter
   useEffect(() => {
     if (!project?.videoUrl) {
       resumeAudio(true);
-      return;
-    }
-
-    // On mobile, do NOT start the main video until the Rotate Phone intro finishes
-    if (isMobileDevice && !hasDismissedRotate) {
       return;
     }
 
@@ -171,7 +138,7 @@ export default function ProjectPage() {
     return () => {
       resumeAudio(true);
     };
-  }, [project?.slug, project?.videoUrl, isMobileDevice, hasDismissedRotate, pauseAudio, resumeAudio]);
+  }, [project?.slug, project?.videoUrl, pauseAudio, resumeAudio]);
 
   // Ensure scroll position is reset on page entry
   useEffect(() => {
@@ -577,42 +544,8 @@ export default function ProjectPage() {
     );
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // MOBILE CINEMA EXPERIENCE (NETFLIX STYLE)
-  // ══════════════════════════════════════════════════════════════
-  if (isVideoProject && isMobileDevice) {
-    if (!hasDismissedRotate) {
-      return (
-        <RotatePhonePrompt
-          lang={lang}
-          filmTitle={project.title}
-          onComplete={() => {
-            setHasDismissedRotate(true);
-          }}
-        />
-      );
-    }
-
-    return (
-      <NetflixMobilePlayer
-        project={project}
-        allProjects={videoProjectsData}
-        onSelectProject={(selected) => {
-          // Handled directly inside NetflixMobilePlayer for 0ms instant playback
-        }}
-        onBack={() => {
-          stopAllVideos();
-          playClickSfx();
-          sessionStorage.setItem("scrollToVideos", "true");
-          triggerPageTransition(router, "/#videos");
-        }}
-        lang={lang}
-      />
-    );
-  }
-
   return (
-    <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden selection:bg-white selection:text-black">
+    <main suppressHydrationWarning className="min-h-screen bg-[#050505] text-white overflow-x-hidden selection:bg-white selection:text-black">
       <Navbar
         showUI={!isIdle}
         clickable={true}
@@ -659,16 +592,15 @@ export default function ProjectPage() {
               <>
                 <video
                   ref={videoRef}
-                  src={project.videoUrl}
                   poster={project.coverImage || project.heroImage}
                   autoPlay
                   loop
                   muted={isVideoMuted}
                   playsInline
                   preload="auto"
-                  onError={(e) => {
-                    const vid = e.currentTarget;
-                    if (project.mobileVideoUrl && vid.src !== project.mobileVideoUrl) {
+                  onError={() => {
+                    const vid = videoRef.current;
+                    if (vid && project.mobileVideoUrl && !vid.currentSrc.includes(project.mobileVideoUrl)) {
                       vid.src = project.mobileVideoUrl;
                       vid.load();
                       vid.play().catch(() => {});
@@ -707,7 +639,14 @@ export default function ProjectPage() {
                     backfaceVisibility: "hidden",
                     WebkitBackfaceVisibility: "hidden",
                   }}
-                />
+                >
+                  {project.videoUrl && (
+                    <source src={project.videoUrl} type="video/mp4" />
+                  )}
+                  {project.mobileVideoUrl && (
+                    <source src={project.mobileVideoUrl} type="video/mp4" />
+                  )}
+                </video>
 
                 {/* Floating Unmute Quick Action Pill (when muted autoplay starts) */}
                 {isVideoMuted && isVideoPlaying && !isIdle && (
@@ -811,11 +750,12 @@ export default function ProjectPage() {
 
                 {/* Awwwards Seamless Cinema Bottom HUD (No box/rectangle, pure floating elegance centered between Contact & Audio) */}
                 <div
+                  suppressHydrationWarning
                   onClick={(e) => { e.stopPropagation(); }}
                   onMouseDown={(e) => { e.stopPropagation(); }}
                   onTouchStart={(e) => { e.stopPropagation(); }}
                   onDoubleClick={(e) => { e.stopPropagation(); }}
-                  className={`absolute inset-x-0 bottom-2 sm:bottom-4 md:bottom-10 z-40 px-3 sm:px-6 md:px-44 lg:px-56 xl:px-64 flex flex-col items-center justify-end pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  className={`absolute inset-x-0 bottom-2 sm:bottom-4 md:bottom-10 z-40 px-3 sm:px-6 md:px-44 lg:px-56 xl:px-64 flex flex-col items-center justify-end transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                     isIdle
                       ? "opacity-0 translate-y-6 pointer-events-none"
                       : "opacity-100 translate-y-0 pointer-events-auto"
