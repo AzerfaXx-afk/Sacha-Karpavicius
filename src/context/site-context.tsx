@@ -63,23 +63,52 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   }, [isPlaying]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (sessionStorage.getItem("userWantsAudio") === "false") {
-        userWantsAudioRef.current = false;
-      } else {
-        userWantsAudioRef.current = true;
-      }
+    if (typeof window === "undefined") return;
 
-      audioRef.current = new Audio("/musique.mp3");
-      audioRef.current.loop = true;
-      audioRef.current.volume = 0.35;
-
-      hoverAudioRef.current = new Audio("/hover.mp3");
-      hoverAudioRef.current.volume = 0.08;
-
-      clickAudioRef.current = new Audio("/click.mp3");
-      clickAudioRef.current.volume = 0.15;
+    if (sessionStorage.getItem("userWantsAudio") === "false") {
+      userWantsAudioRef.current = false;
+    } else {
+      userWantsAudioRef.current = true;
     }
+
+    const audio = new Audio("/musique.mp3");
+    audio.loop = true;
+    audio.volume = 0.35;
+    audio.preload = "auto";
+
+    // Direct binding of HTML5 media events to React isPlaying state
+    const handlePlaying = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    const handleEnded = () => setIsPlaying(false);
+
+    audio.addEventListener("playing", handlePlaying);
+    audio.addEventListener("play", handlePlaying);
+    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("ended", handleEnded);
+
+    audioRef.current = audio;
+
+    hoverAudioRef.current = new Audio("/hover.mp3");
+    hoverAudioRef.current.volume = 0.08;
+
+    clickAudioRef.current = new Audio("/click.mp3");
+    clickAudioRef.current.volume = 0.15;
+
+    // Heartbeat sync loop: guarantees zero desynchronization between audio and visualizer at all times
+    const syncInterval = setInterval(() => {
+      if (!audioRef.current) return;
+      const isActuallyPlaying = !audioRef.current.paused && !audioRef.current.ended && audioRef.current.currentTime > 0;
+      setIsPlaying((prev) => (prev !== isActuallyPlaying ? isActuallyPlaying : prev));
+    }, 150);
+
+    return () => {
+      clearInterval(syncInterval);
+      audio.removeEventListener("playing", handlePlaying);
+      audio.removeEventListener("play", handlePlaying);
+      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("ended", handleEnded);
+      audio.pause();
+    };
   }, []);
 
   const stopAllVideos = useCallback(() => {
@@ -104,15 +133,12 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
     if (isAutoPausedRef.current) return;
 
     const audio = audioRef.current;
-    const currentlyPlaying = isPlayingRef.current || (audio && !audio.paused && audio.currentTime > 0);
+    const currentlyPlaying = audio && !audio.paused && audio.currentTime > 0;
 
     if (currentlyPlaying) {
       wasPlayingBeforeBackgroundRef.current = true;
       isAutoPausedRef.current = true;
-
-      if (audio) {
-        audio.pause();
-      }
+      audio.pause();
       setIsPlaying(false);
     }
 
@@ -129,6 +155,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
 
     const audio = audioRef.current;
     if (wasPlayingBeforeBackgroundRef.current && audio && userWantsAudioRef.current) {
+      audio.volume = 0.35;
       audio
         .play()
         .then(() => {
@@ -136,6 +163,7 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
         })
         .catch((err) => {
           console.warn("Audio resume interrupted by browser policy:", err);
+          setIsPlaying(false);
         });
     }
 
@@ -170,117 +198,86 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   }, [handleBackground, handleForeground]);
 
 
-  const toggleAudio = () => {
-    if (!audioRef.current) return;
+  const toggleAudio = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
     wasPlayingBeforeBackgroundRef.current = false;
     isAutoPausedRef.current = false;
 
-    if (isPlaying) {
+    const isCurrentlyPlaying = !audio.paused && audio.currentTime > 0;
+
+    if (isCurrentlyPlaying) {
+      // User clicked while playing -> IMMEDIATELY turn OFF sound and update UI to dots
       userWantsAudioRef.current = false;
       if (typeof window !== "undefined") sessionStorage.setItem("userWantsAudio", "false");
-      audioRef.current.pause();
+      audio.pause();
       setIsPlaying(false);
     } else {
+      // User clicked while stopped -> IMMEDIATELY turn ON sound and update UI to animated bars
       userWantsAudioRef.current = true;
       if (typeof window !== "undefined") sessionStorage.setItem("userWantsAudio", "true");
-      audioRef.current.volume = 0.35;
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+      audio.volume = 0.35;
+      audio
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch((err) => {
+          console.warn("Audio play blocked by browser policy:", err);
+          setIsPlaying(false);
+        });
     }
-  };
-
-  const pauseAudio = useCallback((fade = true) => {
-    if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
-    setIsPlaying(false);
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (!fade || audio.paused) {
-      audio.pause();
-      return;
-    }
-
-    const startVolume = audio.volume;
-    const startTime = Date.now();
-    const duration = 600;
-
-    fadeIntervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(1, elapsed / duration);
-      audio.volume = Math.max(0, startVolume * (1 - progress));
-
-      if (progress >= 1) {
-        if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
-        audio.pause();
-      }
-    }, 30);
   }, []);
 
-  const resumeAudio = useCallback((fade = true) => {
+  const pauseAudio = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+    }
+    setIsPlaying(false);
+  }, []);
+
+  const resumeAudio = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
     if (!userWantsAudioRef.current) return;
 
-    if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
-
-    const targetVolume = 0.35;
-
-    if (!fade) {
-      audio.volume = targetVolume;
-      if (audio.paused) {
-        audio.play().then(() => setIsPlaying(true)).catch(() => {});
-      } else {
-        setIsPlaying(true);
-      }
-      return;
-    }
-
-    if (!audio.paused && Math.abs(audio.volume - targetVolume) < 0.05) {
-      setIsPlaying(true);
-      return;
-    }
-
-    const startVol = audio.paused ? 0 : audio.volume;
-    if (audio.paused) {
-      audio.volume = 0;
-    }
-
+    audio.volume = 0.35;
     audio
       .play()
       .then(() => {
         setIsPlaying(true);
-        const startTime = Date.now();
-        const duration = 600;
-
-        fadeIntervalRef.current = setInterval(() => {
-          const elapsed = Date.now() - startTime;
-          const progress = Math.min(1, elapsed / duration);
-          audio.volume = Math.min(targetVolume, startVol + (targetVolume - startVol) * progress);
-
-          if (progress >= 1) {
-            if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
-            audio.volume = targetVolume;
-          }
-        }, 30);
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.warn("Audio resume interrupted:", err);
+        setIsPlaying(false);
+      });
   }, []);
 
-  const playEntrance = () => {
+  const playEntrance = useCallback(() => {
     wasPlayingBeforeBackgroundRef.current = false;
     isAutoPausedRef.current = false;
     userWantsAudioRef.current = true;
     if (typeof window !== "undefined") sessionStorage.setItem("userWantsAudio", "true");
 
-    if (audioRef.current) {
-      audioRef.current.volume = 0.35;
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+    const audio = audioRef.current;
+    if (audio) {
+      audio.volume = 0.35;
+      audio
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch(() => {
+          setIsPlaying(false);
+        });
     }
     try {
       const entrance = new Audio("/entrance.mp3");
       entrance.volume = 0.3;
       entrance.play().catch(() => {});
     } catch {}
-  };
+  }, []);
 
   const playClickSfx = () => {
     if (clickAudioRef.current) {
