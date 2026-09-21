@@ -75,19 +75,19 @@ export default function NetflixMobilePlayer({
 
   const resetIdleTimer = useCallback(() => {
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    if (isPlaying && !isMenuOpen && !isScrubbing) {
+    if (!isMenuOpen && !isScrubbing) {
       idleTimerRef.current = setTimeout(() => {
         setIsUiVisible(false);
-      }, 3500);
+      }, 5000);
     }
-  }, [isPlaying, isMenuOpen, isScrubbing]);
+  }, [isMenuOpen, isScrubbing]);
 
   useEffect(() => {
     resetIdleTimer();
     return () => {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
-  }, [resetIdleTimer]);
+  }, [resetIdleTimer, isPlaying]);
 
   // Autoplay with sound on initial load
   useEffect(() => {
@@ -140,6 +140,8 @@ export default function NetflixMobilePlayer({
       setIsPlaying(false);
       triggerPulse("pause");
       setIsUiVisible(true);
+      resetIdleTimer();
+      resumeAudio(true);
     }
   };
 
@@ -332,7 +334,7 @@ export default function NetflixMobilePlayer({
       {/* Top & Bottom Cinematic Vignette Gradient */}
       <div
         className={`absolute inset-0 pointer-events-none transition-opacity duration-400 z-15 ${
-          isUiVisible || !isPlaying || isMenuOpen ? "opacity-100" : "opacity-0"
+          isUiVisible || isMenuOpen ? "opacity-100" : "opacity-0"
         }`}
       >
         <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-black/90 via-black/40 to-transparent" />
@@ -342,7 +344,7 @@ export default function NetflixMobilePlayer({
       {/* ═══════════════ TOP BAR (NETFLIX STYLE) ═══════════════ */}
       <header
         className={`relative z-30 w-full px-5 pt-4 sm:pt-5 flex items-center justify-between transition-all duration-300 ${
-          isUiVisible || !isPlaying || isMenuOpen
+          isUiVisible || isMenuOpen
             ? "opacity-100 translate-y-0 pointer-events-auto"
             : "opacity-0 -translate-y-4 pointer-events-none"
         }`}
@@ -382,7 +384,7 @@ export default function NetflixMobilePlayer({
       {/* ═══════════════ CENTER CONTROLS (NETFLIX STYLE) ═══════════════ */}
       <div
         className={`relative z-30 w-full flex items-center justify-center gap-10 sm:gap-16 my-auto transition-all duration-300 pointer-events-auto ${
-          (isUiVisible || !isPlaying) && !isMenuOpen
+          isUiVisible && !isMenuOpen
             ? "opacity-100 scale-100"
             : "opacity-0 scale-95 pointer-events-none"
         }`}
@@ -438,7 +440,7 @@ export default function NetflixMobilePlayer({
       {/* ═══════════════ BOTTOM BAR (TIMELINE + FILMS + FULLSCREEN BUTTON) ═══════════════ */}
       <footer
         className={`relative z-30 w-full px-5 pb-3 sm:pb-4 flex flex-col gap-2 transition-all duration-300 ${
-          isUiVisible || !isPlaying || isMenuOpen
+          isUiVisible || isMenuOpen
             ? "opacity-100 translate-y-0 pointer-events-auto"
             : "opacity-0 translate-y-4 pointer-events-none"
         }`}

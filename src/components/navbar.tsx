@@ -243,11 +243,11 @@ export default function Navbar({
   // Navbar entry animation
   useEffect(() => {
     if (showUI) {
-      if (navRef.current) gsap.to(navRef.current, { y: 0, opacity: 1, duration: 1.5, ease: "power4.out", overwrite: true });
-      if (timeRef.current) gsap.to(timeRef.current, { y: 0, opacity: 1, duration: 1.5, ease: "power4.out", overwrite: true });
+      if (navRef.current) gsap.to(navRef.current, { y: 0, opacity: 1, duration: 0.6, ease: "power4.out", overwrite: true });
+      if (timeRef.current) gsap.to(timeRef.current, { y: 0, opacity: 1, duration: 0.6, ease: "power4.out", overwrite: true });
     } else {
-      if (navRef.current) gsap.to(navRef.current, { y: -32, opacity: 0, duration: 1.0, ease: "power3.inOut", overwrite: true });
-      if (timeRef.current) gsap.to(timeRef.current, { y: -32, opacity: 0, duration: 1.0, ease: "power3.inOut", overwrite: true });
+      if (navRef.current) gsap.to(navRef.current, { y: -32, opacity: 0, duration: 0.6, ease: "power3.inOut", overwrite: true });
+      if (timeRef.current) gsap.to(timeRef.current, { y: -32, opacity: 0, duration: 0.6, ease: "power3.inOut", overwrite: true });
     }
   }, [showUI]);
 
@@ -483,7 +483,7 @@ export default function Navbar({
     <>
       <nav 
         ref={navRef}
-        className={`fixed top-0 left-0 w-full z-[110] px-6 py-6 md:px-12 md:py-8 mix-blend-difference -translate-y-8 opacity-0 ${clickable ? 'pointer-events-auto' : 'pointer-events-none'}`}
+        className={`fixed top-0 left-0 w-full z-[110] px-6 py-6 md:px-12 md:py-8 mix-blend-difference -translate-y-8 opacity-0 ${clickable && showUI ? 'pointer-events-auto' : 'pointer-events-none'}`}
       >
         <div className="flex justify-between items-start w-full">
           {/* Top Left: Hamburger Menu */}

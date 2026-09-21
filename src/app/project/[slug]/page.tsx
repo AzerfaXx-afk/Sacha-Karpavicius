@@ -62,17 +62,8 @@ export default function ProjectPage() {
   const horizontalTrackRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
 
-  // 100% Bulletproof Inactivity Idle Timer (hides navbar, contact badge & audio signal after 2.5s mouse inactivity)
-  const isVideoPlayingRef = useRef(isVideoPlaying);
+  // 100% Bulletproof Inactivity Idle Timer (hides all UI, HUD, controls & badges after 5s of inactivity, even when paused)
   const lastActivityRef = useRef<number>(Date.now());
-
-  useEffect(() => {
-    isVideoPlayingRef.current = isVideoPlaying;
-    if (!isVideoPlaying) {
-      setIsIdle(false);
-      setIsHideUI(false);
-    }
-  }, [isVideoPlaying, setIsHideUI]);
 
   useEffect(() => {
     if (!project?.videoUrl) return;
@@ -87,20 +78,22 @@ export default function ProjectPage() {
 
     const checkIdleInterval = setInterval(() => {
       const elapsed = Date.now() - lastActivityRef.current;
-      if (elapsed >= 2500 && isVideoPlayingRef.current) {
+      if (elapsed >= 5000) {
         setIsIdle(true);
         setIsHideUI(true);
       }
-    }, 400);
+    }, 300);
 
-    window.addEventListener("mousemove", handleUserActivity);
-    window.addEventListener("mousedown", handleUserActivity);
-    window.addEventListener("touchstart", handleUserActivity);
-    window.addEventListener("keydown", handleUserActivity);
+    window.addEventListener("mousemove", handleUserActivity, { passive: true });
+    window.addEventListener("pointermove", handleUserActivity, { passive: true });
+    window.addEventListener("mousedown", handleUserActivity, { passive: true });
+    window.addEventListener("touchstart", handleUserActivity, { passive: true });
+    window.addEventListener("keydown", handleUserActivity, { passive: true });
 
     return () => {
       clearInterval(checkIdleInterval);
       window.removeEventListener("mousemove", handleUserActivity);
+      window.removeEventListener("pointermove", handleUserActivity);
       window.removeEventListener("mousedown", handleUserActivity);
       window.removeEventListener("touchstart", handleUserActivity);
       window.removeEventListener("keydown", handleUserActivity);
@@ -392,7 +385,6 @@ export default function ProjectPage() {
       if (clamped === 0) {
         vid.muted = true;
         setIsVideoMuted(true);
-        resumeAudio(true);
       } else {
         vid.muted = false;
         setIsVideoMuted(false);
@@ -658,7 +650,7 @@ export default function ProjectPage() {
           }
         }}
         className={`relative w-full h-[100vh] min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] group select-none transition-all duration-500 ${
-          isIdle && isVideoPlaying ? "cursor-none" : "cursor-pointer"
+          isIdle ? "cursor-none" : "cursor-pointer"
         }`}
       >
         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
@@ -699,11 +691,7 @@ export default function ProjectPage() {
                   onTimeUpdate={handleTimeUpdate}
                   onPlay={() => {
                     setIsVideoPlaying(true);
-                    if (!videoRef.current?.muted && videoVolume > 0) {
-                      pauseAudio(true);
-                    } else {
-                      resumeAudio(true);
-                    }
+                    pauseAudio(true);
                   }}
                   onPause={() => {
                     setIsVideoPlaying(false);
@@ -776,20 +764,20 @@ export default function ProjectPage() {
                   </div>
                 </div>
 
-                {/* Dynamic Cinema Bottom Gradient (Smoothly visible when UI is visible or paused, fades out when idle & playing) */}
+                {/* Dynamic Cinema Bottom Gradient (Smoothly visible when UI is visible, fades out when idle) */}
                 <div
                   className={`absolute inset-x-0 bottom-0 pointer-events-none h-48 sm:h-72 md:h-[440px] bg-gradient-to-t from-black/95 via-black/50 to-transparent transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] z-15 ${
-                    !isIdle || !isVideoPlaying ? "opacity-100" : "opacity-0"
+                    !isIdle ? "opacity-100" : "opacity-0"
                   }`}
                 />
 
                 {/* Minimal Paused Info Card (Clean, unobtrusive, positioned above the bottom controls) */}
                 <div
                   className={`absolute inset-0 z-20 pointer-events-none flex flex-col justify-end p-4 sm:p-8 md:p-16 pb-20 sm:pb-28 md:pb-36 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                    !isVideoPlaying
-                      ? "opacity-100 translate-y-0"
-                      : isIdle
+                    isIdle
                       ? "opacity-0 translate-y-8 pointer-events-none"
+                      : !isVideoPlaying
+                      ? "opacity-100 translate-y-0 pointer-events-auto"
                       : "opacity-0 pointer-events-none"
                   }`}
                 >
@@ -828,9 +816,9 @@ export default function ProjectPage() {
                   onTouchStart={(e) => { e.stopPropagation(); }}
                   onDoubleClick={(e) => { e.stopPropagation(); }}
                   className={`absolute inset-x-0 bottom-2 sm:bottom-4 md:bottom-10 z-40 px-3 sm:px-6 md:px-44 lg:px-56 xl:px-64 flex flex-col items-center justify-end pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                    isIdle && isVideoPlaying
-                      ? "opacity-0 translate-y-6"
-                      : "opacity-100 translate-y-0"
+                    isIdle
+                      ? "opacity-0 translate-y-6 pointer-events-none"
+                      : "opacity-100 translate-y-0 pointer-events-auto"
                   }`}
                 >
                   <div className="w-full max-w-4xl lg:max-w-5xl flex flex-col gap-3 pointer-events-auto">
