@@ -43,6 +43,8 @@ export default function ProjectPage() {
   const [videoDur, setVideoDur] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showRotatePrompt, setShowRotatePrompt] = useState(false);
+  const [isVideoBuffering, setIsVideoBuffering] = useState(isVideoProject);
+  const [bufferPercent, setBufferPercent] = useState(0);
 
   const heroRef = useRef<HTMLDivElement>(null);
   const heroImgRef = useRef<HTMLDivElement>(null);
@@ -123,6 +125,7 @@ export default function ProjectPage() {
       vid.play()
         .then(() => {
           setIsVideoPlaying(true);
+          setIsVideoBuffering(false);
           pauseAudio(true);
         })
         .catch(() => {
@@ -131,6 +134,7 @@ export default function ProjectPage() {
           vid.play()
             .then(() => {
               setIsVideoPlaying(true);
+              setIsVideoBuffering(false);
               pauseAudio(true);
             })
             .catch(() => {});
@@ -165,12 +169,20 @@ export default function ProjectPage() {
     const vid = videoRef.current;
     if (!vid) return;
 
+    // Check if video is already ready from background warmup preloader
+    if (vid.readyState >= 3) {
+      setIsVideoBuffering(false);
+    } else {
+      setIsVideoBuffering(true);
+    }
+
     const startPlayback = async () => {
       try {
         vid.muted = false;
         setIsVideoMuted(false);
         await vid.play();
         setIsVideoPlaying(true);
+        setIsVideoBuffering(false);
         pauseAudio(true);
       } catch {
         // Browser blocked unmuted autoplay -> immediately play muted without delay
@@ -179,16 +191,35 @@ export default function ProjectPage() {
           setIsVideoMuted(true);
           await vid.play();
           setIsVideoPlaying(true);
+          setIsVideoBuffering(false);
           pauseAudio(true);
         } catch {
-          // Waiting for user interaction
+          // Waiting for media buffer or user interaction
+          if (vid.readyState < 3) {
+            setIsVideoBuffering(true);
+          }
         }
       }
     };
 
     startPlayback();
 
+    // Fast-fallback timer: if raw remote master takes > 5.5s, fall back to faststart stream
+    const fallbackTimer = setTimeout(() => {
+      if (vid && vid.readyState < 3 && project.mobileVideoUrl && !vid.currentSrc.includes(project.mobileVideoUrl)) {
+        vid.src = project.mobileVideoUrl;
+        vid.load();
+        vid.play()
+          .then(() => {
+            setIsVideoPlaying(true);
+            setIsVideoBuffering(false);
+          })
+          .catch(() => {});
+      }
+    }, 5500);
+
     return () => {
+      clearTimeout(fallbackTimer);
       if (vid) {
         try {
           vid.pause();
@@ -196,7 +227,7 @@ export default function ProjectPage() {
       }
       resumeAudio(true);
     };
-  }, [project?.slug, project?.videoUrl, showRotatePrompt, pauseAudio, resumeAudio]);
+  }, [project?.slug, project?.videoUrl, project?.mobileVideoUrl, showRotatePrompt, pauseAudio, resumeAudio]);
 
   // Ensure scroll position is reset on page entry
   useEffect(() => {
@@ -640,12 +671,16 @@ export default function ProjectPage() {
 
       <section
         ref={heroRef}
-        onClick={() => {
+        onClick={(e) => {
+          if ((e.target as HTMLElement)?.closest("button") || (e.target as HTMLElement)?.closest("a")) return;
+          if (isVideoBuffering) return;
           if (project?.videoUrl) {
             togglePlayVideo();
           }
         }}
-        onDoubleClick={() => {
+        onDoubleClick={(e) => {
+          if ((e.target as HTMLElement)?.closest("button") || (e.target as HTMLElement)?.closest("a")) return;
+          if (isVideoBuffering) return;
           if (project?.videoUrl) {
             toggleFullscreen();
           }
@@ -671,26 +706,67 @@ export default function ProjectPage() {
                     if (vid && project.mobileVideoUrl && !vid.currentSrc.includes(project.mobileVideoUrl)) {
                       vid.src = project.mobileVideoUrl;
                       vid.load();
-                      vid.play().catch(() => {});
+                      vid.play()
+                        .then(() => {
+                          setIsVideoPlaying(true);
+                          setIsVideoBuffering(false);
+                        })
+                        .catch(() => {});
                     }
+                  }}
+                  onWaiting={() => {
+                    setIsVideoBuffering(true);
                   }}
                   onLoadedMetadata={(e) => {
                     const vid = e.currentTarget;
                     setVideoDur(vid.duration || 0);
                     setVideoTime(vid.currentTime || 0);
-                    if (vid.paused) {
-                      vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+                    if (vid.readyState >= 3) {
+                      setIsVideoBuffering(false);
+                    }
+                    if (vid.paused && !showRotatePrompt) {
+                      vid.play()
+                        .then(() => {
+                          setIsVideoPlaying(true);
+                          setIsVideoBuffering(false);
+                        })
+                        .catch(() => {});
                     }
                   }}
                   onCanPlay={(e) => {
                     const vid = e.currentTarget;
-                    if (vid.paused) {
-                      vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+                    if (vid.readyState >= 3) {
+                      setIsVideoBuffering(false);
+                    }
+                    if (vid.paused && !showRotatePrompt) {
+                      vid.play()
+                        .then(() => {
+                          setIsVideoPlaying(true);
+                          setIsVideoBuffering(false);
+                        })
+                        .catch(() => {});
                     }
                   }}
+                  onCanPlayThrough={() => {
+                    setIsVideoBuffering(false);
+                  }}
                   onTimeUpdate={handleTimeUpdate}
+                  onProgress={(e) => {
+                    const vid = e.currentTarget;
+                    if (vid.buffered && vid.buffered.length > 0 && vid.duration) {
+                      const end = vid.buffered.end(vid.buffered.length - 1);
+                      const pct = Math.min(100, Math.round((end / vid.duration) * 100));
+                      setBufferPercent(pct);
+                    }
+                  }}
                   onPlay={() => {
                     setIsVideoPlaying(true);
+                    setIsVideoBuffering(false);
+                    pauseAudio(true);
+                  }}
+                  onPlaying={() => {
+                    setIsVideoPlaying(true);
+                    setIsVideoBuffering(false);
                     pauseAudio(true);
                   }}
                   onPause={() => {
@@ -715,6 +791,92 @@ export default function ProjectPage() {
                     <source src={project.mobileVideoUrl} type="video/mp4" />
                   )}
                 </video>
+
+                {/* ══════════ AWWWARDS CINEMA MASTER BUFFERING HUD ══════════ */}
+                <div
+                  className={`absolute inset-0 z-40 flex flex-col items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    isVideoBuffering && !showRotatePrompt
+                      ? "opacity-100 backdrop-blur-md bg-black/70 pointer-events-auto"
+                      : "opacity-0 pointer-events-none scale-105"
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                >
+                  {/* Subtle cinema vignette & radial aura */}
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.08)_0%,rgba(0,0,0,0.85)_75%)] pointer-events-none" />
+
+                  {/* Luxury Reticle / Circular Aperture Spinner */}
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center">
+                    {/* Pulsing center aura */}
+                    <div className="absolute inset-0 rounded-full bg-white/10 blur-xl animate-pulse" />
+
+                    {/* Outer slow dashed ring */}
+                    <svg className="absolute inset-0 w-full h-full animate-[spin_8s_linear_infinite]" viewBox="0 0 100 100">
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="45"
+                        fill="none"
+                        stroke="rgba(255,255,255,0.2)"
+                        strokeWidth="1.2"
+                        strokeDasharray="4 8"
+                      />
+                    </svg>
+
+                    {/* Fast dynamic rotating arc with gradient */}
+                    <svg className="absolute inset-0 w-full h-full animate-[spin_1.6s_cubic-bezier(0.4,0,0.2,1)_infinite]" viewBox="0 0 100 100">
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="45"
+                        fill="none"
+                        stroke="url(#cinema-buffer-grad)"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeDasharray="65 220"
+                      />
+                      <defs>
+                        <linearGradient id="cinema-buffer-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#ffffff" />
+                          <stop offset="50%" stopColor="#f59e0b" />
+                          <stop offset="100%" stopColor="#ec4899" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+
+                    {/* Center percentage or 4K emblem */}
+                    <div className="relative z-10 flex flex-col items-center justify-center">
+                      <span className="font-mono text-[11px] sm:text-[12px] font-bold tracking-widest text-white/90 tabular-nums">
+                        {bufferPercent > 0 ? `${bufferPercent}%` : "4K"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* High-End Title & Buffering Status */}
+                  <div className="relative z-10 text-center px-4 mt-6 flex flex-col items-center">
+                    <h3 className="font-syne font-bold text-lg sm:text-2xl text-white tracking-[0.2em] uppercase drop-shadow-md">
+                      {project.title}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-2.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                      <p className="font-mono text-[10px] sm:text-[11px] tracking-[0.25em] text-white/70 uppercase">
+                        {lang === "fr"
+                          ? "CHARGEMENT DU MASTER HAUTE DÉFINITION..."
+                          : "BUFFERING HIGH DEFINITION MASTER..."}
+                      </p>
+                    </div>
+
+                    {/* Cinema Specs Badges */}
+                    <div className="flex flex-wrap items-center justify-center gap-2.5 mt-4 text-[9px] sm:text-[10px] font-mono tracking-widest text-white/40 uppercase">
+                      <span className="px-2 py-0.5 rounded border border-white/15 bg-white/5">4K MASTER</span>
+                      <span>•</span>
+                      <span className="px-2 py-0.5 rounded border border-white/15 bg-white/5">DOLBY STEREO</span>
+                      <span>•</span>
+                      <span className="px-2 py-0.5 rounded border border-white/15 bg-white/5">24 FPS</span>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Floating Unmute Quick Action Pill (when muted autoplay starts) */}
                 {isVideoMuted && isVideoPlaying && !isIdle && (
