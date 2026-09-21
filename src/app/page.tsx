@@ -1190,17 +1190,23 @@ export default function Home() {
       }
     });
 
-    // Background warmup of video elements to ensure instant playback without lag
-    videoProjectsData.forEach((vp) => {
-      const src = vp.previewVideoUrl || vp.videoUrl;
-      if (src) {
+    // Background warmup of all video elements (previews, raw 4K, faststart streams, rotate prompt)
+    const videosToWarm = [
+      "/Videos/rotate-phone.mp4",
+      ...videoProjectsData.map((vp) => vp.previewVideoUrl).filter(Boolean) as string[],
+      ...videoProjectsData.map((vp) => vp.mobileVideoUrl).filter(Boolean) as string[],
+      ...videoProjectsData.map((vp) => vp.videoUrl).filter(Boolean) as string[],
+    ];
+
+    videosToWarm.forEach((src) => {
+      try {
         const v = document.createElement("video");
         v.preload = "auto";
         v.muted = true;
         v.playsInline = true;
         v.src = src;
         v.load();
-      }
+      } catch (_) {}
     });
   }, []);
 
@@ -1657,11 +1663,11 @@ export default function Home() {
             >
               <div
                 data-parallax-container
-                className="relative aspect-[4/5] overflow-hidden bg-[#111] rounded-xl will-change-transform shadow-2xl"
+                className="relative w-full overflow-hidden bg-[#0d0d0d] rounded-xl border border-white/10 aspect-[16/11] md:aspect-[16/10] will-change-transform shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
               >
                 <div
                   data-parallax-img
-                  className="absolute -top-[12%] left-0 w-full h-[124%] will-change-transform"
+                  className="absolute -top-[10%] left-0 w-full h-[120%] will-change-transform"
                 >
                   <Image
                     src={project.coverImage}
@@ -1669,6 +1675,7 @@ export default function Home() {
                     fill
                     className={`object-cover ${project.objectPosition || "object-[center_28%]"} transform-gpu group-hover:scale-105 group-data-[touch-hover=true]:scale-105 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] brightness-[1.03] contrast-[1.05]`}
                     sizes="(max-width: 768px) 100vw, 50vw"
+                    quality={95}
                     priority={idx < 2}
                   />
                 </div>

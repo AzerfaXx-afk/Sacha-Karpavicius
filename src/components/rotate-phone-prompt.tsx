@@ -39,10 +39,10 @@ export default function RotatePhonePrompt({
       });
     }
 
-    // Safety fallback: if video stalls or takes too long, complete after 3.2s
+    // Safety fallback: if video stalls or takes too long, complete after 5.5s
     const fallbackTimer = setTimeout(() => {
       handleFinish();
-    }, 3200);
+    }, 5500);
 
     return () => clearTimeout(fallbackTimer);
   }, [pauseAudio, setIsHideUI]);

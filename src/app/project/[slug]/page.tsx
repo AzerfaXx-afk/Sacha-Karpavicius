@@ -8,6 +8,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Navbar from "@/components/navbar";
 import ProjectNav from "@/components/project-nav";
+import RotatePhonePrompt from "@/components/rotate-phone-prompt";
 import { projectsData, videoProjectsData, getProjectBySlug } from "@/data/projects";
 import { useSiteContext } from "@/context/site-context";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
@@ -41,6 +42,7 @@ export default function ProjectPage() {
   const [videoTime, setVideoTime] = useState(0);
   const [videoDur, setVideoDur] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showRotatePrompt, setShowRotatePrompt] = useState(false);
 
   const heroRef = useRef<HTMLDivElement>(null);
   const heroImgRef = useRef<HTMLDivElement>(null);
@@ -102,12 +104,63 @@ export default function ProjectPage() {
     };
   }, [setIsHideUI, resumeAudio]);
 
-  // Launch video directly on enter
+  // Mobile portrait detection for Rotate Phone Prompt
+  useEffect(() => {
+    if (typeof window === "undefined" || !isVideoProject) return;
+    const isMobile = window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches;
+    const isPortrait = window.innerHeight > window.innerWidth || window.matchMedia("(orientation: portrait)").matches;
+    if (isMobile && isPortrait) {
+      setShowRotatePrompt(true);
+      pauseAudio(true);
+    }
+  }, [isVideoProject, pauseAudio]);
+
+  const handleRotatePromptComplete = useCallback(() => {
+    setShowRotatePrompt(false);
+    setIsHideUI(false);
+    const vid = videoRef.current;
+    if (vid) {
+      vid.play()
+        .then(() => {
+          setIsVideoPlaying(true);
+          pauseAudio(true);
+        })
+        .catch(() => {
+          vid.muted = true;
+          setIsVideoMuted(true);
+          vid.play()
+            .then(() => {
+              setIsVideoPlaying(true);
+              pauseAudio(true);
+            })
+            .catch(() => {});
+        });
+    }
+  }, [pauseAudio, setIsHideUI]);
+
+  useEffect(() => {
+    if (!showRotatePrompt) return;
+    const handleOrientation = () => {
+      if (window.innerWidth > window.innerHeight) {
+        handleRotatePromptComplete();
+      }
+    };
+    window.addEventListener("resize", handleOrientation);
+    window.addEventListener("orientationchange", handleOrientation);
+    return () => {
+      window.removeEventListener("resize", handleOrientation);
+      window.removeEventListener("orientationchange", handleOrientation);
+    };
+  }, [showRotatePrompt, handleRotatePromptComplete]);
+
+  // Launch video directly on enter (or right after rotation prompt completes)
   useEffect(() => {
     if (!project?.videoUrl) {
       resumeAudio(true);
       return;
     }
+
+    if (showRotatePrompt) return;
 
     const vid = videoRef.current;
     if (!vid) return;
@@ -136,9 +189,14 @@ export default function ProjectPage() {
     startPlayback();
 
     return () => {
+      if (vid) {
+        try {
+          vid.pause();
+        } catch (_) {}
+      }
       resumeAudio(true);
     };
-  }, [project?.slug, project?.videoUrl, pauseAudio, resumeAudio]);
+  }, [project?.slug, project?.videoUrl, showRotatePrompt, pauseAudio, resumeAudio]);
 
   // Ensure scroll position is reset on page entry
   useEffect(() => {
@@ -548,6 +606,14 @@ export default function ProjectPage() {
 
   return (
     <main suppressHydrationWarning className="min-h-screen bg-[#050505] text-white overflow-x-hidden selection:bg-white selection:text-black">
+      {showRotatePrompt && (
+        <RotatePhonePrompt
+          filmTitle={project.title}
+          lang={lang}
+          onComplete={handleRotatePromptComplete}
+        />
+      )}
+
       <Navbar
         showUI={!isIdle}
         clickable={true}

@@ -49,8 +49,8 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
   const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
   const clickAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // User preference: true if user started or turned on music
-  const userWantsAudioRef = useRef(false);
+  // User preference: true by default on cinematic experience unless explicitly muted
+  const userWantsAudioRef = useRef(true);
 
   // Background audio pause/resume tracking refs
   const wasPlayingBeforeBackgroundRef = useRef(false);
@@ -64,7 +64,9 @@ export const SiteProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      if (sessionStorage.getItem("userWantsAudio") === "true") {
+      if (sessionStorage.getItem("userWantsAudio") === "false") {
+        userWantsAudioRef.current = false;
+      } else {
         userWantsAudioRef.current = true;
       }
 

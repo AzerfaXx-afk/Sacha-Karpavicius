@@ -5,6 +5,7 @@ import { SiteProvider } from "@/context/site-context";
 import SmoothScrollProvider from "@/components/smooth-scroll-provider";
 import GlobalAudioSignal from "@/components/global-audio-signal";
 import PwaInstallPrompt from "@/components/pwa-install-prompt";
+import VideoPreloader from "@/components/video-preloader";
 
 const syne = Syne({
   variable: "--font-syne",
@@ -63,6 +64,7 @@ export default function RootLayout({
           </SmoothScrollProvider>
           <GlobalAudioSignal />
           <PwaInstallPrompt />
+          <VideoPreloader />
         </SiteProvider>
       </body>
     </html>
