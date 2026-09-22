@@ -473,24 +473,6 @@ function VideoCardItem({
   const [isMobileInView, setIsMobileInView] = useState(false);
   const [activeClipIndex, setActiveClipIndex] = useState(0);
   const [clipProgress, setClipProgress] = useState(0);
-  const [liveViews, setLiveViews] = useState<string | null>(null);
-
-  // Fetch YouTube live views if project is linked to YouTube
-  useEffect(() => {
-    if (!project?.youtubeId) return;
-    let active = true;
-    fetch(`/api/youtube-views?id=${encodeURIComponent(project.youtubeId)}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (active && data?.formattedViews) {
-          setLiveViews(data.formattedViews);
-        }
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [project?.youtubeId]);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -666,12 +648,6 @@ function VideoCardItem({
             <h3 className="font-syne font-bold text-[15px] md:text-[18px] tracking-tight group-hover:tracking-[0.15em] text-white/90 group-hover:text-white uppercase transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
               {project.title}
             </h3>
-            {liveViews && (
-              <span className="inline-flex items-center gap-1.5 text-[10px] md:text-[11px] font-mono text-white/75 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full backdrop-blur-sm shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span>{liveViews}</span>
-              </span>
-            )}
           </div>
 
           <div className="flex-1 mx-4 h-[1px] relative overflow-hidden">

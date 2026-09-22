@@ -58,24 +58,6 @@ export default function ProjectPage() {
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
   const ytPlayerRef = useRef<any>(null);
   const [ytFailed, setYtFailed] = useState(false);
-  const [liveViews, setLiveViews] = useState<string | null>(null);
-
-  // Fetch live YouTube views if project is linked to YouTube
-  useEffect(() => {
-    if (!youtubeId) return;
-    let active = true;
-    fetch(`/api/youtube-views?id=${encodeURIComponent(youtubeId)}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (active && data?.formattedViews) {
-          setLiveViews(data.formattedViews);
-        }
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [youtubeId]);
 
 
   // Horizontal Scrollytelling Refs
@@ -916,7 +898,7 @@ export default function ProjectPage() {
         onPlayHoverSfx={playHoverSfx}
       />
 
-      <div className={`fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference transition-all duration-700 ${isIdle ? "opacity-0 pointer-events-none translate-y-4" : "opacity-100 translate-y-0 pointer-events-auto"} ${isVideoProject ? "hidden md:block" : ""}`}>
+      <div className={`fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference transition-all duration-700 ${isIdle ? "opacity-0 pointer-events-none translate-y-4" : "opacity-100 translate-y-0 pointer-events-auto"} ${isVideoProject ? "hidden" : ""}`}>
         <a
           href="/#contact"
           onClick={(e) => {
@@ -1113,14 +1095,11 @@ export default function ProjectPage() {
                   </div>
                 </div>
 
-                {/* 4K Cinema Buffering Indicator */}
+                {/* Cinema Buffering Indicator */}
                 {isVideoBuffering && (
                   <div className="absolute inset-0 z-35 flex items-center justify-center pointer-events-none transition-opacity duration-300">
-                    <div className="flex flex-col items-center gap-2.5 bg-black/75 backdrop-blur-md px-5 py-3.5 rounded-2xl border border-white/20 shadow-[0_10px_30px_rgba(0,0,0,0.9)]">
-                      <div className="w-6 h-6 border-2 border-white/20 border-t-amber-400 rounded-full animate-spin" />
-                      <span className="font-mono text-[10px] tracking-widest uppercase text-white/90 font-bold">
-                        4K BUFFERING
-                      </span>
+                    <div className="flex flex-col items-center justify-center bg-black/60 backdrop-blur-md p-3.5 rounded-full border border-white/15 shadow-[0_10px_30px_rgba(0,0,0,0.9)]">
+                      <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                     </div>
                   </div>
                 )}
@@ -1155,21 +1134,10 @@ export default function ProjectPage() {
                       <span className="text-white font-bold bg-white/10 px-1.5 py-0.5 rounded border border-white/20">{project.year}</span>
                       <span className="text-white/40">•</span>
                       <span>{project.category || (lang === "fr" ? "Vidéo" : "Video")}</span>
-                      <span className="text-white/40">•</span>
-                      <span className="text-amber-300 font-bold bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/30 tracking-wider shadow-[0_0_10px_rgba(251,191,36,0.15)]">4K UHD</span>
                       {videoDur > 0 && (
                         <>
                           <span className="text-white/40">•</span>
                           <span>{formatTime(videoDur)}</span>
-                        </>
-                      )}
-                      {liveViews && (
-                        <>
-                          <span className="text-white/40">•</span>
-                          <span className="inline-flex items-center gap-1.5 text-white/90 bg-white/10 px-2 py-0.5 rounded-full border border-white/15 backdrop-blur-sm shadow-sm">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                            <span>{liveViews}</span>
-                          </span>
                         </>
                       )}
                       {project.youtubeUrl && (
@@ -1203,7 +1171,7 @@ export default function ProjectPage() {
                   onMouseDown={(e) => { e.stopPropagation(); }}
                   onTouchStart={(e) => { e.stopPropagation(); }}
                   onDoubleClick={(e) => { e.stopPropagation(); }}
-                  className={`absolute inset-x-0 bottom-2 sm:bottom-4 md:bottom-10 z-40 px-3 sm:px-6 md:px-44 lg:px-56 xl:px-64 flex flex-col items-center justify-end transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  className={`absolute inset-x-0 bottom-3 sm:bottom-4 md:bottom-10 z-40 px-3 sm:px-6 md:px-44 lg:px-56 xl:px-64 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] flex flex-col items-center justify-end transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                     isIdle
                       ? "opacity-0 translate-y-6 pointer-events-none"
                       : "opacity-100 translate-y-0 pointer-events-auto"
@@ -1227,7 +1195,7 @@ export default function ProjectPage() {
                           setIsScrubberHovered(false);
                           setHoverSeekTime(null);
                         }}
-                        className="relative flex-1 h-1 hover:h-2 bg-white/20 hover:bg-white/35 rounded-full cursor-pointer group/scrubber transition-all duration-200 backdrop-blur-[2px]"
+                        className="relative flex-1 h-1 hover:h-2 bg-white/20 hover:bg-white/35 rounded-full cursor-pointer group/scrubber transition-all duration-200 backdrop-blur-[2px] touch-none"
                       >
                         {/* Floating Awwwards Cinema Video Thumbnail & Time Tooltip */}
                         {project.videoUrl && (
@@ -1396,14 +1364,6 @@ export default function ProjectPage() {
 
                       {/* Right Group */}
                       <div className="flex items-center gap-1.5 sm:gap-2.5 z-10">
-                        {/* 4K Master Quality Pill */}
-                        <div
-                          className="font-mono text-[9px] sm:text-[10px] font-bold text-amber-300/90 px-1.5 py-0.5 rounded border border-amber-400/30 bg-amber-500/10 backdrop-blur-sm select-none shadow-[0_0_8px_rgba(251,191,36,0.15)]"
-                          title="Qualité Master 4K"
-                        >
-                          4K
-                        </div>
-
                         {/* Playback Speed Button */}
                         <button
                           onClick={cyclePlaybackRate}
