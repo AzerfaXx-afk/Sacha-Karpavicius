@@ -25,7 +25,7 @@ export default function ProjectPage() {
 
   const project = getProjectBySlug(slug) || projectsData[0];
   const youtubeId = project?.youtubeId || getYoutubeId(project?.videoUrl);
-  const isYoutube = Boolean(youtubeId);
+  const isYoutube = Boolean(project?.videoUrl && getYoutubeId(project.videoUrl));
   const isVideoProject = Boolean(project?.isVideo || project?.videoUrl || isYoutube);
   const targetDataset = isVideoProject ? videoProjectsData : projectsData;
   const currentIndex = targetDataset.findIndex((p) => p.slug === project?.slug);
@@ -44,6 +44,7 @@ export default function ProjectPage() {
   const [videoTime, setVideoTime] = useState(0);
   const [videoDur, setVideoDur] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isVideoBuffering, setIsVideoBuffering] = useState(false);
   const [showRotatePrompt, setShowRotatePrompt] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [isPortrait, setIsPortrait] = useState(false);
@@ -972,6 +973,7 @@ export default function ProjectPage() {
             ) : project.videoUrl ? (
               <video
                 ref={videoRef}
+                src={project.videoUrl}
                 poster={project.coverImage || project.heroImage}
                 autoPlay
                 loop
@@ -986,7 +988,11 @@ export default function ProjectPage() {
                     vid.play().catch(() => {});
                   }
                 }}
+                onWaiting={() => setIsVideoBuffering(true)}
+                onPlaying={() => setIsVideoBuffering(false)}
+                onSeeked={() => setIsVideoBuffering(false)}
                 onLoadedMetadata={(e) => {
+                  setIsVideoBuffering(false);
                   const vid = e.currentTarget;
                   setVideoDur(vid.duration || 0);
                   setVideoTime(vid.currentTime || 0);
@@ -995,6 +1001,7 @@ export default function ProjectPage() {
                   }
                 }}
                 onCanPlay={(e) => {
+                  setIsVideoBuffering(false);
                   const vid = e.currentTarget;
                   if (vid.paused && !showRotatePrompt) {
                     vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
@@ -1002,6 +1009,7 @@ export default function ProjectPage() {
                 }}
                 onTimeUpdate={handleTimeUpdate}
                 onPlay={() => {
+                  setIsVideoBuffering(false);
                   setIsVideoPlaying(true);
                   pauseAudio(true);
                 }}
@@ -1105,6 +1113,18 @@ export default function ProjectPage() {
                   </div>
                 </div>
 
+                {/* 4K Cinema Buffering Indicator */}
+                {isVideoBuffering && (
+                  <div className="absolute inset-0 z-35 flex items-center justify-center pointer-events-none transition-opacity duration-300">
+                    <div className="flex flex-col items-center gap-2.5 bg-black/75 backdrop-blur-md px-5 py-3.5 rounded-2xl border border-white/20 shadow-[0_10px_30px_rgba(0,0,0,0.9)]">
+                      <div className="w-6 h-6 border-2 border-white/20 border-t-amber-400 rounded-full animate-spin" />
+                      <span className="font-mono text-[10px] tracking-widest uppercase text-white/90 font-bold">
+                        4K BUFFERING
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Dynamic Cinema Bottom Gradient (Smoothly visible when UI is visible, fades out when idle) */}
                 <div
                   className={`absolute inset-x-0 bottom-0 pointer-events-none h-48 sm:h-72 md:h-[440px] bg-gradient-to-t from-black/95 via-black/50 to-transparent transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] z-15 ${
@@ -1135,6 +1155,8 @@ export default function ProjectPage() {
                       <span className="text-white font-bold bg-white/10 px-1.5 py-0.5 rounded border border-white/20">{project.year}</span>
                       <span className="text-white/40">•</span>
                       <span>{project.category || (lang === "fr" ? "Vidéo" : "Video")}</span>
+                      <span className="text-white/40">•</span>
+                      <span className="text-amber-300 font-bold bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/30 tracking-wider shadow-[0_0_10px_rgba(251,191,36,0.15)]">4K UHD</span>
                       {videoDur > 0 && (
                         <>
                           <span className="text-white/40">•</span>
@@ -1374,6 +1396,14 @@ export default function ProjectPage() {
 
                       {/* Right Group */}
                       <div className="flex items-center gap-1.5 sm:gap-2.5 z-10">
+                        {/* 4K Master Quality Pill */}
+                        <div
+                          className="font-mono text-[9px] sm:text-[10px] font-bold text-amber-300/90 px-1.5 py-0.5 rounded border border-amber-400/30 bg-amber-500/10 backdrop-blur-sm select-none shadow-[0_0_8px_rgba(251,191,36,0.15)]"
+                          title="Qualité Master 4K"
+                        >
+                          4K
+                        </div>
+
                         {/* Playback Speed Button */}
                         <button
                           onClick={cyclePlaybackRate}
