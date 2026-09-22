@@ -3,7 +3,7 @@
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 /**
- * Déclenche une transition de page Awwwards ultra-fluide avec rideau fondu.
+ * Déclenche une transition de page Awwwards ultra-fluide avec rideau fondu rapide et sans blocage.
  */
 export function triggerPageTransition(
   router: AppRouterInstance,
@@ -16,11 +16,19 @@ export function triggerPageTransition(
   }
 
   if (onStart) {
-    onStart();
+    try {
+      onStart();
+    } catch (_) {}
   }
 
   // Pre-set SPA navigation marker for instant scroll reset
   sessionStorage.setItem("spa_nav", "true");
+
+  // Clean up any existing overlay
+  const existing = document.getElementById("awwwards-page-transition-overlay");
+  if (existing && existing.parentNode) {
+    existing.parentNode.removeChild(existing);
+  }
 
   // Create high-z-index fullscreen curtain overlay
   const overlay = document.createElement("div");
@@ -30,8 +38,8 @@ export function triggerPageTransition(
   overlay.style.backgroundColor = "#050505";
   overlay.style.opacity = "0";
   overlay.style.zIndex = "999999";
-  overlay.style.pointerEvents = "all";
-  overlay.style.transition = "opacity 0.45s cubic-bezier(0.76, 0, 0.24, 1)";
+  overlay.style.pointerEvents = "none"; // Never block or trap clicks
+  overlay.style.transition = "opacity 0.18s cubic-bezier(0.76, 0, 0.24, 1)";
   document.body.appendChild(overlay);
 
   // Trigger smooth curtain fade-in
@@ -39,7 +47,7 @@ export function triggerPageTransition(
     overlay.style.opacity = "1";
   });
 
-  // Navigate after curtain is fully drawn
+  // Navigate after swift 160ms curtain fade
   setTimeout(() => {
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
@@ -54,7 +62,15 @@ export function triggerPageTransition(
         if (overlay.parentNode) {
           overlay.parentNode.removeChild(overlay);
         }
-      }, 450);
-    }, 250);
-  }, 450);
+      }, 250);
+    }, 150);
+  }, 160);
+
+  // Hard safety cleanup: always ensure overlay is destroyed after 1200ms
+  setTimeout(() => {
+    const el = document.getElementById("awwwards-page-transition-overlay");
+    if (el && el.parentNode) {
+      el.parentNode.removeChild(el);
+    }
+  }, 1200);
 }

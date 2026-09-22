@@ -28,6 +28,8 @@ export interface Project {
   videoUrl?: string;
   mobileVideoUrl?: string;
   previewVideoUrl?: string;
+  youtubeId?: string;
+  youtubeUrl?: string;
   isVideo?: boolean;
   gallery: string[];
   descriptionFr: string;
@@ -110,8 +112,9 @@ export const videoProjectsData: Project[] = [
     coverImage: "/Videos/AFFICHE.png",
     heroImage: "/Videos/AFFICHE.png",
     objectPosition: "object-center",
-    videoUrl: "https://github.com/AzerfaXx-afk/Sacha-Karpavicius/releases/download/v1.0.0/AU.GRAND.JOUR.mp4",
-    mobileVideoUrl: "/Videos/au_grand_jour_stream.mp4",
+    videoUrl: "https://youtu.be/9rdVSTtubOw",
+    youtubeId: "9rdVSTtubOw",
+    youtubeUrl: "https://youtu.be/9rdVSTtubOw",
     previewVideoUrl: "/Videos/au-grand-jour-preview.mp4",
     isVideo: true,
     gallery: [],
@@ -471,4 +474,10 @@ export const projectsData: Project[] = [
 export function getProjectBySlug(slug: string): Project | undefined {
   const allProjects = [...projectsData, ...videoProjectsData];
   return allProjects.find((p) => p.slug === slug || p.id === slug);
+}
+
+export function getYoutubeId(url?: string): string | null {
+  if (!url) return null;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  return match ? match[1] : null;
 }

@@ -461,13 +461,11 @@ function warmUpAudio(el: HTMLAudioElement | null) {
 function VideoCardItem({
   project,
   idx,
-  onClick,
   playHoverSfx,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   project: any;
   idx: number;
-  onClick?: (e: React.MouseEvent) => void;
   playHoverSfx?: () => void;
 }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -479,8 +477,9 @@ function VideoCardItem({
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const isPoster = project.coverImage.toLowerCase().includes("affiche");
-  const previewSource = project.previewVideoUrl || project.videoUrl;
+  const isPoster = project.coverImage?.toLowerCase().includes("affiche");
+  const rawPreview = project.previewVideoUrl || project.videoUrl;
+  const previewSource = rawPreview && !rawPreview.includes("youtu") ? rawPreview : null;
 
   // Mobile viewport detection — only active when card is clearly visible
   useEffect(() => {
@@ -559,7 +558,6 @@ function VideoCardItem({
       data-work-card
       data-cursor="PLAY"
       data-cursor-text="PLAY"
-      onClick={onClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className="group relative cursor-pointer mb-24 md:mb-32"
@@ -621,7 +619,7 @@ function VideoCardItem({
 
         {/* YouTube / Stories Style 5-Segment Clip Progress Bar with Real-Time Smooth Filling */}
         {previewSource && (
-          <div className={`absolute bottom-4 left-6 right-6 z-30 flex items-center gap-1.5 transition-opacity duration-500 ${shouldPlay ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+          <div className={`absolute bottom-4 left-6 right-6 z-30 flex items-center gap-1.5 transition-opacity duration-500 pointer-events-none ${shouldPlay ? "opacity-100" : "opacity-0"}`}>
             {[0, 1, 2, 3, 4].map((segIdx) => {
               const widthPct =
                 segIdx < activeClipIndex
@@ -644,7 +642,7 @@ function VideoCardItem({
       </div>
 
       {/* Project Info Bar below card — EXACT SAME FORMAT AS PHOTO CARDS */}
-      <div className="mt-4 relative overflow-hidden">
+      <div className="mt-4 relative overflow-hidden pointer-events-none">
         <div className="flex items-center justify-between py-1">
           <h3 className="font-syne font-bold text-[15px] md:text-[18px] tracking-tight group-hover:tracking-[0.15em] text-white/90 group-hover:text-white uppercase transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
             {project.title}
@@ -1140,6 +1138,7 @@ export default function Home() {
 
   // Awwwards Seamless Navigation to Project Page
   const handleProjectClick = (e: React.MouseEvent, project: any) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
     if (isProjectTransitioning) return;
     const targetSlug = project.slug || "editorial-1";
@@ -1150,12 +1149,12 @@ export default function Home() {
     setIsHideUI(true);
 
     triggerPageTransition(router, `/project/${targetSlug}`, () => {
-      lockScrollForNavigation(350);
+      lockScrollForNavigation(200);
     });
 
     setTimeout(() => {
       setIsProjectTransitioning(false);
-    }, 800);
+    }, 400);
   };
 
 
@@ -1189,22 +1188,21 @@ export default function Home() {
       }
     });
 
-    // Background warmup of all video elements (previews, raw 4K, faststart streams, rotate prompt)
+    // Background warmup of lightweight preview video elements (NEVER full 4K movies or YouTube links)
     const videosToWarm = [
       "/Videos/rotate-phone.mp4",
-      ...videoProjectsData.map((vp) => vp.previewVideoUrl).filter(Boolean) as string[],
-      ...videoProjectsData.map((vp) => vp.mobileVideoUrl).filter(Boolean) as string[],
-      ...videoProjectsData.map((vp) => vp.videoUrl).filter(Boolean) as string[],
+      ...videoProjectsData
+        .map((vp) => vp.previewVideoUrl)
+        .filter((url): url is string => Boolean(url && !url.includes("youtu") && !url.startsWith("http"))),
     ];
 
     videosToWarm.forEach((src) => {
       try {
         const v = document.createElement("video");
-        v.preload = "auto";
+        v.preload = "metadata";
         v.muted = true;
         v.playsInline = true;
         v.src = src;
-        v.load();
       } catch (_) {}
     });
 
@@ -1639,27 +1637,6 @@ export default function Home() {
               data-cursor="VIEW"
               data-cursor-text="VIEW"
               onClick={(e) => handleProjectClick(e, project)}
-              data-touch-hover={touchHoveredIndex === idx}
-              onTouchStart={(e) => {
-                const touch = e.touches[0];
-                touchStartPos.current = { x: touch.clientX, y: touch.clientY };
-
-                if (touchHoverTimeout.current) clearTimeout(touchHoverTimeout.current);
-
-                // Trigger touch-hover if they hold for 100ms
-                touchHoverTimeout.current = setTimeout(() => {
-                  setTouchHoveredIndex(idx);
-                  setTouchHoveredIndex(null);
-                }, 1500);
-              }}
-              onTouchEnd={() => {
-                if (touchHoverTimeout.current) clearTimeout(touchHoverTimeout.current);
-                setTouchHoveredIndex(null);
-              }}
-              onTouchCancel={() => {
-                if (touchHoverTimeout.current) clearTimeout(touchHoverTimeout.current);
-                setTouchHoveredIndex(null);
-              }}
               onMouseEnter={() => {
                 if (playHoverSfx) playHoverSfx();
               }}
@@ -1739,7 +1716,6 @@ export default function Home() {
                 project={project}
                 idx={idx}
                 playHoverSfx={playHoverSfx}
-                onClick={(e) => handleProjectClick(e, project)}
               />
             </Link>
           ))}

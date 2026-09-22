@@ -9,7 +9,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Navbar from "@/components/navbar";
 import ProjectNav from "@/components/project-nav";
 import RotatePhonePrompt from "@/components/rotate-phone-prompt";
-import { projectsData, videoProjectsData, getProjectBySlug } from "@/data/projects";
+import { projectsData, videoProjectsData, getProjectBySlug, getYoutubeId } from "@/data/projects";
 import { useSiteContext } from "@/context/site-context";
 import { lockScrollForNavigation } from "@/utils/scroll-lock";
 import { triggerPageTransition } from "@/utils/page-transition";
@@ -24,7 +24,9 @@ export default function ProjectPage() {
   const { hasEnteredSite, setHasEnteredSite, isPlaying, toggleAudio, pauseAudio, resumeAudio, playClickSfx, playHoverSfx, setIsHideUI, stopAllVideos } = useSiteContext();
 
   const project = getProjectBySlug(slug) || projectsData[0];
-  const isVideoProject = Boolean(project?.isVideo || project?.videoUrl);
+  const youtubeId = project?.youtubeId || getYoutubeId(project?.videoUrl);
+  const isYoutube = Boolean(youtubeId);
+  const isVideoProject = Boolean(project?.isVideo || project?.videoUrl || isYoutube);
   const targetDataset = isVideoProject ? videoProjectsData : projectsData;
   const currentIndex = targetDataset.findIndex((p) => p.slug === project?.slug);
   const validIndex = currentIndex !== -1 ? currentIndex : 0;
@@ -60,7 +62,7 @@ export default function ProjectPage() {
   const lastActivityRef = useRef<number>(Date.now());
 
   useEffect(() => {
-    if (!project?.videoUrl) return;
+    if (!project?.videoUrl || isYoutube) return;
 
     lastActivityRef.current = Date.now();
 
@@ -106,14 +108,14 @@ export default function ProjectPage() {
 
   // Mobile portrait detection for Rotate Phone Prompt
   useEffect(() => {
-    if (typeof window === "undefined" || !isVideoProject) return;
+    if (typeof window === "undefined" || !isVideoProject || isYoutube) return;
     const isMobile = window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches;
     const isPortrait = window.innerHeight > window.innerWidth || window.matchMedia("(orientation: portrait)").matches;
     if (isMobile && isPortrait) {
       setShowRotatePrompt(true);
       pauseAudio(true);
     }
-  }, [isVideoProject, pauseAudio]);
+  }, [isVideoProject, isYoutube, pauseAudio]);
 
   const handleRotatePromptComplete = useCallback(() => {
     setShowRotatePrompt(false);
@@ -155,6 +157,13 @@ export default function ProjectPage() {
 
   // Launch video directly on enter (or right after rotation prompt completes)
   useEffect(() => {
+    if (isYoutube) {
+      pauseAudio(true);
+      return () => {
+        resumeAudio(true);
+      };
+    }
+
     if (!project?.videoUrl) {
       resumeAudio(true);
       return;
@@ -196,7 +205,7 @@ export default function ProjectPage() {
       }
       resumeAudio(true);
     };
-  }, [project?.slug, project?.videoUrl, showRotatePrompt, pauseAudio, resumeAudio]);
+  }, [project?.slug, project?.videoUrl, isYoutube, showRotatePrompt, pauseAudio, resumeAudio]);
 
   // Ensure scroll position is reset on page entry
   useEffect(() => {
@@ -549,6 +558,7 @@ export default function ProjectPage() {
 
   // Keyboard shortcuts (Space: Play/Pause, F: Fullscreen, M: Mute, Left/Right Arrows: Rewind/Skip, Up/Down: Volume)
   useEffect(() => {
+    if (isYoutube) return; // YouTube player controls keyboard shortcuts natively
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
       if (tag === "input" || tag === "textarea") return;
@@ -579,7 +589,7 @@ export default function ProjectPage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [togglePlayVideo, toggleFullscreen, toggleMuteVideo, changeVolume, videoVolume, seekRelative]);
+  }, [isYoutube, togglePlayVideo, toggleFullscreen, toggleMuteVideo, changeVolume, videoVolume, seekRelative]);
 
   const handleTimeUpdate = () => {
     const vid = videoRef.current;
@@ -641,22 +651,67 @@ export default function ProjectPage() {
       <section
         ref={heroRef}
         onClick={() => {
-          if (project?.videoUrl) {
+          if (project?.videoUrl && !isYoutube) {
             togglePlayVideo();
           }
         }}
         onDoubleClick={() => {
-          if (project?.videoUrl) {
+          if (project?.videoUrl && !isYoutube) {
             toggleFullscreen();
           }
         }}
-        className={`relative w-full h-[100vh] min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] group select-none transition-all duration-500 ${
-          isIdle ? "cursor-none" : "cursor-pointer"
+        className={`relative w-full min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] group select-none transition-all duration-500 ${
+          isIdle && !isYoutube ? "cursor-none" : "cursor-pointer"
         }`}
       >
         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
           <div className="relative w-full h-full">
-            {project.videoUrl ? (
+            {isYoutube ? (
+              <div className="relative w-full h-full flex flex-col items-center justify-center bg-[#050505] overflow-hidden pt-16 md:pt-20 pb-8 px-4 sm:px-8 md:px-16">
+                {/* Cinema ambient backlight glow */}
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent pointer-events-none z-0" />
+
+                <div className="relative w-full max-w-6xl aspect-video rounded-xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.95)] border border-white/10 z-10">
+                  <iframe
+                    src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=0&controls=1&rel=0&playsinline=1&modestbranding=1&enablejsapi=1`}
+                    title={project.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="w-full h-full border-0"
+                  />
+                </div>
+
+                {/* Minimal Film Info below embed */}
+                <div className="w-full max-w-6xl mt-6 flex flex-col md:flex-row md:items-end justify-between gap-4 z-10 px-1">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[10px] md:text-[11px] tracking-[0.3em] text-white/60 uppercase">
+                        {project.year} • {project.category || (lang === "fr" ? "Court-Métrage" : "Short Film")}
+                      </span>
+                    </div>
+                    <h1 className="font-syne font-extrabold text-2xl sm:text-3xl md:text-4xl uppercase tracking-tight text-white">
+                      {project.title}
+                    </h1>
+                    {project.descriptionFr && (
+                      <p className="font-inter text-xs sm:text-sm text-white/70 max-w-2xl pt-1">
+                        {lang === "fr" ? project.descriptionFr : (project.descriptionEn || project.descriptionFr)}
+                      </p>
+                    )}
+                  </div>
+
+                  {project.credits && project.credits.length > 0 && (
+                    <div className="flex flex-col md:items-end font-inter text-[11px] text-white/60 shrink-0">
+                      {project.credits.map((c, i) => (
+                        <div key={i} className="flex gap-2">
+                          <span className="text-white/40">{c.role} :</span>
+                          <span className="text-white/90 font-medium">{c.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : project.videoUrl ? (
               <>
                 <video
                   ref={videoRef}
@@ -1059,7 +1114,7 @@ export default function ProjectPage() {
                 />
               </div>
             )}
-            {!project.videoUrl && (
+            {!project.videoUrl && !isYoutube && (
               <>
                 {/* Top ambient gradient for crisp navbar & logo contrast */}
                 <div className="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-black/80 via-black/35 to-transparent pointer-events-none z-10" />
@@ -1070,7 +1125,7 @@ export default function ProjectPage() {
           </div>
         </div>
 
-        {!project.videoUrl && (
+        {!project.videoUrl && !isYoutube && (
           <div className={`relative z-10 w-full px-5 md:px-16 pb-28 sm:pb-32 md:pb-20 text-left flex flex-col justify-end items-start transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${
             isIdle
               ? "opacity-0 translate-y-8 pointer-events-none"
