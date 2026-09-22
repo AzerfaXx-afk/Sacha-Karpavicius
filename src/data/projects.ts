@@ -115,6 +115,7 @@ export const videoProjectsData: Project[] = [
     videoUrl: "https://youtu.be/9rdVSTtubOw",
     youtubeId: "9rdVSTtubOw",
     youtubeUrl: "https://youtu.be/9rdVSTtubOw",
+    mobileVideoUrl: "/Videos/au_grand_jour_stream.mp4",
     previewVideoUrl: "/Videos/au-grand-jour-preview.mp4",
     isVideo: true,
     gallery: [],

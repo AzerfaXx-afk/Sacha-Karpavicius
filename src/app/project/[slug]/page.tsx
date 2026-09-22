@@ -52,6 +52,26 @@ export default function ProjectPage() {
   const previewThumbVideoRef = useRef<HTMLVideoElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const ytPlayerRef = useRef<any>(null);
+  const [ytFailed, setYtFailed] = useState(false);
+  const [liveViews, setLiveViews] = useState<string | null>(null);
+
+  // Fetch live YouTube views if project is linked to YouTube
+  useEffect(() => {
+    if (!youtubeId) return;
+    let active = true;
+    fetch(`/api/youtube-views?id=${encodeURIComponent(youtubeId)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (active && data?.formattedViews) {
+          setLiveViews(data.formattedViews);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [youtubeId]);
 
   // Horizontal Scrollytelling Refs
   const scrollySectionRef = useRef<HTMLDivElement>(null);
@@ -62,7 +82,7 @@ export default function ProjectPage() {
   const lastActivityRef = useRef<number>(Date.now());
 
   useEffect(() => {
-    if (!project?.videoUrl || isYoutube) return;
+    if (!project?.videoUrl && !isYoutube) return;
 
     lastActivityRef.current = Date.now();
 
@@ -155,14 +175,154 @@ export default function ProjectPage() {
     };
   }, [showRotatePrompt, handleRotatePromptComplete]);
 
-  // Launch video directly on enter (or right after rotation prompt completes)
+  // Official YouTube IFrame Player API integration (counts legitimate views on YouTube)
   useEffect(() => {
-    if (isYoutube) {
-      pauseAudio(true);
-      return () => {
-        resumeAudio(true);
-      };
+    if (!isYoutube || !youtubeId || ytFailed) return;
+
+    let isMounted = true;
+    let pollTimer: NodeJS.Timeout | null = null;
+
+    const setupYT = () => {
+      if (!isMounted) return;
+      const YT = (window as any).YT;
+      if (!YT || !YT.Player) return;
+
+      const container = document.getElementById("yt-player-embed");
+      if (!container) return;
+
+      if (ytPlayerRef.current) {
+        try {
+          ytPlayerRef.current.destroy();
+        } catch (_) {}
+        ytPlayerRef.current = null;
+      }
+
+      try {
+        const player = new YT.Player("yt-player-embed", {
+          videoId: youtubeId,
+          host: "https://www.youtube.com",
+          playerVars: {
+            autoplay: 1,
+            controls: 0,
+            disablekb: 1,
+            fs: 0,
+            rel: 0,
+            modestbranding: 1,
+            playsinline: 1,
+            enablejsapi: 1,
+            iv_load_policy: 3,
+            origin: typeof window !== "undefined" ? window.location.origin : undefined,
+            widget_referrer: typeof window !== "undefined" ? window.location.href : undefined,
+          },
+          events: {
+            onReady: (e: any) => {
+              if (!isMounted) return;
+              ytPlayerRef.current = e.target;
+              const dur = e.target.getDuration() || 0;
+              if (dur > 0) setVideoDur(dur);
+
+              try {
+                if (isVideoMuted) {
+                  e.target.mute();
+                } else {
+                  e.target.unMute();
+                  e.target.setVolume(Math.round(videoVolume * 100));
+                }
+                e.target.playVideo();
+                setIsVideoPlaying(true);
+                pauseAudio(true);
+              } catch (_) {}
+            },
+            onStateChange: (e: any) => {
+              if (!isMounted) return;
+              // 1 = playing, 2 = paused, 0 = ended, 3 = buffering
+              if (e.data === 1) {
+                setIsVideoPlaying(true);
+                pauseAudio(true);
+                const dur = e.target.getDuration() || 0;
+                if (dur > 0) setVideoDur(dur);
+              } else if (e.data === 2) {
+                setIsVideoPlaying(false);
+                resumeAudio(true);
+              } else if (e.data === 0) {
+                setIsVideoPlaying(false);
+                resumeAudio(true);
+                try {
+                  e.target.seekTo(0);
+                  e.target.playVideo();
+                } catch (_) {}
+              }
+            },
+            onError: (err: any) => {
+              console.warn("YouTube player API error, activating stream fallback:", err);
+              if (isMounted) setYtFailed(true);
+            },
+          },
+        });
+      } catch (err) {
+        console.warn("Failed to instantiate YT.Player:", err);
+        if (isMounted) setYtFailed(true);
+      }
+    };
+
+    if (!(window as any).YT || !(window as any).YT.Player) {
+      if (!document.getElementById("youtube-iframe-api-script")) {
+        const tag = document.createElement("script");
+        tag.id = "youtube-iframe-api-script";
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.head.appendChild(tag);
+      }
+
+      let pollAttempts = 0;
+      pollTimer = setInterval(() => {
+        pollAttempts++;
+        if ((window as any).YT && (window as any).YT.Player) {
+          if (pollTimer) clearInterval(pollTimer);
+          setupYT();
+        } else if (pollAttempts > 60) {
+          // Timeout after 3s (60 * 50ms) -> fallback to local stream
+          if (pollTimer) clearInterval(pollTimer);
+          console.warn("YouTube API load timed out, using local video fallback");
+          setYtFailed(true);
+        }
+      }, 50);
+    } else {
+      setupYT();
     }
+
+    return () => {
+      isMounted = false;
+      if (pollTimer) clearInterval(pollTimer);
+      if (ytPlayerRef.current) {
+        try {
+          ytPlayerRef.current.destroy();
+        } catch (_) {}
+        ytPlayerRef.current = null;
+      }
+      resumeAudio(true);
+    };
+  }, [isYoutube, youtubeId, ytFailed, pauseAudio, resumeAudio]);
+
+  // Live time synchronization for YouTube video playback
+  useEffect(() => {
+    if (!isYoutube || !isVideoPlaying || ytFailed) return;
+    const interval = setInterval(() => {
+      const p = ytPlayerRef.current;
+      if (p && typeof p.getCurrentTime === "function") {
+        const ct = p.getCurrentTime() || 0;
+        setVideoTime(ct);
+        const dur = p.getDuration() || 0;
+        if (dur > 0 && dur !== videoDur) {
+          setVideoDur(dur);
+        }
+      }
+    }, 200);
+    return () => clearInterval(interval);
+  }, [isYoutube, isVideoPlaying, ytFailed, videoDur]);
+
+  // Launch native video directly on enter (or right after rotation prompt completes)
+  useEffect(() => {
+    if (isYoutube && !ytFailed) return;
 
     if (!project?.videoUrl) {
       resumeAudio(true);
@@ -205,7 +365,7 @@ export default function ProjectPage() {
       }
       resumeAudio(true);
     };
-  }, [project?.slug, project?.videoUrl, isYoutube, showRotatePrompt, pauseAudio, resumeAudio]);
+  }, [project?.slug, project?.videoUrl, isYoutube, ytFailed, showRotatePrompt, pauseAudio, resumeAudio]);
 
   // Ensure scroll position is reset on page entry
   useEffect(() => {
@@ -415,6 +575,22 @@ export default function ProjectPage() {
   const changeVolume = useCallback((newVol: number) => {
     const clamped = Math.max(0, Math.min(1, newVol));
     setVideoVolume(clamped);
+
+    if (isYoutube && !ytFailed && ytPlayerRef.current) {
+      if (clamped === 0) {
+        ytPlayerRef.current.mute?.();
+        setIsVideoMuted(true);
+      } else {
+        ytPlayerRef.current.unMute?.();
+        ytPlayerRef.current.setVolume?.(Math.round(clamped * 100));
+        setIsVideoMuted(false);
+        if (isVideoPlaying) {
+          pauseAudio(true);
+        }
+      }
+      return;
+    }
+
     const vid = videoRef.current;
     if (vid) {
       vid.volume = clamped;
@@ -429,11 +605,9 @@ export default function ProjectPage() {
         }
       }
     }
-  }, [pauseAudio, resumeAudio]);
+  }, [isYoutube, ytFailed, isVideoPlaying, pauseAudio]);
 
   const toggleMuteVideo = useCallback(() => {
-    const vid = videoRef.current;
-    if (!vid) return;
     if (isVideoMuted || videoVolume === 0) {
       changeVolume(1.0);
     } else {
@@ -442,6 +616,23 @@ export default function ProjectPage() {
   }, [isVideoMuted, videoVolume, changeVolume]);
 
   const togglePlayVideo = useCallback(() => {
+    if (isYoutube && !ytFailed && ytPlayerRef.current) {
+      const state = ytPlayerRef.current.getPlayerState?.();
+      // 1 = playing, 3 = buffering
+      if (state === 1 || state === 3) {
+        ytPlayerRef.current.pauseVideo?.();
+        setIsVideoPlaying(false);
+        triggerPulse("pause");
+        resumeAudio(true);
+      } else {
+        ytPlayerRef.current.playVideo?.();
+        setIsVideoPlaying(true);
+        triggerPulse("play");
+        pauseAudio(true);
+      }
+      return;
+    }
+
     const vid = videoRef.current;
     if (!vid) return;
     if (vid.paused || vid.ended) {
@@ -456,12 +647,12 @@ export default function ProjectPage() {
       triggerPulse("pause");
       resumeAudio(true);
     }
-  }, [triggerPulse, pauseAudio, resumeAudio]);
+  }, [isYoutube, ytFailed, triggerPulse, pauseAudio, resumeAudio]);
 
   const toggleFullscreen = useCallback(() => {
     const container = heroRef.current;
     const vid = videoRef.current;
-    if (!container || !vid) return;
+    if (!container) return;
 
     if (
       document.fullscreenElement ||
@@ -480,7 +671,7 @@ export default function ProjectPage() {
         container.requestFullscreen().catch(() => {});
       } else if ((container as any).webkitRequestFullscreen) {
         (container as any).webkitRequestFullscreen();
-      } else if ((vid as any).webkitEnterFullscreen) {
+      } else if (vid && (vid as any).webkitEnterFullscreen) {
         (vid as any).webkitEnterFullscreen();
       }
     }
@@ -491,13 +682,17 @@ export default function ProjectPage() {
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const width = rect.width;
-    if (width > 0 && videoDur > 0 && videoRef.current) {
+    if (width > 0 && videoDur > 0) {
       const ratio = Math.max(0, Math.min(1, clickX / width));
       const newTime = ratio * videoDur;
-      videoRef.current.currentTime = newTime;
+      if (isYoutube && !ytFailed && ytPlayerRef.current) {
+        ytPlayerRef.current.seekTo?.(newTime, true);
+      } else if (videoRef.current) {
+        videoRef.current.currentTime = newTime;
+      }
       setVideoTime(newTime);
     }
-  }, [videoDur]);
+  }, [videoDur, isYoutube, ytFailed]);
 
   const handleVolumePointer = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -520,19 +715,30 @@ export default function ProjectPage() {
     const nextIdx = (rates.indexOf(playbackRate) + 1) % rates.length;
     const nextRate = rates[nextIdx];
     setPlaybackRate(nextRate);
-    if (videoRef.current) {
+    if (isYoutube && !ytFailed && ytPlayerRef.current) {
+      ytPlayerRef.current.setPlaybackRate?.(nextRate);
+    } else if (videoRef.current) {
       videoRef.current.playbackRate = nextRate;
     }
-  }, [playbackRate]);
+  }, [isYoutube, ytFailed, playbackRate]);
 
   const seekRelative = useCallback((seconds: number) => {
+    if (isYoutube && !ytFailed && ytPlayerRef.current) {
+      const cur = ytPlayerRef.current.getCurrentTime?.() || 0;
+      const dur = ytPlayerRef.current.getDuration?.() || videoDur;
+      const target = Math.max(0, Math.min(dur, cur + seconds));
+      ytPlayerRef.current.seekTo?.(target, true);
+      setVideoTime(target);
+      triggerPulse(seconds > 0 ? "skip" : "rewind");
+      return;
+    }
     const vid = videoRef.current;
     if (!vid) return;
     const target = Math.max(0, Math.min(vid.duration || 0, vid.currentTime + seconds));
     vid.currentTime = target;
     setVideoTime(target);
     triggerPulse(seconds > 0 ? "skip" : "rewind");
-  }, [triggerPulse]);
+  }, [isYoutube, ytFailed, videoDur, triggerPulse]);
 
   const handleScrubberMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -558,11 +764,9 @@ export default function ProjectPage() {
 
   // Keyboard shortcuts (Space: Play/Pause, F: Fullscreen, M: Mute, Left/Right Arrows: Rewind/Skip, Up/Down: Volume)
   useEffect(() => {
-    if (isYoutube) return; // YouTube player controls keyboard shortcuts natively
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
       if (tag === "input" || tag === "textarea") return;
-      const vid = videoRef.current;
 
       if (e.code === "Space" || e.key === " ") {
         e.preventDefault();
@@ -575,10 +779,10 @@ export default function ProjectPage() {
         toggleMuteVideo();
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        if (vid) seekRelative(10);
+        seekRelative(10);
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
-        if (vid) seekRelative(-10);
+        seekRelative(-10);
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         changeVolume(videoVolume + 0.1);
@@ -589,7 +793,7 @@ export default function ProjectPage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isYoutube, togglePlayVideo, toggleFullscreen, toggleMuteVideo, changeVolume, videoVolume, seekRelative]);
+  }, [togglePlayVideo, toggleFullscreen, toggleMuteVideo, changeVolume, videoVolume, seekRelative]);
 
   const handleTimeUpdate = () => {
     const vid = videoRef.current;
@@ -650,126 +854,93 @@ export default function ProjectPage() {
 
       <section
         ref={heroRef}
-        onClick={() => {
-          if (project?.videoUrl && !isYoutube) {
-            togglePlayVideo();
-          }
-        }}
-        onDoubleClick={() => {
-          if (project?.videoUrl && !isYoutube) {
-            toggleFullscreen();
-          }
-        }}
-        className={`relative w-full min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] group select-none transition-all duration-500 ${
-          isIdle && !isYoutube ? "cursor-none" : "cursor-pointer"
+        onClick={togglePlayVideo}
+        onDoubleClick={toggleFullscreen}
+        className={`relative w-full h-[100vh] min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] group select-none transition-all duration-500 ${
+          isIdle ? "cursor-none" : "cursor-pointer"
         }`}
       >
-        <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
+        <div className="absolute inset-0 w-full h-full z-0 overflow-hidden pointer-events-none">
           <div className="relative w-full h-full">
-            {isYoutube ? (
-              <div className="relative w-full h-full flex flex-col items-center justify-center bg-[#050505] overflow-hidden pt-16 md:pt-20 pb-8 px-4 sm:px-8 md:px-16">
-                {/* Cinema ambient backlight glow */}
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent pointer-events-none z-0" />
-
-                <div className="relative w-full max-w-6xl aspect-video rounded-xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.95)] border border-white/10 z-10">
-                  <iframe
-                    src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=0&controls=1&rel=0&playsinline=1&modestbranding=1&enablejsapi=1`}
-                    title={project.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                    className="w-full h-full border-0"
-                  />
-                </div>
-
-                {/* Minimal Film Info below embed */}
-                <div className="w-full max-w-6xl mt-6 flex flex-col md:flex-row md:items-end justify-between gap-4 z-10 px-1">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-[10px] md:text-[11px] tracking-[0.3em] text-white/60 uppercase">
-                        {project.year} • {project.category || (lang === "fr" ? "Court-Métrage" : "Short Film")}
-                      </span>
-                    </div>
-                    <h1 className="font-syne font-extrabold text-2xl sm:text-3xl md:text-4xl uppercase tracking-tight text-white">
-                      {project.title}
-                    </h1>
-                    {project.descriptionFr && (
-                      <p className="font-inter text-xs sm:text-sm text-white/70 max-w-2xl pt-1">
-                        {lang === "fr" ? project.descriptionFr : (project.descriptionEn || project.descriptionFr)}
-                      </p>
-                    )}
-                  </div>
-
-                  {project.credits && project.credits.length > 0 && (
-                    <div className="flex flex-col md:items-end font-inter text-[11px] text-white/60 shrink-0">
-                      {project.credits.map((c, i) => (
-                        <div key={i} className="flex gap-2">
-                          <span className="text-white/40">{c.role} :</span>
-                          <span className="text-white/90 font-medium">{c.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+            {isYoutube && !ytFailed ? (
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.78vh] pointer-events-none overflow-hidden select-none">
+                <div id="yt-player-embed" className="w-full h-full pointer-events-none" />
               </div>
             ) : project.videoUrl ? (
+              <video
+                ref={videoRef}
+                poster={project.coverImage || project.heroImage}
+                autoPlay
+                loop
+                muted={isVideoMuted}
+                playsInline
+                preload="auto"
+                onError={() => {
+                  const vid = videoRef.current;
+                  if (vid && project.mobileVideoUrl && !vid.currentSrc.includes(project.mobileVideoUrl)) {
+                    vid.src = project.mobileVideoUrl;
+                    vid.load();
+                    vid.play().catch(() => {});
+                  }
+                }}
+                onLoadedMetadata={(e) => {
+                  const vid = e.currentTarget;
+                  setVideoDur(vid.duration || 0);
+                  setVideoTime(vid.currentTime || 0);
+                  if (vid.paused) {
+                    vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+                  }
+                }}
+                onCanPlay={(e) => {
+                  const vid = e.currentTarget;
+                  if (vid.paused) {
+                    vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+                  }
+                }}
+                onTimeUpdate={handleTimeUpdate}
+                onPlay={() => {
+                  setIsVideoPlaying(true);
+                  pauseAudio(true);
+                }}
+                onPause={() => {
+                  setIsVideoPlaying(false);
+                  resumeAudio(true);
+                }}
+                onEnded={() => {
+                  setIsVideoPlaying(false);
+                  resumeAudio(true);
+                }}
+                className="object-cover w-full h-full min-h-full min-w-full transform-gpu will-change-transform"
+                style={{
+                  imageRendering: "crisp-edges",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden",
+                }}
+              >
+                {project.videoUrl && (
+                  <source src={project.videoUrl} type="video/mp4" />
+                )}
+                {project.mobileVideoUrl && (
+                  <source src={project.mobileVideoUrl} type="video/mp4" />
+                )}
+              </video>
+            ) : (
+              <div ref={heroImgRef} className="relative w-full h-full will-change-transform">
+                <Image
+                  src={project.heroImage}
+                  alt={project.title}
+                  fill
+                  priority
+                  quality={96}
+                  sizes="100vw"
+                  className={`object-cover ${project.objectPosition || "object-[center_35%]"} w-full h-full min-h-full min-w-full transform-gpu`}
+                />
+              </div>
+            )}
+
+            {/* If video project (YouTube or native video) -> render complete custom Awwwards HUD & overlays */}
+            {(isVideoProject || project.videoUrl) && (
               <>
-                <video
-                  ref={videoRef}
-                  poster={project.coverImage || project.heroImage}
-                  autoPlay
-                  loop
-                  muted={isVideoMuted}
-                  playsInline
-                  preload="auto"
-                  onError={() => {
-                    const vid = videoRef.current;
-                    if (vid && project.mobileVideoUrl && !vid.currentSrc.includes(project.mobileVideoUrl)) {
-                      vid.src = project.mobileVideoUrl;
-                      vid.load();
-                      vid.play().catch(() => {});
-                    }
-                  }}
-                  onLoadedMetadata={(e) => {
-                    const vid = e.currentTarget;
-                    setVideoDur(vid.duration || 0);
-                    setVideoTime(vid.currentTime || 0);
-                    if (vid.paused) {
-                      vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
-                    }
-                  }}
-                  onCanPlay={(e) => {
-                    const vid = e.currentTarget;
-                    if (vid.paused) {
-                      vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
-                    }
-                  }}
-                  onTimeUpdate={handleTimeUpdate}
-                  onPlay={() => {
-                    setIsVideoPlaying(true);
-                    pauseAudio(true);
-                  }}
-                  onPause={() => {
-                    setIsVideoPlaying(false);
-                    resumeAudio(true);
-                  }}
-                  onEnded={() => {
-                    setIsVideoPlaying(false);
-                    resumeAudio(true);
-                  }}
-                  className="object-cover w-full h-full min-h-full min-w-full transform-gpu will-change-transform"
-                  style={{
-                    imageRendering: "crisp-edges",
-                    backfaceVisibility: "hidden",
-                    WebkitBackfaceVisibility: "hidden",
-                  }}
-                >
-                  {project.videoUrl && (
-                    <source src={project.videoUrl} type="video/mp4" />
-                  )}
-                  {project.mobileVideoUrl && (
-                    <source src={project.mobileVideoUrl} type="video/mp4" />
-                  )}
-                </video>
 
                 {/* Floating Unmute Quick Action Pill (when muted autoplay starts) */}
                 {isVideoMuted && isVideoPlaying && !isIdle && (
@@ -860,6 +1031,30 @@ export default function ProjectPage() {
                         <>
                           <span className="text-white/40">•</span>
                           <span>{formatTime(videoDur)}</span>
+                        </>
+                      )}
+                      {liveViews && (
+                        <>
+                          <span className="text-white/40">•</span>
+                          <span className="inline-flex items-center gap-1.5 text-white/90 bg-white/10 px-2 py-0.5 rounded-full border border-white/15 backdrop-blur-sm shadow-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                            <span>{liveViews}</span>
+                          </span>
+                        </>
+                      )}
+                      {project.youtubeUrl && (
+                        <>
+                          <span className="text-white/40">•</span>
+                          <a
+                            href={project.youtubeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-white/60 hover:text-white transition-colors underline-offset-2 hover:underline cursor-pointer"
+                          >
+                            <span>YouTube</span>
+                            <span className="text-[9px]">↗</span>
+                          </a>
                         </>
                       )}
                     </div>
@@ -1101,20 +1296,10 @@ export default function ProjectPage() {
                   </div>
                 </div>
               </>
-            ) : (
-              <div ref={heroImgRef} className="relative w-full h-full will-change-transform">
-                <Image
-                  src={project.heroImage}
-                  alt={project.title}
-                  fill
-                  priority
-                  quality={96}
-                  sizes="100vw"
-                  className={`object-cover ${project.objectPosition || "object-[center_35%]"} w-full h-full min-h-full min-w-full transform-gpu`}
-                />
-              </div>
             )}
-            {!project.videoUrl && !isYoutube && (
+
+            {/* If photo project -> render photo top/bottom gradients */}
+            {!isVideoProject && !project.videoUrl && (
               <>
                 {/* Top ambient gradient for crisp navbar & logo contrast */}
                 <div className="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-black/80 via-black/35 to-transparent pointer-events-none z-10" />
@@ -1125,7 +1310,7 @@ export default function ProjectPage() {
           </div>
         </div>
 
-        {!project.videoUrl && !isYoutube && (
+        {!isVideoProject && !project.videoUrl && (
           <div className={`relative z-10 w-full px-5 md:px-16 pb-28 sm:pb-32 md:pb-20 text-left flex flex-col justify-end items-start transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${
             isIdle
               ? "opacity-0 translate-y-8 pointer-events-none"
