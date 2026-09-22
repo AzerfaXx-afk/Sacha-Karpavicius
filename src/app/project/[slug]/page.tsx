@@ -73,6 +73,42 @@ export default function ProjectPage() {
     };
   }, [youtubeId]);
 
+  // Video Quality state & selection (real YouTube quality switching + native switching)
+  const [currentQuality, setCurrentQuality] = useState<string>(isYoutube ? "hd1080" : "4k");
+  const [currentQualityLabel, setCurrentQualityLabel] = useState<string>(isYoutube ? "1080p" : "4K");
+  const [isQualityMenuOpen, setIsQualityMenuOpen] = useState<boolean>(false);
+  const [qualityToast, setQualityToast] = useState<string | null>(null);
+  const qualityMenuRef = useRef<HTMLDivElement>(null);
+  const qualityToastTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showQualityToast = useCallback((label: string) => {
+    if (qualityToastTimerRef.current) clearTimeout(qualityToastTimerRef.current);
+    setQualityToast(label);
+    qualityToastTimerRef.current = setTimeout(() => {
+      setQualityToast(null);
+    }, 2200);
+  }, []);
+
+  // Close quality menu on outside click or idle
+  useEffect(() => {
+    if (!isQualityMenuOpen) return;
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      if (qualityMenuRef.current && !qualityMenuRef.current.contains(e.target as Node)) {
+        setIsQualityMenuOpen(false);
+      }
+    };
+    window.addEventListener("mousedown", handleOutsideClick);
+    window.addEventListener("touchstart", handleOutsideClick);
+    return () => {
+      window.removeEventListener("mousedown", handleOutsideClick);
+      window.removeEventListener("touchstart", handleOutsideClick);
+    };
+  }, [isQualityMenuOpen]);
+
+  useEffect(() => {
+    if (isIdle) setIsQualityMenuOpen(false);
+  }, [isIdle]);
+
   // Horizontal Scrollytelling Refs
   const scrollySectionRef = useRef<HTMLDivElement>(null);
   const horizontalTrackRef = useRef<HTMLDivElement>(null);
@@ -228,10 +264,35 @@ export default function ProjectPage() {
                   e.target.unMute();
                   e.target.setVolume(Math.round(videoVolume * 100));
                 }
+                try {
+                  e.target.setPlaybackQuality("hd1080");
+                } catch (_) {}
                 e.target.playVideo();
                 setIsVideoPlaying(true);
                 pauseAudio(true);
               } catch (_) {}
+            },
+            onPlaybackQualityChange: (e: any) => {
+              if (!isMounted) return;
+              const q = e.data;
+              if (q) {
+                const map: Record<string, string> = {
+                  highres: "4K",
+                  hd2160: "4K",
+                  hd1440: "1440p",
+                  hd1080: "1080p",
+                  hd720: "720p",
+                  large: "480p",
+                  medium: "360p",
+                  small: "240p",
+                  tiny: "144p",
+                  auto: "Auto",
+                };
+                if (map[q]) {
+                  setCurrentQuality(q);
+                  setCurrentQualityLabel(map[q]);
+                }
+              }
             },
             onStateChange: (e: any) => {
               if (!isMounted) return;
@@ -705,6 +766,45 @@ export default function ProjectPage() {
     }
   }, [changeVolume]);
 
+  const changeQuality = useCallback(
+    (qualityKey: string, displayLabel: string) => {
+      setCurrentQuality(qualityKey);
+      setCurrentQualityLabel(displayLabel);
+      setIsQualityMenuOpen(false);
+      showQualityToast(displayLabel);
+
+      if (isYoutube && !ytFailed && ytPlayerRef.current) {
+        const p = ytPlayerRef.current;
+        try {
+          if (typeof p.setPlaybackQuality === "function") {
+            p.setPlaybackQuality(qualityKey);
+          }
+          // Seek to current time flushes buffer and forces YouTube to immediately download and render the new quality stream
+          if (typeof p.getCurrentTime === "function" && typeof p.seekTo === "function") {
+            const ct = p.getCurrentTime() || 0;
+            p.seekTo(ct, true);
+          }
+        } catch (_) {}
+        return;
+      }
+
+      const vid = videoRef.current;
+      if (vid && project) {
+        const curTime = vid.currentTime || 0;
+        const wasPlaying = !vid.paused;
+        const newSrc = qualityKey === "1080p" && project.mobileVideoUrl ? project.mobileVideoUrl : project.videoUrl;
+        if (newSrc && vid.currentSrc && !vid.currentSrc.includes(newSrc)) {
+          vid.src = newSrc;
+          vid.currentTime = curTime;
+          if (wasPlaying) {
+            vid.play().catch(() => {});
+          }
+        }
+      }
+    },
+    [isYoutube, ytFailed, project, showQualityToast]
+  );
+
   const [playbackRate, setPlaybackRate] = useState<number>(1);
   const [hoverSeekTime, setHoverSeekTime] = useState<number | null>(null);
   const [hoverSeekPos, setHoverSeekPos] = useState<number>(0);
@@ -957,6 +1057,14 @@ export default function ProjectPage() {
                     </svg>
                     <span className="font-semibold">{lang === "fr" ? "Activer le son" : "Unmute Audio"}</span>
                   </button>
+                )}
+
+                {/* Floating Feedback Toast for Quality Change */}
+                {qualityToast && (
+                  <div className="absolute top-20 sm:top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-black/90 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-full border border-white/25 shadow-[0_10px_35px_rgba(0,0,0,0.9)] backdrop-blur-xl font-mono text-[11px] sm:text-xs animate-fade-in pointer-events-none">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                    <span>{lang === "fr" ? "Qualité réglée sur" : "Quality set to"} : <strong className="text-amber-300 font-bold">{qualityToast}</strong></span>
+                  </div>
                 )}
 
                 {/* Awwwards Center Play/Pause/Rewind/Skip Animated Pulse Feedback */}
@@ -1274,6 +1382,93 @@ export default function ProjectPage() {
                         >
                           {playbackRate}x
                         </button>
+
+                        {/* Video Quality Selector */}
+                        <div className="relative" ref={qualityMenuRef}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsQualityMenuOpen((prev) => !prev);
+                            }}
+                            className={`font-mono text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded border transition-all cursor-pointer drop-shadow flex items-center gap-1.5 ${
+                              isQualityMenuOpen
+                                ? "bg-white text-black border-white"
+                                : "text-white/85 hover:text-white border-white/20 hover:border-white/50 bg-white/10 hover:bg-white/20 backdrop-blur-sm"
+                            }`}
+                            title="Qualité vidéo"
+                          >
+                            <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="3" />
+                              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                            </svg>
+                            <span>{currentQualityLabel}</span>
+                          </button>
+
+                          {/* Floating Awwwards Quality Popover */}
+                          {isQualityMenuOpen && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute bottom-full mb-3 right-0 w-48 sm:w-56 bg-[#080808]/95 backdrop-blur-2xl border border-white/20 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.95)] p-2 z-50 text-left animate-fade-in select-none"
+                            >
+                              <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-white/10 mb-1">
+                                <span className="font-mono text-[9px] uppercase tracking-widest text-white/50">
+                                  {lang === "fr" ? "Qualité vidéo" : "Video quality"}
+                                </span>
+                                {isYoutube && (
+                                  <span className="font-mono text-[9px] text-red-400 font-semibold flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                                    YouTube
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="space-y-0.5">
+                                {(isYoutube && !ytFailed ? [
+                                  { key: "hd1080", label: "1080p", badge: "HD", desc: "Haute Définition" },
+                                  { key: "hd720", label: "720p", badge: "HD", desc: "Standard HD" },
+                                  { key: "medium", label: "360p", badge: "SD", desc: "Basse Définition" },
+                                  { key: "tiny", label: "144p", badge: "ECO", desc: "Économie données" },
+                                  { key: "auto", label: "Auto", badge: "AUTO", desc: "Automatique" },
+                                ] : [
+                                  { key: "4k", label: "4K UHD", badge: "MAX", desc: "Plein débit d'origine" },
+                                  { key: "1080p", label: "1080p Web", badge: "HD", desc: "Optimisé streaming" },
+                                ]).map((q) => {
+                                  const isActive = currentQuality === q.key;
+                                  return (
+                                    <button
+                                      key={q.key}
+                                      onClick={() => changeQuality(q.key, q.label)}
+                                      className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-all cursor-pointer group/q ${
+                                        isActive
+                                          ? "bg-white/15 text-white"
+                                          : "hover:bg-white/10 text-white/70 hover:text-white"
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <span className={`w-1.5 h-1.5 rounded-full transition-colors ${isActive ? "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]" : "bg-transparent group-hover/q:bg-white/40"}`} />
+                                        <div className="flex flex-col">
+                                          <span className="font-mono text-[11px] font-semibold tracking-wide">
+                                            {q.label}
+                                          </span>
+                                          <span className="font-inter text-[9px] text-white/40 leading-none">
+                                            {q.desc}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <span className={`font-mono text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                                        isActive
+                                          ? "border-amber-400/40 text-amber-300 bg-amber-400/10"
+                                          : "border-white/10 text-white/40 group-hover/q:text-white/70 group-hover/q:border-white/20"
+                                      }`}>
+                                        {q.badge}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
 
                         {/* Fullscreen Button */}
                         <button
