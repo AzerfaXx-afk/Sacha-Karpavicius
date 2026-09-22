@@ -45,6 +45,9 @@ export default function ProjectPage() {
   const [videoDur, setVideoDur] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showRotatePrompt, setShowRotatePrompt] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(false);
+  const [isForcedLandscapeCSS, setIsForcedLandscapeCSS] = useState(false);
 
   const heroRef = useRef<HTMLDivElement>(null);
   const heroImgRef = useRef<HTMLDivElement>(null);
@@ -162,20 +165,54 @@ export default function ProjectPage() {
     };
   }, [setIsHideUI, resumeAudio]);
 
-  // Mobile portrait detection for Rotate Phone Prompt
+  // Mobile orientation detection (portrait vs landscape)
   useEffect(() => {
-    if (typeof window === "undefined" || !isVideoProject || isYoutube) return;
-    const isMobile = window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches;
-    const isPortrait = window.innerHeight > window.innerWidth || window.matchMedia("(orientation: portrait)").matches;
-    if (isMobile && isPortrait) {
+    if (typeof window === "undefined") return;
+    const checkOrientation = () => {
+      const isMob = window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches;
+      const isPort = window.innerHeight > window.innerWidth || window.matchMedia("(orientation: portrait)").matches;
+      setIsMobileDevice(isMob);
+      setIsPortrait(isPort);
+      if (!isPort) {
+        setIsForcedLandscapeCSS(false);
+      }
+    };
+
+    checkOrientation();
+    window.addEventListener("resize", checkOrientation);
+    window.addEventListener("orientationchange", checkOrientation);
+    return () => {
+      window.removeEventListener("resize", checkOrientation);
+      window.removeEventListener("orientationchange", checkOrientation);
+    };
+  }, []);
+
+  // Trigger Rotate Phone Prompt on mobile portrait for all video projects
+  useEffect(() => {
+    if (typeof window === "undefined" || !isVideoProject) return;
+    const isMob = window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches;
+    const isPort = window.innerHeight > window.innerWidth || window.matchMedia("(orientation: portrait)").matches;
+    if (isMob && isPort) {
       setShowRotatePrompt(true);
       pauseAudio(true);
     }
-  }, [isVideoProject, isYoutube, pauseAudio]);
+  }, [isVideoProject, pauseAudio]);
 
   const handleRotatePromptComplete = useCallback(() => {
     setShowRotatePrompt(false);
     setIsHideUI(false);
+
+    // If YouTube video, launch playback
+    if (isYoutube && !ytFailed && ytPlayerRef.current) {
+      try {
+        ytPlayerRef.current.playVideo?.();
+        setIsVideoPlaying(true);
+        pauseAudio(true);
+      } catch (_) {}
+      return;
+    }
+
+    // If native video, launch playback
     const vid = videoRef.current;
     if (vid) {
       vid.play()
@@ -194,7 +231,7 @@ export default function ProjectPage() {
             .catch(() => {});
         });
     }
-  }, [pauseAudio, setIsHideUI]);
+  }, [isYoutube, ytFailed, pauseAudio, setIsHideUI]);
 
   useEffect(() => {
     if (!showRotatePrompt) return;
@@ -267,9 +304,11 @@ export default function ProjectPage() {
                 try {
                   e.target.setPlaybackQuality("hd1080");
                 } catch (_) {}
-                e.target.playVideo();
-                setIsVideoPlaying(true);
-                pauseAudio(true);
+                if (!showRotatePrompt) {
+                  e.target.playVideo();
+                  setIsVideoPlaying(true);
+                  pauseAudio(true);
+                }
               } catch (_) {}
             },
             onPlaybackQualityChange: (e: any) => {
@@ -710,33 +749,64 @@ export default function ProjectPage() {
     }
   }, [isYoutube, ytFailed, triggerPulse, pauseAudio, resumeAudio]);
 
-  const toggleFullscreen = useCallback(() => {
+  const toggleFullscreen = useCallback(async () => {
     const container = heroRef.current;
     const vid = videoRef.current;
     if (!container) return;
 
-    if (
-      document.fullscreenElement ||
-      (document as any).webkitFullscreenElement ||
-      (document as any).mozFullScreenElement ||
-      (document as any).msFullscreenElement
-    ) {
+    const isCurrentlyFs =
+      Boolean(document.fullscreenElement) ||
+      Boolean((document as any).webkitFullscreenElement) ||
+      Boolean((document as any).mozFullScreenElement) ||
+      Boolean((document as any).msFullscreenElement) ||
+      isForcedLandscapeCSS;
+
+    if (isCurrentlyFs) {
       if (document.exitFullscreen) {
         document.exitFullscreen().catch(() => {});
       } else if ((document as any).webkitExitFullscreen) {
         (document as any).webkitExitFullscreen();
       }
+      if (screen.orientation && (screen.orientation as any).unlock) {
+        try {
+          (screen.orientation as any).unlock();
+        } catch (_) {}
+      }
+      setIsForcedLandscapeCSS(false);
+      setIsFullscreen(false);
     } else {
+      setIsFullscreen(true);
       scrollPosBeforeFs.current = window.scrollY || document.documentElement.scrollTop || 0;
+
       if (container.requestFullscreen) {
-        container.requestFullscreen().catch(() => {});
+        try {
+          await container.requestFullscreen();
+        } catch (_) {}
       } else if ((container as any).webkitRequestFullscreen) {
-        (container as any).webkitRequestFullscreen();
+        try {
+          (container as any).webkitRequestFullscreen();
+        } catch (_) {}
       } else if (vid && (vid as any).webkitEnterFullscreen) {
-        (vid as any).webkitEnterFullscreen();
+        try {
+          (vid as any).webkitEnterFullscreen();
+        } catch (_) {}
+      }
+
+      // Try Screen Orientation Lock API to force horizontal landscape on mobile
+      let lockSucceeded = false;
+      if (screen.orientation && typeof (screen.orientation as any).lock === "function") {
+        try {
+          await (screen.orientation as any).lock("landscape");
+          lockSucceeded = true;
+        } catch (_) {}
+      }
+
+      // If mobile portrait and orientation lock wasn't available (e.g. iOS Safari), force CSS landscape
+      if (isMobileDevice && isPortrait && !lockSucceeded) {
+        setIsForcedLandscapeCSS(true);
       }
     }
-  }, []);
+  }, [isForcedLandscapeCSS, isMobileDevice, isPortrait]);
 
   const handleSeekPointer = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -936,7 +1006,7 @@ export default function ProjectPage() {
         onPlayHoverSfx={playHoverSfx}
       />
 
-      <div className={`fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference transition-all duration-700 ${isIdle ? "opacity-0 pointer-events-none translate-y-4" : "opacity-100 translate-y-0 pointer-events-auto"}`}>
+      <div className={`fixed bottom-6 left-6 md:bottom-10 md:left-12 z-[100] mix-blend-difference transition-all duration-700 ${isIdle ? "opacity-0 pointer-events-none translate-y-4" : "opacity-100 translate-y-0 pointer-events-auto"} ${isVideoProject ? "hidden md:block" : ""}`}>
         <a
           href="/#contact"
           onClick={(e) => {
@@ -957,13 +1027,37 @@ export default function ProjectPage() {
         onClick={togglePlayVideo}
         onDoubleClick={toggleFullscreen}
         className={`relative w-full h-[100vh] min-h-screen m-0 p-0 overflow-hidden flex flex-col justify-end bg-[#050505] group select-none transition-all duration-500 ${
+          isForcedLandscapeCSS
+            ? "fixed inset-0 z-[9999] w-[100vh] h-[100vw] rotate-90 origin-top-left translate-x-[100vw]"
+            : ""
+        } ${
           isIdle ? "cursor-none" : "cursor-pointer"
         }`}
       >
         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden pointer-events-none">
           <div className="relative w-full h-full">
+            {/* Ambient Blurred Video Glow in Portrait */}
+            {isMobileDevice && isPortrait && !isForcedLandscapeCSS && (
+              <div className="absolute inset-0 scale-125 blur-3xl opacity-35 pointer-events-none overflow-hidden">
+                <Image
+                  src={project.coverImage || project.heroImage}
+                  alt=""
+                  fill
+                  sizes="100vw"
+                  className="object-cover"
+                  quality={20}
+                />
+              </div>
+            )}
+
             {isYoutube && !ytFailed ? (
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.78vh] pointer-events-none overflow-hidden select-none">
+              <div
+                className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none overflow-hidden select-none transition-all duration-500 ${
+                  isMobileDevice && isPortrait && !isForcedLandscapeCSS
+                    ? "w-full max-w-full aspect-video shadow-[0_10px_35px_rgba(0,0,0,0.9)]"
+                    : "w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.78vh]"
+                }`}
+              >
                 <div id="yt-player-embed" className="w-full h-full pointer-events-none" />
               </div>
             ) : project.videoUrl ? (
@@ -987,13 +1081,13 @@ export default function ProjectPage() {
                   const vid = e.currentTarget;
                   setVideoDur(vid.duration || 0);
                   setVideoTime(vid.currentTime || 0);
-                  if (vid.paused) {
+                  if (vid.paused && !showRotatePrompt) {
                     vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
                   }
                 }}
                 onCanPlay={(e) => {
                   const vid = e.currentTarget;
-                  if (vid.paused) {
+                  if (vid.paused && !showRotatePrompt) {
                     vid.play().then(() => setIsVideoPlaying(true)).catch(() => {});
                   }
                 }}
@@ -1010,7 +1104,11 @@ export default function ProjectPage() {
                   setIsVideoPlaying(false);
                   resumeAudio(true);
                 }}
-                className="object-cover w-full h-full min-h-full min-w-full transform-gpu will-change-transform"
+                className={`transform-gpu will-change-transform transition-all duration-500 ${
+                  isMobileDevice && isPortrait && !isForcedLandscapeCSS
+                    ? "w-full aspect-video object-contain absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 shadow-[0_10px_35px_rgba(0,0,0,0.9)]"
+                    : "object-cover w-full h-full min-h-full min-w-full"
+                }`}
                 style={{
                   imageRendering: "crisp-edges",
                   backfaceVisibility: "hidden",
@@ -1112,9 +1210,9 @@ export default function ProjectPage() {
                   }`}
                 />
 
-                {/* Minimal Paused Info Card (Clean, unobtrusive, positioned above the bottom controls) */}
+                {/* Minimal Paused Info Card (Clean, positioned comfortably above the bottom controls) */}
                 <div
-                  className={`absolute inset-0 z-20 pointer-events-none flex flex-col justify-end p-4 sm:p-8 md:p-16 pb-20 sm:pb-28 md:pb-36 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  className={`absolute inset-0 z-20 pointer-events-none flex flex-col justify-end p-4 sm:p-8 md:p-16 pb-24 sm:pb-28 md:pb-36 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                     isIdle
                       ? "opacity-0 translate-y-8 pointer-events-none"
                       : !isVideoPlaying
@@ -1122,7 +1220,7 @@ export default function ProjectPage() {
                       : "opacity-0 pointer-events-none"
                   }`}
                 >
-                  <div className="max-w-md sm:max-w-xl md:max-w-2xl space-y-1.5 sm:space-y-3 pointer-events-auto">
+                  <div className="max-w-xs sm:max-w-xl md:max-w-2xl space-y-1.5 sm:space-y-3 pointer-events-auto">
                     <div className="flex items-center gap-2">
                       <span className="font-inter text-[10px] sm:text-xs md:text-sm tracking-widest uppercase text-white/70 font-semibold drop-shadow-md">
                         {lang === "fr" ? "Vous regardez" : "Now watching"}
@@ -1354,7 +1452,7 @@ export default function ProjectPage() {
                             onPointerMove={(e) => {
                               if (e.buttons === 1) handleVolumePointer(e);
                             }}
-                            className="relative w-12 sm:w-16 h-1 bg-white/20 rounded-full cursor-pointer overflow-hidden transition-all duration-300 hover:h-1.5 group-hover/vol:bg-white/35 backdrop-blur-[2px]"
+                            className="relative w-8 sm:w-16 h-1 bg-white/20 rounded-full cursor-pointer overflow-hidden transition-all duration-300 hover:h-1.5 group-hover/vol:bg-white/35 backdrop-blur-[2px]"
                             title={`Volume: ${Math.round((isVideoMuted ? 0 : videoVolume) * 100)}%`}
                           >
                             <div
@@ -1365,8 +1463,8 @@ export default function ProjectPage() {
                         </div>
                       </div>
 
-                      {/* Video Title Perfectly Centered in Bottom Controls */}
-                      <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none px-2 max-w-[45%] text-center">
+                      {/* Video Title - Hidden on mobile to prevent overlapping controls */}
+                      <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center justify-center pointer-events-none px-2 max-w-[40%] text-center">
                         <span className="font-syne font-bold text-xs sm:text-sm tracking-wider text-white uppercase truncate drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]">
                           {project.title}
                         </span>
